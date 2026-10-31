@@ -39,6 +39,26 @@ const pingArtifact = {
   state: { host: 'example.com' }
 };
 
+// Data-driven element exercising ui.db (persistent tables) end to end.
+const dbArtifact = {
+  version: 1,
+  name: 'Aufgaben-DB',
+  html: '<div><h2>Aufgaben-DB</h2><input id="t" type="text"><button id="add">+</button><button id="done">Erste erledigt</button><button id="pop">Erste löschen</button><button id="big">Grosse Zeile</button><button id="dropall">Tabelle löschen</button><ul id="list"></ul><p id="msg">startet …</p></div>',
+  css: 'h2{color:#d4ef8b}button{margin:4px 4px 0 0}li{margin:2px 0;color:#e9e9de}p{color:#9ca49f}',
+  js: 'state.items=state.items||[];function draw(){ui.html("list",state.items.map(function(i){return "<li>"+String(i.t)+(i.done?" ✓":"")+"</li>"}).join(""))}function load(){ui.db.select("todos",{},function(r){if(r.ok){state.items=r.rows||[];draw();ui.text("msg","geladen: "+state.items.length)}else{ui.text("msg",r.error||"db")}})}ui.db.create("todos",["t","done"],function(){load()});ui.on("t","input",function(e){state.t=e.value;ui.persist()});ui.on("add","click",function(){var t=state.t||("item "+(state.items.length+1));ui.db.insert("todos",{t:t,done:false},function(r){if(r.ok){state.items.push({id:r.id,t:t,done:false});draw();ui.text("msg","ok id "+r.id);ui.value("t","");state.t="";ui.persist()}else{ui.text("msg","Fehler: "+(r.error||"?"))}})});ui.on("done","click",function(){var f=state.items[0];if(!f)return ui.text("msg","leer");ui.db.update("todos",f.id,{done:true},function(r){ui.text("msg",r.ok?"updated "+f.id:"Fehler: "+(r.error||"?"));if(r.ok){f.done=true;draw()}})});ui.on("pop","click",function(){var f=state.items[0];if(!f)return ui.text("msg","leer");ui.db.delete("todos",f.id,function(r){ui.text("msg",r.ok?"gelöscht "+f.id:"Fehler: "+(r.error||"?"));if(r.ok){state.items.shift();draw()}})});ui.on("big","click",function(){var s="";for(var i=0;i<19000;i++)s+="x";ui.db.insert("todos",{t:s},function(r){ui.text("msg",r.ok?"surreal ok":"Fehler: "+(r.error||"?"))})});ui.on("dropall","click",function(){ui.db.drop("todos",function(r){ui.text("msg",r.ok?"gedroppt":"Fehler: "+(r.error||"?"));if(r.ok){state.items=[];draw()}})});load();',
+  state: {}
+};
+
+// Element B: proves per-element table scoping from inside the sandbox.
+const scopeArtifact = {
+  version: 1,
+  name: 'Scoping-Test',
+  html: '<div><h2>Scoping-Test</h2><button id="s">todos lesen</button><p id="msg">–</p></div>',
+  css: 'h2{color:#d4ef8b}p{color:#9ca49f}',
+  js: 'ui.on("s","click",function(){ui.db.select("todos",{},function(r){ui.text("msg",r.ok?"SEHEN!":"isoliert: "+(r.error||"?"))})});',
+  state: {}
+};
+
 const boundaryArtifact = {
   version: 1,
   html: '<meta http-equiv="refresh" content="0;url=https://example.com"><a href="https://example.com">link</a><img src="https://example.com"><svg><a href="https://example.com"><text>X</text></a></svg><input id="amount" type="number"><p id="result"></p><svg viewBox="0 0 100 100"><g id="dyn"></g><g id="dyn3"></g></svg><div id="dyn2"></div><button id="suggest" onclick="location="https://example.com"">Suggest</button><script>location="https://example.com"</script>',
@@ -82,6 +102,14 @@ async function run(scenario, res) {
     P('Hier ist dein Netz-Labor mit echtem Ping. ', 40),
     P('```json\n' + JSON.stringify(pingArtifact) + '\n```', 10)
   ]);
+  if (scenario === 'dbschema') return stream(res, [
+    P('Hier ist deine Aufgaben-DB mit eigener Tabelle. ', 40),
+    P('```json\n' + JSON.stringify(dbArtifact) + '\n```', 10)
+  ]);
+  if (scenario === 'dbscope') return stream(res, [
+    P('Scoping-Test. ', 20),
+    P('```json\n' + JSON.stringify(scopeArtifact) + '\n```', 10)
+  ]);
   if (scenario === 'slow') return stream(res, [
     P('Erster Gedanke …', 6000),
     P(' Zweiter Teil nach der Pause.', 30)
@@ -113,13 +141,15 @@ const server = http.createServer(async (req, res) => {
   const lastUser = [...messages].reverse().find(m => m.role === 'user');
   const text = String(lastUser?.content || '').toLowerCase();
   stats.lastRoles = messages.map(m => m.role);
-  stats.lastUserContent = String(lastUser?.content || '').slice(0, 300);
+  stats.lastUserContent = String(lastUser?.content || '').slice(0, 1200);
   const corrective = messages.some(m => m.role === 'user' && String(m.content).startsWith('Your previous answer'));
   const refine = messages.some(m => m.role === 'user' && String(m.content).includes('[marked-element'));
   let scenario = 'prose';
   if (corrective) scenario = 'corrected';
   else if (refine) scenario = 'refine';
   else if (text.includes('netz-labor')) scenario = 'pingshell';
+  else if (text.includes('aufgaben-db')) scenario = 'dbschema';
+  else if (text.includes('scoping-test')) scenario = 'dbscope';
   else if (text.includes('slider')) scenario = 'slider';
   else if (text.includes('invalid')) scenario = 'invalid';
   else if (text.includes('slow')) scenario = 'slow';

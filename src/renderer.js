@@ -40,7 +40,7 @@ export function bridge(){
 }
 
 
-export function renderUI(data,{onState,onSuggest,onError,onPing}={}){
+export function renderUI(data,{onState,onSuggest,onError,onPing,onDb}={}){
   const f=document.createElement('iframe');
   f.className='render';
   f.title='Form · interaktive Antwort';
@@ -49,7 +49,7 @@ export function renderUI(data,{onState,onSuggest,onError,onPing}={}){
   f.setAttribute('allow',"camera 'none'; microphone 'none'; geolocation 'none'");
   const channel=crypto.randomUUID(),nonce=crypto.randomUUID();
   let worker,port,timer,inflight=false;
-  const pingQ=[];
+  const asyncQ=[]; // pending synthetic-event deliveries (ping/db results)
   const html=safeHTML(data.html),css=safeCSS(data.css);
   const listener=e=>{
     if(e.source!==f.contentWindow||e.origin!=='null'||e.data?.channel!==channel)return;
@@ -66,17 +66,17 @@ export function renderUI(data,{onState,onSuggest,onError,onPing}={}){
       timer=setTimeout(()=>{worker.terminate();onError('Interaktion angehalten (Zeitlimit).');},3000);
       worker.postMessage(d);
     };
-    const deliverPing=(ref,value)=>{
-      pingQ.push({id:'__ping:'+ref,value});
-      pumpPings();
+    const deliver=(id,event,value)=>{
+      asyncQ.push({id,event,value});
+      pumpAsync();
     };
-    const pumpPings=()=>{
-      while(worker&&!inflight&&pingQ.length){
-        const j=pingQ.shift();
+    const pumpAsync=()=>{
+      while(worker&&!inflight&&asyncQ.length){
+        const j=asyncQ.shift();
         inflight=true;
         clearTimeout(timer);
         timer=setTimeout(()=>{worker.terminate();onError('Interaktion angehalten (Zeitlimit).');},3000);
-        worker.postMessage({type:'event',id:j.id,event:'ping',value:j.value});
+        worker.postMessage({type:'event',id:j.id,event:j.event,value:j.value});
       }
     };
     port.onmessage=({data:d})=>{
@@ -86,7 +86,7 @@ export function renderUI(data,{onState,onSuggest,onError,onPing}={}){
     worker.onmessage=({data:d})=>{
       inflight=false;clearTimeout(timer);
       if(d.type==='error')return onError(d.message);
-      if(d.type!=='ops'||!Array.isArray(d.ops)||d.ops.length>250){pumpPings();return;}
+      if(d.type!=='ops'||!Array.isArray(d.ops)||d.ops.length>250){pumpAsync();return;}
       const dom=[];
       for(const o of d.ops){
         if(o.op==='state'){
@@ -100,22 +100,40 @@ export function renderUI(data,{onState,onSuggest,onError,onPing}={}){
         }else if(o.op==='ping'){
           const ref=typeof o.ref==='string'?o.ref.slice(0,32):'';
           const host=typeof o.host==='string'?o.host.slice(0,253):'';
-          if(!ref||!HOST_OK.test(host)||!host.includes('.'))deliverPing(ref,{host,ok:false,error:'Ungültiger Host.'});
-          else if(pingQ.length>=8)deliverPing(ref,{host,ok:false,error:'Zu viele offene Pings.'});
+          if(!ref||!HOST_OK.test(host)||!host.includes('.'))deliver('__ping:'+ref,'ping',{host,ok:false,error:'Ungültiger Host.'});
+          else if(asyncQ.length>=8)deliver('__ping:'+ref,'ping',{host,ok:false,error:'Zu viele offene Pings.'});
           else Promise.resolve(typeof onPing==='function'?onPing(host):undefined)
             .then(v=>(v&&typeof v==='object')?v:{ok:false,error:'Ping nicht verfügbar.'})
             .catch(()=>({ok:false,error:'Ping fehlgeschlagen.'}))
-            .then(v=>deliverPing(ref,{
+            .then(v=>deliver('__ping:'+ref,'ping',{
               host,
               ok:v.ok===true,
               ip:typeof v.ip==='string'?v.ip.slice(0,64):undefined,
               ms:typeof v.ms==='number'&&isFinite(v.ms)?Math.round(v.ms):undefined,
               error:typeof v.error==='string'?v.error.slice(0,120):undefined
             }));
+        }else if(o.op==='db'){
+          const ref=typeof o.ref==='string'?o.ref.slice(0,32):'';
+          const dbop=typeof o.dbop==='string'?o.dbop:'';
+          const table=typeof o.table==='string'?o.table.slice(0,64):'';
+          const args=Array.isArray(o.args)?o.args.slice(0,3):null;
+          if(!ref||!['create','drop','insert','select','update','delete'].includes(dbop)||!/^[a-z0-9_]{1,32}$/.test(table)||!args)
+            deliver('__db:'+ref,'db',{ok:false,error:'Ungültige Datenbank-Anfrage.'});
+          else if(asyncQ.length>=8)deliver('__db:'+ref,'db',{ok:false,error:'Zu viele offene Anfragen.'});
+          else Promise.resolve(typeof onDb==='function'?onDb({dbop,table,args}):undefined)
+            .then(v=>(v&&typeof v==='object')?v:{ok:false,error:'Datenbank nicht verfügbar.'})
+            .catch(()=>({ok:false,error:'Datenbankfehler.'}))
+            .then(v=>deliver('__db:'+ref,'db',{
+              ok:v.ok===true,
+              id:typeof v.id==='number'&&Number.isFinite(v.id)?v.id:undefined,
+              rows:Array.isArray(v.rows)?v.rows.slice(0,500):undefined,
+              truncated:v.truncated===true||undefined,
+              error:typeof v.error==='string'?v.error.slice(0,160):undefined
+            }));
         }else dom.push(o);
       }
       port.postMessage(dom);
-      pumpPings();
+      pumpAsync();
     };
     worker.onerror=()=>{clearTimeout(timer);onError('Interaktion konnte nicht gestartet werden.');};
     dispatch({type:'init',js:data.js,state:data.state});
@@ -129,7 +147,7 @@ export function renderUI(data,{onState,onSuggest,onError,onPing}={}){
       clearTimeout(timer);
       worker?.terminate();
       port?.close();
-      pingQ.length=0;
+      asyncQ.length=0;
     }
   };
 }

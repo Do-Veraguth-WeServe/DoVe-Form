@@ -4,3 +4,4 @@ form.models.json
 exports/
 *.log
 .DS_Store
+data/

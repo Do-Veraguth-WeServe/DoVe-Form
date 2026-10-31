@@ -7,6 +7,7 @@ const ready=newQuickJSWASMModule(newVariant(RELEASE_SYNC,{wasmLocation:'/quickjs
 const INIT = `
 let state = __state;
 let pingc = 0;
+let dbc = 0;
 const handlers = Object.create(null);
 const ui = Object.freeze({
   text: (id, value) => __emit(JSON.stringify({op:"text", id, value:String(value)})),
@@ -20,7 +21,22 @@ const ui = Object.freeze({
     const ref = String(++pingc);
     handlers["__ping:"+ref+":ping"] = fn;
     __emit(JSON.stringify({op:"ping", host:String(host), ref}));
-  }
+  },
+  db: (() => {
+    const call = (dbop, table, args, cb) => {
+      const ref = 'd' + String(++dbc);
+      if (typeof cb === 'function') handlers["__db:"+ref+":db"] = cb;
+      __emit(JSON.stringify({op:"db", dbop, table:String(table), args, ref}));
+    };
+    return Object.freeze({
+      create: (t, c, cb) => { if (typeof c === 'function') { cb = c; c = undefined; } call('create', t, [c === undefined ? null : c], cb); },
+      drop: (t, cb) => call('drop', t, [], cb),
+      insert: (t, row, cb) => call('insert', t, [row === undefined ? null : row], cb),
+      select: (t, q, cb) => { if (typeof q === 'function') { cb = q; q = undefined; } call('select', t, [q === undefined ? null : q], cb); },
+      update: (t, id, patch, cb) => call('update', t, [id, patch === undefined ? null : patch], cb),
+      delete: (t, id, cb) => call('delete', t, [id], cb)
+    });
+  })()
 });
 `;
 
@@ -45,7 +61,7 @@ onmessage=async({data:d})=>{
         if(++count>250)throw Error('Operation budget');
         const raw=ctx.getString(h);
         const o=JSON.parse(raw);
-        if(raw.length>(o.op==='html'?24000:8192))throw Error('Operation size');
+        if(raw.length>(o.op==='html'?24000:o.op==='db'?20000:8192))throw Error('Operation size');
         ops.push(o);
       });
       ctx.setProp(ctx.global,'__emit',emit);emit.dispose();

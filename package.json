@@ -1,11 +1,11 @@
 {
   "name": "form3",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "private": true,
   "type": "module",
-  "description": "Form v3.1 — local interactive AI chat. Two-phase answers with named, pinnable Elements (sandboxed artifacts), in-place refinement and one bounded ui.ping primitive; any OpenAI-compatible provider, runs entirely on your machine.",
+  "description": "Form v3.2 — local interactive AI chat with user accounts. Two-phase answers with named, pinnable Elements (sandboxed artifacts), in-place refinement, ui.ping and persistent per-element tables via ui.db; any OpenAI-compatible provider, conversations and element databases stored server-side in SQLite.",
   "engines": {
-    "node": ">=20"
+    "node": ">=23.4"
   },
   "scripts": {
     "build": "node build.mjs",

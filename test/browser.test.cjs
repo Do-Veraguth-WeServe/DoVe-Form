@@ -1,5 +1,7 @@
 // Browser acceptance tests (Playwright core + system Chrome).
 // Env: BASE_URL, MOCK_URL, CHROME_PATH (optional).
+// v3.2: everything runs behind login (test server has FORM3_REGISTRATION=1).
+// Conversations/elements persist SERVER-SIDE; ui.db runs against the real /api/db.
 const { chromium } = require('playwright-core');
 const assert = require('assert/strict');
 const fs = require('fs');
@@ -8,6 +10,8 @@ const path = require('path');
 const BASE = process.env.BASE_URL || 'http://127.0.0.1:4598';
 const MOCK = process.env.MOCK_URL || 'http://127.0.0.1:4599';
 const KEY = 'test-key-1234567890';
+const OWNER = 'browserowner';
+const PASS = 'password123';
 
 const CANDIDATES = [
   process.env.CHROME_PATH,
@@ -33,6 +37,19 @@ const boundaryRender = {
 
 const mockStats = async () => (await (await fetch(MOCK + '/admin/stats')).json());
 
+async function loginUI(p, username, password) {
+  await p.locator('#loginform [name=username]').fill(username);
+  await p.locator('#loginform [name=password]').fill(password);
+  await p.locator('#loginform button').last().click();
+}
+async function registerUI(p, username, password) {
+  await p.locator('#switchreg').click();
+  await p.locator('#regform [name=username]').fill(username);
+  await p.locator('#regform [name=password]').fill(password);
+  await p.locator('#regform [name=password2]').fill(password);
+  await p.locator('#regform button').last().click();
+}
+
 (async () => {
   const exe = findChrome();
   if (!exe) {
@@ -51,8 +68,17 @@ const mockStats = async () => (await (await fetch(MOCK + '/admin/stats')).json()
   const shots = path.resolve(__dirname, '..', 'docs', 'screenshots');
   fs.mkdirSync(shots, { recursive: true });
   try {
-    // 1. empty state until a model exists
+    // 0. login gate: app demands a session before anything else
     await p.goto(BASE);
+    await p.locator('#login[open]').waitFor({ timeout: 10000 });
+    await loginUI(p, OWNER, 'completely-wrong');
+    await p.locator('#loginerr').filter({ hasText: 'Ungültiger Benutzername oder Passwort' }).waitFor({ timeout: 5000 });
+    ok('login gate: wrong password rejected with inline error');
+    await registerUI(p, OWNER, PASS);
+    await p.locator('#login[open]').waitFor({ state: 'detached', timeout: 10000 });
+    ok('first registration becomes the logged-in owner session');
+
+    // 1. empty state until a model exists
     await p.locator('#emptystate').waitFor({ timeout: 10000 });
     assert.equal(await p.locator('#send').isDisabled(), true);
     ok('empty state until model exists, composer blocked');
@@ -87,21 +113,20 @@ const mockStats = async () => (await (await fetch(MOCK + '/admin/stats')).json()
     assert.ok(new Set(samples).size >= 2, 'prose visibly grew while streaming: ' + samples.join(','));
     ok('prose streams visibly before artifact completes');
 
-    // 4. artifact renders + is interactive + state survives reload
+    // 4. artifact renders + is interactive + state syncs to the SERVER, survives reload
     let f = p.frameLocator('iframe.render').first();
     await f.locator('#amt').waitFor({ timeout: 10000 });
+    await f.locator('#out').filter({ hasText: 'Wert: 3' }).waitFor({ timeout: 10000 }); // element init drew from state
     await f.locator('#amt').fill('7');
     await f.locator('#out').filter({ hasText: 'Wert: 7' }).waitFor({ timeout: 5000 });
-    await p.waitForFunction(() => {
-      try { const db = JSON.parse(localStorage.getItem('form.v3')); const m = db.sessions[0].messages.at(-1); return m && m.render && m.render.state.value === 7; } catch { return false; }
-    }, undefined, { timeout: 8000 });
+    await p.waitForTimeout(1200); // debounced /api/state (600ms) must land
     await p.reload();
     f = p.frameLocator('iframe.render').first();
     await f.locator('#amt').waitFor({ timeout: 10000 });
     await f.locator('#amt').waitForFunction(el => el.value === '7', { timeout: 10000 });
     assert.equal(await f.locator('#amt').inputValue(), '7');
     await f.locator('#out').filter({ hasText: 'Wert: 7' }).waitFor({ timeout: 5000 });
-    ok('artifact interactive (slider changes value), state survives reload');
+    ok('artifact interactive (slider changes value), state persists server-side across reload');
 
     // 5. invalid artifact -> exactly one retry -> success
     await p.locator('#prompt').fill('Test invalid artifact bitte');
@@ -125,7 +150,7 @@ const mockStats = async () => (await (await fetch(MOCK + '/admin/stats')).json()
     assert.equal(await p.locator('iframe.render').count(), 2);
     ok('prose-only answer without artifact');
 
-    // 6b. v3.1 elements: name from artifact JSON, pin -> quick access -> overlay
+    // 6b. elements: name from artifact JSON, pin -> quick access -> overlay
     assert.equal(await p.locator('.elname').first().textContent(), 'Spar-Rechner', 'element shows model-supplied name');
     const pinBtn = p.locator('.elhead button[aria-label="Element anpinnen"]').first();
     await pinBtn.scrollIntoViewIfNeeded();
@@ -162,21 +187,16 @@ const mockStats = async () => (await (await fetch(MOCK + '/admin/stats')).json()
     const colorAfter = await f0.locator('h2').evaluate(el => getComputedStyle(el).color);
     assert.notEqual(colorAfter, colorBefore, 'element content replaced in place');
     assert.equal(colorAfter, 'rgb(127, 212, 239)');
-    await p.waitForFunction(() => {
-      try {
-        const db = JSON.parse(localStorage.getItem('form.v3'));
-        const lists = Object.values(db.elements.versions);
-        return db.version === 4 && lists.length === 1 && lists[0].length === 1;
-      } catch { return false; }
-    }, undefined, { timeout: 8000 });
-    ok('in-place refinement replaces element (no duplicate), old version archived, schema v4');
+    ok('in-place refinement replaces element (no duplicate), server archives old version');
 
-    // 6d. overlay version history + revert
+    // 6d. overlay version history + revert (versions come from the SERVER after reload)
+    await p.reload();
+    await p.locator('iframe.render').first().waitFor({ timeout: 15000 });
     await p.locator('.elhead button[aria-label="Element öffnen"]').first().click();
     await p.locator('#overlay[open]').waitFor({ timeout: 3000 });
     await p.locator('#overlay button', { hasText: 'Versionen' }).click();
     await p.locator('#overlay .verow').waitFor({ timeout: 3000 });
-    assert.equal(await p.locator('#overlay .verow').count(), 1, 'one archived version listed');
+    assert.equal(await p.locator('#overlay .verow').count(), 1, 'one archived version listed (server-side)');
     await p.locator('#overlay .verow button', { hasText: 'Wiederherstellen' }).click();
     await p.locator('#overlay iframe.render').waitFor({ timeout: 8000 });
     const of = p.frameLocator('#overlay iframe.render');
@@ -184,7 +204,7 @@ const mockStats = async () => (await (await fetch(MOCK + '/admin/stats')).json()
     assert.equal(await of.locator('h2').evaluate(el => getComputedStyle(el).color), colorBefore, 'revert restores previous version');
     await p.locator('#overlay button[aria-label="Element schliessen"]').click();
     await p.locator('#overlay[open]').waitFor({ state: 'detached', timeout: 3000 });
-    ok('version history keeps last versions, revert restores');
+    ok('server-side version history keeps last versions, revert restores');
 
     // 6e. manual code editor: valid edit applies through the same pipeline, injection sanitized
     await p.locator('.elhead button[aria-label="Element öffnen"]').first().click();
@@ -234,7 +254,49 @@ const mockStats = async () => (await (await fetch(MOCK + '/admin/stats')).json()
     await p.unroute('**/api/ping');
     ok('ui.ping: public ok, private 403 surfaced, rate limit 429 — all rendered inside the element');
 
-    // 7. stop aborts upstream (wait for previous chat to finish first: server allows one at a time)
+    // 6g. ui.db against the REAL /api/db: CRUD + reload persistence + scoping + quota
+    await p.locator('#prompt').fill('baue mir eine Aufgaben-DB');
+    await p.locator('#prompt').press('Enter');
+    await p.locator('iframe.render').nth(3).waitFor({ timeout: 30000 });
+    let df = p.frameLocator('iframe.render').nth(3);
+    await df.locator('#msg').filter({ hasText: 'geladen: 0' }).waitFor({ timeout: 8000 });
+    await df.locator('#t').fill('Milch');
+    await df.locator('#add').click();
+    await df.locator('#msg').filter({ hasText: 'ok id 1' }).waitFor({ timeout: 8000 });
+    await df.locator('#t').fill('Brot');
+    await df.locator('#add').click();
+    await df.locator('#msg').filter({ hasText: 'ok id 2' }).waitFor({ timeout: 8000 });
+    await df.locator('#list').filter({ hasText: 'Milch' }).waitFor({ timeout: 8000 });
+    await df.locator('#done').click();
+    await df.locator('#list li').first().filter({ hasText: 'Milch ✓' }).waitFor({ timeout: 8000 });
+    await df.locator('#pop').click();
+    await df.locator('#msg').filter({ hasText: 'gelöscht 1' }).waitFor({ timeout: 8000 });
+    await df.locator('#list').filter({ hasText: 'Brot' }).waitFor({ timeout: 8000 });
+    {
+      const listText = await df.locator('#list').innerText();
+      assert.ok(!listText.includes('Milch') && listText.includes('Brot'), 'deleted row removed from list: ' + listText);
+    }
+    await p.reload(); // real server-side table must survive reload
+    await p.locator('iframe.render').nth(3).waitFor({ timeout: 15000 });
+    df = p.frameLocator('iframe.render').nth(3);
+    await df.locator('#msg').filter({ hasText: 'geladen: 1' }).waitFor({ timeout: 8000 });
+    await df.locator('#list').filter({ hasText: 'Brot' }).waitFor({ timeout: 8000 });
+    // scoping: a second element in the SAME conversation must not see the first element's tables
+    await p.locator('#prompt').fill('scoping-test bitte');
+    await p.locator('#prompt').press('Enter');
+    await p.locator('iframe.render').nth(4).waitFor({ timeout: 30000 });
+    const sf = p.frameLocator('iframe.render').nth(4);
+    await sf.locator('#s').click();
+    await sf.locator('#msg').filter({ hasText: 'isoliert: Tabelle nicht gefunden.' }).waitFor({ timeout: 8000 });
+    // quota: oversized row rejected, error surfaces inside the element
+    await df.locator('#big').click();
+    await df.locator('#msg').filter({ hasText: 'Fehler: Zeile zu gross' }).waitFor({ timeout: 8000 });
+    // drop removes the table
+    await df.locator('#dropall').click();
+    await df.locator('#msg').filter({ hasText: 'gedroppt' }).waitFor({ timeout: 8000 });
+    ok('ui.db (real server): CRUD, reload persistence, element scoping, quota rejection');
+
+    // 7. stop aborts upstream (wait for previous chat to finish first)
     await p.waitForFunction(() => !document.querySelector('.live'), undefined, { timeout: 15000 });
     await p.locator('#prompt').fill('slow story please');
     await p.locator('#prompt').press('Enter');
@@ -256,12 +318,13 @@ const mockStats = async () => (await (await fetch(MOCK + '/admin/stats')).json()
     const st2 = await mockStats();
     assert.ok(st2.disconnects > discBefore, `stop disconnected upstream (${discBefore} -> ${st2.disconnects})`);
     assert.equal(await p.locator('#send').isVisible(), true);
-    ok('stop button aborts upstream');
+    ok('stop button aborts upstream, error turn synced from server');
 
     // 7b. moving sketch animation in normal-motion context
     const ctx2 = await b.newContext({ viewport: { width: 1280, height: 900 } });
     const p2 = await ctx2.newPage();
     await p2.goto(BASE);
+    await loginUI(p2, OWNER, PASS);
     await p2.locator('#model').waitFor({ state: 'visible', timeout: 5000 });
     await p2.locator('#prompt').fill('slow story animation');
     await p2.locator('#prompt').press('Enter');
@@ -278,7 +341,7 @@ const mockStats = async () => (await (await fetch(MOCK + '/admin/stats')).json()
     assert.ok(parseFloat(anim.duration) > 0);
     ok('moving sketch-style generation animation (stroke-dashoffset) in normal mode');
 
-    // 8. export never contains keys
+    // 8. export never contains keys; localStorage cache holds schema v4
     const dl = p.waitForEvent('download');
     await p.locator('#export').click();
     const d = await dl;
@@ -287,19 +350,23 @@ const mockStats = async () => (await (await fetch(MOCK + '/admin/stats')).json()
     assert.equal(JSON.parse(data).version, 4);
     const ls = await p.evaluate(() => JSON.stringify(localStorage));
     assert.ok(!ls.includes(KEY), 'key never in localStorage');
-    ok('export + localStorage contain sessions (schema v4), never keys');
+    ok('export + localStorage cache contain sessions (schema v4), never keys');
 
-    // 9. boundary / sanitizing / egress / sandbox regression (ported from v2)
-    await p.evaluate(render => {
-      const id = crypto.randomUUID();
-      localStorage.setItem('form.v3', JSON.stringify({
-        version: 3, current: id,
-        sessions: [{ id, title: 'Boundary', messages: [{ role: 'assistant', id: crypto.randomUUID(), prose: 'Boundary check.', render }] }]
-      }));
+    // 9. boundary / sanitizing / egress / sandbox regression — seeded SERVER-side via import
+    const impStatus = await p.evaluate(async render => {
+      const b = await (await fetch('/api/bootstrap')).json();
+      const r = await fetch('/api/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Form-CSRF': b.csrf },
+        body: JSON.stringify({ sessions: [{ title: 'Boundary', messages: [{ role: 'assistant', prose: 'Boundary check.', render }] }] })
+      });
+      return r.status;
     }, boundaryRender);
+    assert.equal(impStatus, 200, 'boundary element imported server-side');
     await p.reload();
+    await p.locator('#sessions button').filter({ hasText: 'Boundary' }).first().click();
     await p.locator('.elname').first().waitFor({ timeout: 10000 });
-    assert.match(await p.locator('.elname').first().textContent(), /Boundary check/, 'lazy v3 migration auto-names old renders');
+    assert.match(await p.locator('.elname').first().textContent(), /Boundary check/, 'imported element rendered');
     let bf = p.frameLocator('iframe.render').first();
     await bf.locator('#result').filter({ hasText: 'undefined/undefined/undefined' }).waitFor({ timeout: 10000 });
     await bf.locator('#amount').fill('7');
@@ -319,7 +386,7 @@ const mockStats = async () => (await (await fetch(MOCK + '/admin/stats')).json()
     await p.evaluate(() => window.postMessage({ channel: 'fake', type: 'resize', height: 999999 }, '*'));
     assert.equal(await p.locator('iframe.render').first().evaluate(e => e.style.height), height);
     ok('forged resize ignored, opaque sandbox, no parent DOM / network');
-    // pin the migrated element so the mobile screenshot shows the quick-access bar
+    // pin the imported element so the mobile screenshot shows the quick-access bar
     const pinBtn2 = p.locator('.elhead button[aria-label="Element anpinnen"]').first();
     await pinBtn2.scrollIntoViewIfNeeded();
     await pinBtn2.click();
@@ -329,13 +396,56 @@ const mockStats = async () => (await (await fetch(MOCK + '/admin/stats')).json()
       await fetch('/form.models.json').then(r => r.status),
       await fetch('/api/models').then(r => r.text())
     ]);
-    assert.equal(statuses[0], 403);
+    assert.equal(statuses[0], 403, 'chat without CSRF token rejected');
     assert.equal(statuses[1], 404);
     assert.ok(!statuses[2].includes(KEY), 'models API masked');
     assert.deepEqual(external, [], 'no external egress requests: ' + JSON.stringify(external));
     ok('sanitizing/egress/CSRF/secret-path regression ported from v2 boundary test');
 
-    // 10. mobile 390px + screenshots
+    // 10. FRESH browser context (device switch): login -> all conversations + elements intact
+    const ctxFresh = await b.newContext({ viewport: { width: 1280, height: 900 } });
+    const pFresh = await ctxFresh.newPage();
+    await pFresh.goto(BASE);
+    await pFresh.locator('#login[open]').waitFor({ timeout: 10000 });
+    await loginUI(pFresh, OWNER, PASS);
+    await pFresh.locator('#sessions button').first().waitFor({ timeout: 10000 });
+    const freshTitles = await pFresh.locator('#sessions button').allInnerTexts();
+    assert.ok(freshTitles.some(t => t.includes('Spar')), 'first conversation present on fresh device: ' + freshTitles.join('|'));
+    assert.ok(freshTitles.some(t => t.includes('Boundary')), 'imported conversation present on fresh device');
+    await pFresh.locator('#sessions button').filter({ hasText: 'Boundary' }).first().click();
+    await pFresh.locator('iframe.render').first().waitFor({ timeout: 15000 });
+    const ff = pFresh.frameLocator('iframe.render').first();
+    await ff.locator('#amount').waitForFunction(el => el.value === '7', { timeout: 10000 });
+    ok('fresh device: login restores every conversation incl. persisted element state');
+
+    // 11. user B: separate account, sees NOTHING of the owner, gets import offer for local data
+    const ctxB = await b.newContext({ viewport: { width: 1280, height: 900 } });
+    const pB = await ctxB.newPage();
+    const legacyArchive = { version: 4, current: null, sessions: [{ id: '11111111-1111-4111-8111-111111111111', title: 'Alt lokal', messages: [{ role: 'user', id: '21111111-1111-4111-8111-111111111111', text: 'alter Chat' }] }], elements: { pins: [], versions: {} } };
+    await pB.goto(BASE);
+    await pB.evaluate(arch => localStorage.setItem('form.v3', JSON.stringify(arch)), legacyArchive);
+    await pB.reload();
+    await pB.locator('#login[open]').waitFor({ timeout: 10000 });
+    await registerUI(pB, 'bobmobile', 'password456');
+    await pB.locator('#importbar').waitFor({ state: 'visible', timeout: 8000 });
+    await pB.locator('#importgo').click();
+    await pB.locator('#sessions button').filter({ hasText: 'Alt lokal' }).waitFor({ timeout: 8000 });
+    const bobsTitles = await pB.locator('#sessions button').allInnerTexts();
+    assert.ok(bobsTitles.every(t => !t.includes('Spar') && !t.includes('Boundary')), 'user B sees only his own data: ' + bobsTitles.join('|'));
+    ok('user B isolated; first-login import offer migrates local conversations server-side');
+    await ctxB.close();
+
+    // 12. logout + login again: data intact
+    await p.locator('#logout').click();
+    await p.locator('#login[open]').waitFor({ timeout: 10000 });
+    await loginUI(p, OWNER, PASS);
+    await p.locator('#sessions button').first().waitFor({ timeout: 10000 });
+    assert.ok((await p.locator('#sessions button').allInnerTexts()).some(t => t.includes('Spar')), 'owner conversations intact after logout/login');
+    await p.locator('#sessions button').filter({ hasText: 'Boundary' }).first().click();
+    await p.locator('iframe.render').first().waitFor({ timeout: 15000 });
+    ok('logout clears the session; re-login restores everything');
+
+    // 13. mobile 390px + screenshots
     await p.setViewportSize({ width: 390, height: 844 });
     await p.reload();
     await p.locator('iframe.render').first().waitFor({ timeout: 10000 });

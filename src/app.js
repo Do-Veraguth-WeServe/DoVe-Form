@@ -2,8 +2,9 @@ import {renderUI} from './renderer.js';
 import {safeHTML,safeCSS} from './sanitize.js';
 import {validateRender,deriveName,sanitizeName} from '../contract.mjs';
 const $=s=>document.querySelector(s),uid=()=>crypto.randomUUID(),KEY='form.v3';
-let db,csrf='',models=[],modelId=localStorage.getItem('form3.model')||'',pending=null,views=[],marked=null;
-let overlayMsg=null,overlayMode='view',overlayView=null;
+let db={version:4,sessions:[],elements:{pins:[],versions:{}},current:null},csrf='',me=null,registrationOpen=false,models=[],modelId=localStorage.getItem('form3.model')||'',pending=null,views=[],marked=null;
+let legacyDb=null;          // pre-login local archive — offered for import on first login
+const stateSync=new Map();  // messageId -> debounce timer for /api/state
 const current=()=>db.sessions.find(s=>s.id===db.current);
 function toast(t){$('#live').textContent=t;const n=document.createElement('div');n.className='toast';n.textContent=t;document.body.append(n);setTimeout(()=>n.remove(),4000)}
 function trimVersions(){
@@ -18,7 +19,8 @@ function trimVersions(){
     }
   }catch{}
 }
-function save(){try{trimVersions();localStorage.setItem(KEY,JSON.stringify(db))}catch{toast('Speicher voll — bitte exportieren.')}}
+// localStorage is a CACHE now — the server (SQLite) is the source of truth.
+function save(){try{trimVersions();localStorage.setItem(KEY,JSON.stringify(db))}catch{}}
 
 // --- schema: version 4 adds elements {pins, versions}; version 3 archives migrate lazily ---
 function normalize(x){
@@ -55,7 +57,106 @@ function normalize(x){
   for(const k of Object.keys(versions))if(!ids.has(k))delete versions[k];
   return {version:4,current:x.current,sessions,elements:{pins,versions}};
 }
-try{db=normalize(JSON.parse(localStorage.getItem(KEY)))}catch{db={version:4,sessions:[],elements:{pins:[],versions:{}}}}
+try{legacyDb=normalize(JSON.parse(localStorage.getItem(KEY)))}catch{legacyDb=null}
+
+// --- boot: session check, then login screen or app ---
+async function boot(){
+  let st={authenticated:false,registration:false};
+  try{const r=await fetch('/api/auth/status');if(r.ok)st=await r.json();}catch{}
+  registrationOpen=st.registration===true;
+  if(st.authenticated){me=st.user;await enter();}
+  else showLogin();
+}
+function showLogin(err){
+  const dlg=$('#login');if(!dlg)return;
+  $('#regform').classList.add('hidden');
+  $('#loginform').classList.remove('hidden');
+  $('#switchreg').classList.toggle('hidden',!registrationOpen);
+  const le=$('#loginerr');le.textContent=err||'';le.classList.toggle('hidden',!err);
+  dlg.showModal?.();
+  $('#loginform [name=username]')?.focus();
+}
+async function authPost(path,body){
+  const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});
+  const t=await r.json().catch(()=>({}));
+  if(!r.ok)throw Error(t.error||('HTTP '+r.status));
+  return t;
+}
+$('#loginform').onsubmit=async e=>{
+  e.preventDefault();
+  const f=e.target;
+  $('#loginerr').classList.add('hidden');
+  try{const t=await authPost('/api/auth/login',{username:f.username.value.trim(),password:f.password.value});me=t.user;csrf=t.csrf;$('#login').close();f.reset();await enter();}
+  catch(err){$('#loginerr').textContent=err.message;$('#loginerr').classList.remove('hidden')}
+};
+$('#regform').onsubmit=async e=>{
+  e.preventDefault();
+  const f=e.target;
+  $('#loginerr').classList.add('hidden');
+  if(f.password.value!==f.password2.value){$('#loginerr').textContent='Passwörter stimmen nicht überein.';$('#loginerr').classList.remove('hidden');return}
+  try{const t=await authPost('/api/auth/register',{username:f.username.value.trim(),password:f.password.value});me=t.user;csrf=t.csrf;$('#login').close();f.reset();await enter();}
+  catch(err){$('#loginerr').textContent=err.message;$('#loginerr').classList.remove('hidden')}
+};
+$('#switchreg').onclick=e=>{e.preventDefault();$('#loginform').classList.toggle('hidden');$('#regform').classList.toggle('hidden');};
+$('#logout').onclick=async()=>{
+  try{await fetch('/api/auth/logout',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:'{}'})}catch{}
+  me=null;csrf='';models=[];
+  try{localStorage.removeItem(KEY)}catch{}
+  location.reload();
+};
+
+// --- server data -> local cache shape ---
+function fromServer(data){
+  const pins=[];const versions=data.versions||{};
+  const sessions=(data.conversations||[]).map(c=>({
+    id:c.id,title:String(c.title||'').slice(0,80),
+    messages:(c.messages||[]).map(m=>{
+      const o={id:m.id,role:m.role};
+      if(typeof m.text==='string')o.text=m.text;
+      if(typeof m.prose==='string')o.prose=m.prose;
+      if(typeof m.error==='string')o.error=m.error;
+      if(m.render)o.render=validateRender(m.render);
+      if(m.pinned&&m.render)pins.push(m.id);
+      return o;
+    })
+  }));
+  return {version:4,current:sessions.length?sessions[0].id:null,sessions,elements:{pins,versions}};
+}
+async function loadFromServer(){
+  try{
+    const r=await fetch('/api/conversations');
+    if(r.status===401){me=null;csrf='';showLogin('Sitzung abgelaufen — bitte erneut anmelden.');return false}
+    if(!r.ok)return false;
+    db=fromServer(await r.json());
+    if(!current()&&db.sessions.length)db.current=db.sessions[0].id;
+    save();
+    return true;
+  }catch{return false}
+}
+async function enter(){
+  await refreshModels();
+  const ok=await loadFromServer();
+  if(!ok)return;
+  if(!db.sessions.length){
+    if(legacyDb&&legacyDb.sessions.length)showImportOffer();
+    else await newSession();
+  } else render();
+}
+function showImportOffer(){
+  render();
+  const bar=$('#importbar');bar.classList.remove('hidden');
+  $('#importgo').onclick=async()=>{
+    try{
+      const r=await fetch('/api/import',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify({sessions:legacyDb.sessions,elements:legacyDb.elements})});
+      const t=await r.json().catch(()=>({}));
+      if(!r.ok)throw Error(t.error||'Import fehlgeschlagen');
+      legacyDb=null;bar.classList.add('hidden');
+      await loadFromServer();if(!current())await newSession();else render();
+      toast('Lokale Gespräche importiert — serverseitig gespeichert.');
+    }catch(e){toast('Import fehlgeschlagen: '+e.message)}
+  };
+  $('#importskip').onclick=async()=>{legacyDb=null;bar.classList.add('hidden');await newSession();};
+}
 
 // --- element helpers ---
 const elementName=m=>m.render.name||deriveName(m.render,m.prose);
@@ -65,10 +166,25 @@ function pushVersion(m,render){
   list.push({at:new Date().toISOString(),render:JSON.parse(JSON.stringify(render))});
   while(list.length>5)list.shift();
 }
+function scheduleStateSync(id,state){
+  clearTimeout(stateSync.get(id));
+  stateSync.set(id,setTimeout(()=>{
+    stateSync.delete(id);
+    if(!csrf)return;
+    fetch('/api/state',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify({messageId:id,state})}).catch(()=>{});
+  },600));
+}
+function syncRender(m){ // full render replaced locally (code editor / version restore) -> server
+  fetch('/api/state',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify({messageId:m.id,render:m.render})}).catch(()=>toast('Speichern auf dem Server fehlgeschlagen.'));
+}
 function togglePin(m){
   const i=db.elements.pins.indexOf(m.id);
-  if(i===-1)db.elements.pins.push(m.id);else db.elements.pins.splice(i,1);
+  const pin=i===-1;
+  if(pin)db.elements.pins.push(m.id);else db.elements.pins.splice(i,1);
   save();
+  fetch('/api/pin',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify({messageId:m.id,pinned:pin})})
+    .then(r=>{if(!r.ok)throw 0})
+    .catch(()=>{if(pin)db.elements.pins.splice(db.elements.pins.indexOf(m.id),1);else db.elements.pins.push(m.id);save();render();toast('Anpinnen fehlgeschlagen.')});
 }
 function markInfo(){
   if(!marked||marked.sessionId!==db.current)return null;
@@ -83,14 +199,31 @@ function toggleMark(id){
   if(marked)$('#prompt').focus();
 }
 function clearMark(){if(marked){marked=null;render()}}
-
-function history(s){return s.messages.slice(-12).map(m=>m.role==='user'?{role:'user',content:m.text}:{role:'assistant',content:(m.prose?m.prose.slice(0,1500):'')+(m.render?(m.prose?' ':'')+'[enthielt ein interaktives Artefakt]':(m.error?'[Fehler]':''))||'[leer]'})}
-function states(s){return s.messages.filter(m=>m.render).slice(-3).map(m=>({id:m.id,state:m.render.state}))}
 function sketchEl(){const d=document.createElement('div');d.className='sketch';d.setAttribute('aria-hidden','true');d.innerHTML='<svg viewBox="0 0 130 72"><path d="M6 60 L28 12 L50 44 L72 8 L94 52 L116 20"/><circle cx="104" cy="46" r="16"/><line x1="6" y1="66" x2="124" y2="66"/><polygon points="16,8 34,8 25,22"/></svg>';return d}
 function busy(on){$('#stop').classList.toggle('hidden',!on);$('#send').classList.toggle('hidden',on)}
-function stop(){if(!pending)return;pending.controller.abort();pending=null;busy(false);toast('Antwort gestoppt.');render()}
-function newSession(){stop();closeOverlay();if(db.sessions.length>=40)return toast('Maximal 40 Sitzungen');const s={id:uid(),title:'Neuer Gedankengang',messages:[]};db.sessions.unshift(s);db.current=s.id;marked=null;save();render();$('#sidebar').classList.remove('open')}
-function updateComposer(){const has=models.length>0;$('#send').disabled=!has;$('#statuslabel').textContent=has?'LOKAL · BEREIT':'KEIN MODELL';$('#prompt').placeholder=has?'Was möchtest du durchdenken?':'Zuerst ein Modell hinzufügen (⚙ oben rechts)'}
+async function stop(){if(!pending)return;pending.controller.abort();pending=null;busy(false);toast('Antwort gestoppt.');await syncFromServer()}
+async function syncFromServer(){if(await loadFromServer())render()}
+async function newSession(){
+  if(pending)await stop();
+  closeOverlay();
+  if(db.sessions.length>=40)return toast('Maximal 40 Gedankengänge');
+  try{
+    const r=await fetch('/api/conversations',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:'{}'});
+    const t=await r.json().catch(()=>({}));
+    if(!r.ok)throw Error(t.error||('HTTP '+r.status));
+    const s={id:t.conversation.id,title:t.conversation.title||'Neuer Gedankengang',messages:[]};
+    db.sessions.unshift(s);db.current=s.id;marked=null;save();render();
+    $('#sidebar').classList.remove('open');
+  }catch(e){toast('Neuer Gedankengang fehlgeschlagen: '+e.message)}
+}
+function updateComposer(){
+  const has=models.length>0;
+  $('#send').disabled=!has;
+  const who=me?String(me.username).slice(0,12):'';
+  $('#statuslabel').textContent=!me?'NICHT ANGEMELDET':(has?('ANGEMELDET · '+who.toUpperCase()):'KEIN MODELL');
+  $('#prompt').placeholder=has?'Was möchtest du durchdenken?':'Zuerst ein Modell hinzufügen (⚙ oben rechts)';
+  $('#whoami').textContent=me?(me.username+(me.role==='owner'?' · Owner':'')):'';
+}
 
 function renderQuickbar(){
   const bar=$('#quickbar');if(!bar)return;
@@ -120,53 +253,56 @@ function renderChip(){
 
 function render(){  views.forEach(v=>v.destroy());views=[];
   $('#sessions').replaceChildren();
-  for(const s of db.sessions){const b=document.createElement('button');b.textContent=s.title;b.setAttribute('aria-current',s.id===db.current);b.onclick=()=>{stop();closeOverlay();db.current=s.id;marked=null;save();render();$('#sidebar').classList.remove('open')};$('#sessions').append(b)}
+  for(const s of db.sessions){const b=document.createElement('button');b.textContent=s.title;b.setAttribute('aria-current',s.id===db.current);b.onclick=async()=>{await stop();closeOverlay();db.current=s.id;marked=null;save();render();$('#sidebar').classList.remove('open')};$('#sessions').append(b)}
   const feed=$('#feed');
-  feed.innerHTML='<section class="intro"><div class="eyebrow">Ein Gespräch. Unendlich viele Formen.</div><h1>Antworten, die<br><em>denken und zeigen.</em></h1><p>Form antwortet zuerst in klarem Text — und baut daraus, wenn es wirklich hilft, ein kleines interaktives Werkzeug. Läuft komplett lokal auf deinem Rechner.</p><div class="starters"><button data-p="Zeig mir einen Spar-Rechner mit Slider">↗ Sparziel erkunden</button><button data-p="Vergleiche drei Ideen als interaktive Grafik">◇ Ideen vergleichen</button><button data-p="Erkläre mir kurz, was ein VPN macht — prose only">◇ Nur Text gefragt</button></div></section>';
+  feed.innerHTML='<section class="intro"><div class="eyebrow">Ein Gespräch. Unendlich viele Formen.</div><h1>Antworten, die<br><em>denken und zeigen.</em></h1><p>Form antwortet zuerst in klarem Text — und baut daraus, wenn es wirklich hilft, ein kleines interaktives Werkzeug. Deine Gespräche liegen serverseitig — getrennt pro Benutzer.</p><div class="starters"><button data-p="Zeig mir einen Spar-Rechner mit Slider">↗ Sparziel erkunden</button><button data-p="Vergleiche drei Ideen als interaktive Grafik">◇ Ideen vergleichen</button><button data-p="Erkläre mir kurz, was ein VPN macht — prose only">◇ Nur Text gefragt</button></div></section>';
   if(!models.length)feed.insertAdjacentHTML('beforeend','<section class="empty" id="emptystate"><div class="eyebrow">Schritt 1 · Noch kein Modell</div><h2>Verbinde dein erstes Modell.</h2><p>Form läuft komplett lokal. Füge ein OpenAI-kompatibles Modell hinzu (z. B. z.ai, OpenRouter oder Ollama) — Base-URL, Modell-ID und API-Key. Der Key bleibt in <code>form.models.json</code> auf deinem Rechner und wird nie angezeigt oder exportiert.</p><button id="emptyadd">⚙ Modell hinzufügen</button></section>');
   const s=current();
-  if(s.messages.length>12){const h=document.createElement('p');h.className='notice';h.textContent='Die letzten 12 Nachrichten sind geöffnet. Das vollständige Gespräch bleibt im Export erhalten.';feed.append(h)}
-  for(const m of s.messages.slice(-12)){
-    const article=document.createElement('article');article.className='message '+(m.role==='user'?'user':'assistant');article.dataset.mid=m.id;
-    if(m.role==='user'){const b=document.createElement('div');b.className='bubble';b.textContent=m.text;article.append(b)}
-    else{
-      article.innerHTML='<div class="byline"><span>⌑</span> FORM <small>/ KI · ISOLIERT</small></div>';
-      if(m.error){const n=document.createElement('div');n.className='notice error';n.textContent=m.error;article.append(n)}
+  if(s){
+    if(s.messages.length>12){const h=document.createElement('p');h.className='notice';h.textContent='Die letzten 12 Nachrichten sind geöffnet. Das vollständige Gespräch bleibt serverseitig und im Export erhalten.';feed.append(h)}
+    for(const m of s.messages.slice(-12)){
+      const article=document.createElement('article');article.className='message '+(m.role==='user'?'user':'assistant');article.dataset.mid=m.id;
+      if(m.role==='user'){const b=document.createElement('div');b.className='bubble';b.textContent=m.text;article.append(b)}
       else{
-        if(m.prose){const p=document.createElement('p');p.className='prose';p.textContent=m.prose;article.append(p)}
-        if(m.render){
-          const wrap=document.createElement('div');
-          wrap.className='elwrap'+((marked&&marked.msgId===m.id&&marked.sessionId===db.current)?' marked':'');
-          const head=document.createElement('div');head.className='elhead';
-          const nm=document.createElement('button');nm.type='button';nm.className='elname';nm.textContent=elementName(m);
-          nm.title='Antippen, um dieses Element für die nächste Nachricht zu markieren';
-          nm.setAttribute('aria-pressed',String(!!(marked&&marked.msgId===m.id)));
-          nm.setAttribute('aria-label','Element markieren: '+elementName(m));
-          nm.onclick=()=>toggleMark(m.id);
-          const pinB=document.createElement('button');pinB.type='button';pinB.className='icon';
-          pinB.textContent=isPinned(m)?'★':'☆';
-          pinB.setAttribute('aria-pressed',String(isPinned(m)));
-          pinB.setAttribute('aria-label',isPinned(m)?'Element lösen':'Element anpinnen');
-          pinB.onclick=()=>{togglePin(m);render();if($('#overlay').open)fillOverlay()};
-          const exp=document.createElement('button');exp.type='button';exp.className='icon';exp.textContent='↗';
-          exp.setAttribute('aria-label','Element öffnen');exp.title='Element öffnen (Vollbild, Code, Versionen)';
-          exp.onclick=()=>openOverlay(m);
-          head.append(nm,pinB,exp);
-          const note=document.createElement('div');note.className='small';
-          const view=renderUI(m.render,{
-            onState:state=>{m.render.state=state;save()},
-            onSuggest:text=>{$('#prompt').value=text;toast('Vorschlag eingefügt — nur du sendest ihn.')},
-            onError:text=>{note.textContent=text;note.className='notice error'},
-            onPing:doPing
-          });
-          views.push(view);
-          wrap.append(head,view.element);
-          article.append(wrap,note);
-          const b=document.createElement('button');b.textContent='Mit diesen Werten weiterdenken ↗';b.onclick=()=>{$('#prompt').value='Denke mit meinen aktuellen Einstellungen weiter.';$('#prompt').focus();toast('Werte werden erst mit deiner Nachricht gesendet.')};article.append(b);
+        article.innerHTML='<div class="byline"><span>⌑</span> FORM <small>/ KI · ISOLIERT</small></div>';
+        if(m.error){const n=document.createElement('div');n.className='notice error';n.textContent=m.error;article.append(n)}
+        else{
+          if(m.prose){const p=document.createElement('p');p.className='prose';p.textContent=m.prose;article.append(p)}
+          if(m.render){
+            const wrap=document.createElement('div');
+            wrap.className='elwrap'+((marked&&marked.msgId===m.id&&marked.sessionId===db.current)?' marked':'');
+            const head=document.createElement('div');head.className='elhead';
+            const nm=document.createElement('button');nm.type='button';nm.className='elname';nm.textContent=elementName(m);
+            nm.title='Antippen, um dieses Element für die nächste Nachricht zu markieren';
+            nm.setAttribute('aria-pressed',String(!!(marked&&marked.msgId===m.id)));
+            nm.setAttribute('aria-label','Element markieren: '+elementName(m));
+            nm.onclick=()=>toggleMark(m.id);
+            const pinB=document.createElement('button');pinB.type='button';pinB.className='icon';
+            pinB.textContent=isPinned(m)?'★':'☆';
+            pinB.setAttribute('aria-pressed',String(isPinned(m)));
+            pinB.setAttribute('aria-label',isPinned(m)?'Element lösen':'Element anpinnen');
+            pinB.onclick=()=>{togglePin(m);render();if($('#overlay').open)fillOverlay()};
+            const exp=document.createElement('button');exp.type='button';exp.className='icon';exp.textContent='↗';
+            exp.setAttribute('aria-label','Element öffnen');exp.title='Element öffnen (Vollbild, Code, Versionen)';
+            exp.onclick=()=>openOverlay(m);
+            head.append(nm,pinB,exp);
+            const note=document.createElement('div');note.className='small';
+            const view=renderUI(m.render,{
+              onState:state=>{m.render.state=state;save();scheduleStateSync(m.id,state)},
+              onSuggest:text=>{$('#prompt').value=text;toast('Vorschlag eingefügt — nur du sendest ihn.')},
+              onError:text=>{note.textContent=text;note.className='notice error'},
+              onPing:doPing,
+              onDb:p=>doDb(m.id,p)
+            });
+            views.push(view);
+            wrap.append(head,view.element);
+            article.append(wrap,note);
+            const b=document.createElement('button');b.textContent='Mit diesen Werten weiterdenken ↗';b.onclick=()=>{$('#prompt').value='Denke mit meinen aktuellen Einstellungen weiter.';$('#prompt').focus();toast('Werte werden erst mit deiner Nachricht gesendet.')};article.append(b);
+          }
         }
       }
+      feed.append(article);
     }
-    feed.append(article);
   }
   feed.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>send(b.dataset.p));
   const add=$('#emptyadd');if(add)add.onclick=openSettings;
@@ -214,21 +350,23 @@ async function readSSE(response,onEvent){
 async function send(text){
   text=text.trim().slice(0,2000);
   if(!text||pending)return;
+  if(!me)return showLogin('Bitte zuerst anmelden.');
   if(!models.length){openSettings();return toast('Bitte zuerst ein Modell hinzufügen.')}
   const s=current();
+  if(!s)return;
   if(s.messages.length>=98)return toast('Bitte einen neuen Gedankengang starten.');
   const target=markInfo();
-  s.messages.push({role:'user',id:uid(),text});
-  if(s.messages.length===1)s.title=text.slice(0,45);
+  const um={role:'user',id:uid(),text};
+  s.messages.push(um);
+  if(s.messages.length===1){s.title=text.slice(0,45);const btn=$('#sessions').firstElementChild;if(btn)btn.textContent=s.title}
   $('#prompt').value='';save();render();
   const live=liveMessage(target?'refine':'new');
   const request={id:uid(),controller:new AbortController()};
   pending=request;busy(true);
-  let prose='',artifact=null,errorMsg=null;
+  let prose='',artifact=null,errorMsg=null,doneUser=null,doneAssist=null;
   try{
-    if(!csrf){const r=await fetch('/api/bootstrap');if(r.ok)csrf=(await r.json()).csrf;}
-    if(!csrf)throw Error('Server nicht erreichbar.');
-    const body={version:1,sessionId:s.id,requestId:request.id,text,history:history(s),states:states(s),model:modelId||undefined};
+    if(!csrf)throw Error('Sitzung abgelaufen — bitte neu anmelden.');
+    const body={version:1,sessionId:s.id,requestId:request.id,text,model:modelId||undefined};
     if(target)body.refineTarget={id:target.id,name:sanitizeName(elementName(target)),html:target.render.html,css:target.render.css,js:target.render.js,state:target.render.state};
     const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},signal:request.controller.signal,body:JSON.stringify(body)});
     if(!r.ok){const t=await r.json().catch(()=>({}));throw Error(t.error||('Serverfehler '+r.status))}
@@ -238,11 +376,13 @@ async function send(text){
       else if(event==='artifact-start')live.sketch();
       else if(event==='retry')live.note('Ungültiges Artefakt — ein Korrekturversuch läuft …');
       else if(event==='render'){try{artifact=validateRender(data.render)}catch{errorMsg='Ungültige Antwort der Gegenseite.'}}
-      else if(event==='error')errorMsg=String(data.message||'Antwort fehlgeschlagen.');
+      else if(event==='error'){errorMsg=String(data.message||'Antwort fehlgeschlagen.');}
+      else if(event==='done'){doneUser=data.userMessageId||null;doneAssist=data.assistantMessageId||null}
     });
   }catch(e){if(pending===request&&e.name!=='AbortError')errorMsg=e.message}
-  if(pending!==request)return;
+  if(pending!==request)return; // aborted: syncFromServer() rebuilds truth
   pending=null;busy(false);
+  if(doneUser)um.id=doneUser;
   if(target){
     // In-place refinement: replace the marked element, never append below it.
     if(artifact){
@@ -260,16 +400,16 @@ async function send(text){
     document.querySelector('[data-mid="'+target.id+'"]')?.scrollIntoView({block:'center'});
     return;
   }
-  if(artifact)s.messages.push({role:'assistant',id:uid(),prose,render:artifact});
-  else if(errorMsg){if(prose)live.error(errorMsg);s.messages.push({role:'assistant',id:uid(),prose,error:errorMsg})}
-  else if(prose)s.messages.push({role:'assistant',id:uid(),prose});
+  if(artifact)s.messages.push({role:'assistant',id:doneAssist||uid(),prose,render:artifact});
+  else if(errorMsg){if(prose)live.error(errorMsg);s.messages.push({role:'assistant',id:doneAssist||uid(),prose,error:errorMsg})}
+  else if(prose)s.messages.push({role:'assistant',id:doneAssist||uid(),prose});
+  else await syncFromServer(); // nothing usable arrived: server holds the truth
   save();render();
   $('#feed').lastElementChild?.scrollIntoView({block:'start'});
 }
 
 async function doPing(host){
   try{
-    if(!csrf){const r=await fetch('/api/bootstrap');if(r.ok)csrf=(await r.json()).csrf;}
     if(!csrf)return {ok:false,error:'Server nicht erreichbar.'};
     const sid=current()?.id||'';
     const r=await fetch('/api/ping',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify({sessionId:sid,host:String(host).slice(0,253)})});
@@ -277,6 +417,25 @@ async function doPing(host){
     if(!r.ok)return {ok:false,error:t.error||('HTTP '+r.status)};
     return {ok:t.ok===true,ip:t.ip,ms:t.ms,error:t.error};
   }catch{return {ok:false,error:'Ping fehlgeschlagen.'}}
+}
+
+// Per-element persistent tables (POST /api/db) — same auth as chat/ping.
+async function doDb(elementId,payload){
+  try{
+    if(!csrf)return {ok:false,error:'Server nicht erreichbar.'};
+    const sid=current()?.id||'';
+    const body={version:1,sessionId:sid,elementId,op:payload.dbop,table:payload.table};
+    const a=payload.args&&payload.args[0],b=payload.args&&payload.args[1];
+    if(payload.dbop==='create'&&a!=null)body.columns=a;
+    if(payload.dbop==='insert')body.row=a??{};
+    if(payload.dbop==='select'&&a!=null)body.query=a;
+    if(payload.dbop==='update'){body.id=a;body.patch=b??{}}
+    if(payload.dbop==='delete')body.id=a;
+    const r=await fetch('/api/db',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify(body)});
+    const t=await r.json().catch(()=>({}));
+    if(!r.ok)return {ok:false,error:t.error||('HTTP '+r.status)};
+    return {ok:t.ok===true,id:t.id,rows:t.rows,truncated:t.truncated,error:t.error};
+  }catch{return {ok:false,error:'Datenbankfehler.'}}
 }
 
 // --- element overlay: focused view, code editor, version history ---
@@ -291,6 +450,7 @@ $('#overlay').addEventListener('close',()=>{
   $('#ovcontent').replaceChildren();
   render();
 });
+let overlayMsg=null,overlayMode='view',overlayView=null;
 function fillOverlay(){
   const m=overlayMsg;if(!m)return;
   if(overlayView){overlayView.destroy();overlayView=null}
@@ -310,10 +470,11 @@ function fillOverlay(){
     const holder=document.createElement('div');body.append(holder);
     const note=document.createElement('div');note.className='small';body.append(note);
     overlayView=renderUI(m.render,{
-      onState:state=>{m.render.state=state;save()},
+      onState:state=>{m.render.state=state;save();scheduleStateSync(m.id,state)},
       onSuggest:text=>{$('#prompt').value=text;toast('Vorschlag eingefügt — nur du sendest ihn.')},
       onError:tx=>{note.textContent=tx;note.className='notice error'},
-      onPing:doPing
+      onPing:doPing,
+      onDb:p=>doDb(m.id,p)
     });
     holder.append(overlayView.element);
     const foot=document.createElement('div');foot.className='ovfoot';
@@ -355,7 +516,7 @@ function fillOverlay(){
       try{cleaned=safeHTML(r.html)!==r.html}catch{}
       pushVersion(m,m.render);
       m.render=r;
-      save();render();
+      save();syncRender(m);render();
       overlayMode='view';fillOverlay();
       toast(cleaned?'Angewendet — unsichere Teile wurden entfernt (wie bei KI-Antworten).':'Code-Änderung angewendet.');
     };
@@ -374,7 +535,7 @@ function fillOverlay(){
       rv.onclick=()=>{
         pushVersion(m,m.render);
         try{m.render=validateRender(JSON.parse(JSON.stringify(v.render)))}catch{toast('Version ungültig.');return}
-        save();render();
+        save();syncRender(m);render();
         overlayMode='view';fillOverlay();
         toast('Alte Version wiederhergestellt — die aktuelle liegt jetzt ebenfalls im Verlauf.');
       };
@@ -389,8 +550,10 @@ function fillOverlay(){
 
 async function refreshModels(){
   try{
-    const r=await fetch('/api/bootstrap');if(!r.ok)return;
-    const b=await r.json();csrf=b.csrf||csrf;models=Array.isArray(b.models)?b.models:[];
+    const r=await fetch('/api/bootstrap');
+    if(r.status===401){me=null;csrf='';showLogin('Sitzung abgelaufen — bitte erneut anmelden.');return}
+    if(!r.ok)return;
+    const b=await r.json();csrf=b.csrf||csrf;me=b.user||me;models=Array.isArray(b.models)?b.models:[];
     if(!models.some(m=>m.id===modelId))modelId=models[0]?.id||'';
     localStorage.setItem('form3.model',modelId);
     const s=$('#model');s.replaceChildren();
@@ -399,24 +562,29 @@ async function refreshModels(){
     if(models.length)s.value=modelId;
     s.onchange=()=>{modelId=s.value;localStorage.setItem('form3.model',modelId)};
   }catch{}
-  if(!pending)render();
+  if(me)render();
   renderModelList();
 }
-function openSettings(){$('#settings').showModal?.();renderModelList()}
+function openSettings(){if(!me)return;$('#settings').showModal?.();renderModelList()}
 function renderModelList(){
   const box=$('#modellist');if(!box)return;box.replaceChildren();
-  if(!models.length){const p=document.createElement('p');p.className='small';p.textContent='Noch keine Modelle. Füge unten dein erstes hinzu.';box.append(p);return}
+  if(!models.length){const p=document.createElement('p');p.className='small';p.textContent='Noch keine Modelle. Der Owner kann unten eines hinzufügen.';box.append(p);return}
   for(const m of models){
     const row=document.createElement('div');row.className='mrow';
     const info=document.createElement('div');
     const strong=document.createElement('strong');strong.textContent=m.label+' · '+m.model;
     const span=document.createElement('span');span.className='small';
-    try{span.textContent=new URL(m.baseUrl).host+' · Key '+m.keyMasked}catch{span.textContent=m.baseUrl+' · Key '+m.keyMasked}
+    span.textContent=m.keyMasked?('Key '+m.keyMasked+' · nur Owner verwaltet'):'Modell vom Owner eingerichtet';
     info.append(strong,span);
-    const del=document.createElement('button');del.textContent='Löschen';del.setAttribute('aria-label','Modell '+m.label+' löschen');
-    del.onclick=async()=>{try{const r=await fetch('/api/models/'+m.id,{method:'DELETE',headers:{'X-Form-CSRF':csrf}});if(!r.ok)throw 0;await refreshModels();toast('Modell gelöscht.')}catch{toast('Löschen fehlgeschlagen.')}};
-    row.append(info,del);box.append(row);
+    if(me&&me.role==='owner'){
+      const del=document.createElement('button');del.textContent='Löschen';del.setAttribute('aria-label','Modell '+m.label+' löschen');
+      del.onclick=async()=>{try{const r=await fetch('/api/models/'+m.id,{method:'DELETE',headers:{'X-Form-CSRF':csrf}});if(!r.ok)throw 0;await refreshModels();toast('Modell gelöscht.')}catch{toast('Löschen fehlgeschlagen.')}};
+      row.append(info,del);
+    }else row.append(info);
+    box.append(row);
   }
+  const addBox=$('#addmodel');
+  if(addBox)addBox.classList.toggle('hidden',!(me&&me.role==='owner'));
 }
 $('#settingsbtn').onclick=openSettings;$('#settingsbtn2').onclick=openSettings;
 $('#closesettings').onclick=()=>$('#settings').close();
@@ -432,7 +600,7 @@ $('#addmodel').onsubmit=async e=>{
 };
 $('#composer').onsubmit=e=>{e.preventDefault();send($('#prompt').value)};
 $('#prompt').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();send(e.target.value)}};
-$('#stop').onclick=stop;$('#new').onclick=newSession;
+$('#stop').onclick=stop;$('#new').onclick=()=>newSession();
 $('#mobile').onclick=()=>{$('#sidebar').classList.toggle('open');$('#mobile').setAttribute('aria-expanded',$('#sidebar').classList.contains('open'))};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('#sidebar').classList.remove('open');$('#mobile').setAttribute('aria-expanded','false')}});
 $('#export').onclick=()=>{const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));a.href=url;a.download='form3-gespraeche.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Archiv exportiert — ohne Modelle und Keys.')};
@@ -443,11 +611,13 @@ $('#file').onchange=async e=>{
     if(f.size>1500000)throw Error('Maximal 1,5 MB');
     const data=normalize(JSON.parse(await f.text()));
     if(data.sessions.length+db.sessions.length>40)throw Error('Maximal 40 Sitzungen');
-    stop();
-    for(const s of data.sessions){s.id=uid();db.sessions.unshift(s)}
-    db.current=db.sessions[0].id;marked=null;save();render();toast('Archiv sicher importiert.');
+    const r=await fetch('/api/import',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify({sessions:data.sessions,elements:data.elements})});
+    const t=await r.json().catch(()=>({}));
+    if(!r.ok)throw Error(t.error||('HTTP '+r.status));
+    await loadFromServer();
+    if(!current())await newSession();else render();
+    toast('Archiv sicher importiert.');
   }catch(err){toast('Import fehlgeschlagen: '+err.message)}
   e.target.value='';
 };
-if(!db.sessions.length)newSession();else{if(!current())db.current=db.sessions[0].id;render();}
-refreshModels();
+boot();
