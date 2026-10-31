@@ -63,7 +63,7 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb}={}){
       if(!worker||inflight)return;
       inflight=true;
       clearTimeout(timer);
-      timer=setTimeout(()=>{worker.terminate();onError('Interaktion angehalten (Zeitlimit).');},3000);
+      timer=setTimeout(()=>{worker.terminate();onError(d.type==='init'?'Interaktions-Engine konnte nicht rechtzeitig geladen werden. Bitte erneut öffnen.':'Interaktion angehalten (Zeitlimit).');},d.type==='init'?30000:3000);
       worker.postMessage(d);
     };
     const deliver=(id,event,value)=>{
@@ -84,6 +84,11 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb}={}){
       if(d?.type==='misuse')onError('Hinweis: ui.value gilt nur für Eingabefelder — dynamische Inhalte gehören in ui.html.');
     };
     worker.onmessage=({data:d})=>{
+      if(d.type==='engine-ready'){
+        clearTimeout(timer);
+        timer=setTimeout(()=>{worker.terminate();onError('Interaktion angehalten (Zeitlimit).');},3000);
+        return;
+      }
       inflight=false;clearTimeout(timer);
       if(d.type==='error')return onError(d.message);
       if(d.type!=='ops'||!Array.isArray(d.ops)||d.ops.length>250){pumpAsync();return;}

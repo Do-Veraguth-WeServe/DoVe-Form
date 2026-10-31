@@ -52,6 +52,7 @@ onmessage=async({data:d})=>{
   try{
     if(d.type==='init'){
       const q=await ready;
+      postMessage({type:'engine-ready'});
       rt=q.newRuntime();
       rt.setMemoryLimit(16*1024*1024);
       rt.setMaxStackSize(256*1024);
