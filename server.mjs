@@ -38,7 +38,7 @@ async function runRound(cfg, messages, controller, onProse, onArtifactStart) {
   const resp = await fetch(endpoint(cfg.baseUrl), {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + cfg.apiKey, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: cfg.model, stream: true, messages }),
+    body: JSON.stringify({ model: cfg.model, stream: true, max_tokens: 16384, messages }),
     signal: controller.signal
   });
   if (!resp.ok) {
@@ -48,13 +48,13 @@ async function runRound(cfg, messages, controller, onProse, onArtifactStart) {
   }
   if (!resp.body) throw Error('Modell-Endpunkt lieferte keinen Stream');
   const reader = resp.body.getReader(), dec = new TextDecoder();
-  let sseBuf = '', total = 0;
+  let sseBuf = '', total = 0, content = 0;
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
     const text = dec.decode(value, { stream: true });
     raw += text; total += text.length;
-    if (total > 300000) { controller.abort(); throw Error('Antwort des Modells zu gross'); }
+    if (total > 4000000) { controller.abort(); throw Error('Antwort des Modells zu gross'); }
     sseBuf += text;
     let nl;
     while ((nl = sseBuf.indexOf('\n')) !== -1) {
@@ -66,7 +66,7 @@ async function runRound(cfg, messages, controller, onProse, onArtifactStart) {
       try {
         const j = JSON.parse(payload);
         const delta = j.choices?.[0]?.delta?.content;
-        if (typeof delta === 'string' && delta) parser.feed(delta);
+        if (typeof delta === 'string' && delta) { content += delta.length; if (content > 200000) { controller.abort(); throw Error('Antwort des Modells zu gross'); } parser.feed(delta); }
       } catch {}
     }
   }
