@@ -65,3 +65,7 @@ Benötigen ein Chrome/Chromium (Headless). Erkannt wird CHROME_PATH, dann bekann
 - Ein Chat gleichzeitig (bewusst); Test-Suite hält die Reihenfolge ein.
 - Mock ersetzt echte Provider-Semantik nicht vollständig (z. B. keine echten Reasoning-Deltas) — Adapter-Kontrakt ist in `ADAPTER.md` dokumentiert.
 - `/api/ping`-API-Tests laufen gegen deterministische Injection (`FORM3_PING_FIXTURE=1`, siehe `ping.mjs`); echter `/bin/ping` wird im Real-Smoke auf dem Deployment geprüft (optionaler Unit-Probe via `FORM3_REAL_PING=1`).
+
+## Real-Deployment-Smoke (manuell, mit echtem Modell)
+
+`SMOKE_URL=https://host:9444 node test/smoke.deployed.cjs` — fährt die live App mit dem konfigurierten Modell: Lab-Shell-Element mit `ui.ping` (echtes `/bin/ping`, Ergebnis im Element), In-Place-Verfeinerung (Assistant-Anzahl unverändert), Pin → Quick-Access, Overlay, 390px. Screenshots: `docs/screenshots/smoke-{desktop,mobile}.png`. Teil des Deployments, nicht von `npm test`.
