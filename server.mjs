@@ -14,7 +14,7 @@ const MODELS_FILE = process.env.FORM3_MODELS || path.join(ROOT, 'form.models.jso
 const PORT = Number(process.env.PORT || 5177);
 const HOST = '127.0.0.1';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
-const ORIGINS = [`http://127.0.0.1:${PORT}`, `http://localhost:${PORT}`];
+const ORIGINS = [`http://127.0.0.1:${PORT}`, `http://localhost:${PORT}`, ...(process.env.FORM3_ORIGIN ? [process.env.FORM3_ORIGIN] : [])];
 
 let store = loadModels(MODELS_FILE);
 const secret = crypto.randomBytes(32);
