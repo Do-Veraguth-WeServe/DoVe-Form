@@ -5,7 +5,40 @@ const $=s=>document.querySelector(s),uid=()=>crypto.randomUUID(),KEY='form.v3';
 let db={version:4,sessions:[],elements:{pins:[],versions:{}},current:null},csrf='',me=null,registrationOpen=false,models=[],modelId=localStorage.getItem('form3.model')||'',pending=null,views=[],marked=null;
 let legacyDb=null;          // pre-login local archive — offered for import on first login
 const stateSync=new Map();  // messageId -> debounce timer for /api/state
+let jobs=new Map();         // jobId -> job (server-owned element builds; transient client mirror)
+let jobStream=null;        // EventSource for /api/jobs/stream
+let sendFinishing=false;   // send() completing its turn — suppress duplicate renders
 const current=()=>db.sessions.find(s=>s.id===db.current);
+
+// --- scroll preservation: submitting or a background element must never
+// jump the viewport to the top (or force it to the end). We anchor on the
+// topmost visible message and restore its position after re-renders.
+function scrollState(){
+  const f=$('#feed');if(!f)return null;
+  const fr=f.getBoundingClientRect();
+  if(f.scrollHeight-f.scrollTop-f.clientHeight<120)return {nearBottom:true};
+  const frac=f.scrollHeight>f.clientHeight?f.scrollTop/(f.scrollHeight-f.clientHeight):0;
+  for(const el of f.querySelectorAll('.message[data-mid]')){
+    const r=el.getBoundingClientRect();
+    if(r.bottom>fr.top+2)
+      return {nearBottom:false,anchor:el.dataset.mid,offset:r.top-fr.top,frac};
+  }
+  return {nearBottom:false,anchor:null,frac};
+}
+function restoreScroll(st){
+  const f=$('#feed');if(!f||!st)return;
+  const go=top=>{try{f.scrollTo({top,behavior:'instant'})}catch{f.scrollTop=top}};
+  if(st.nearBottom){go(f.scrollHeight);return}
+  if(st.anchor){
+    const el=f.querySelector('.message[data-mid="'+st.anchor+'"]');
+    if(el){const fr=f.getBoundingClientRect();go(el.getBoundingClientRect().top-fr.top+f.scrollTop-st.offset);return}
+  }
+  // anchor fell out of the rendered window (last-12): restore by fraction
+  if(st.frac!=null&&f.scrollHeight>f.clientHeight){go(st.frac*(f.scrollHeight-f.clientHeight));return}
+  go(f.scrollTop);
+}
+function renderPreservingScroll(){const st=scrollState();render();restoreScroll(st)}
+const nearBottom=()=>{const f=$('#feed');return !f||f.scrollHeight-f.scrollTop-f.clientHeight<120};
 function toast(t){$('#live').textContent=t;const n=document.createElement('div');n.className='toast';n.textContent=t;document.body.append(n);setTimeout(()=>n.remove(),4000)}
 function trimVersions(){
   try{
@@ -101,6 +134,7 @@ $('#switchreg').onclick=e=>{e.preventDefault();$('#loginform').classList.toggle(
 $('#logout').onclick=async()=>{
   try{await fetch('/api/auth/logout',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:'{}'})}catch{}
   me=null;csrf='';models=[];
+  disconnectJobs();
   try{localStorage.removeItem(KEY)}catch{}
   location.reload();
 };
@@ -108,6 +142,8 @@ $('#logout').onclick=async()=>{
 // --- server data -> local cache shape ---
 function fromServer(data){
   const pins=[];const versions=data.versions||{};
+  // reconcile background jobs (snapshot is the server's truth)
+  jobs=new Map((data.jobs||[]).map(j=>[j.id,j]));
   const sessions=(data.conversations||[]).map(c=>({
     id:c.id,title:String(c.title||'').slice(0,80),
     messages:(c.messages||[]).map(m=>{
@@ -137,6 +173,7 @@ async function enter(){
   await refreshModels();
   const ok=await loadFromServer();
   if(!ok)return;
+  connectJobs();
   if(!db.sessions.length){
     if(legacyDb&&legacyDb.sessions.length)showImportOffer();
     else await newSession();
@@ -199,10 +236,124 @@ function toggleMark(id){
   if(marked)$('#prompt').focus();
 }
 function clearMark(){if(marked){marked=null;render()}}
-function sketchEl(){const d=document.createElement('div');d.className='sketch';d.setAttribute('aria-hidden','true');d.innerHTML='<svg viewBox="0 0 130 72"><path d="M6 60 L28 12 L50 44 L72 8 L94 52 L116 20"/><circle cx="104" cy="46" r="16"/><line x1="6" y1="66" x2="124" y2="66"/><polygon points="16,8 34,8 25,22"/></svg>';return d}
+
+// --- background element jobs: construction site + event stream ---
+const CRANE='<line class="ground" x1="4" y1="90" x2="216" y2="90"/><g class="scaffold"><line x1="150" y1="90" x2="150" y2="34"/><line x1="176" y1="90" x2="176" y2="34"/><line x1="150" y1="46" x2="176" y2="46"/><line x1="150" y1="58" x2="176" y2="58"/><line x1="150" y1="70" x2="176" y2="70"/><line x1="150" y1="82" x2="176" y2="82"/><line x1="150" y1="34" x2="176" y2="46"/><line x1="176" y1="34" x2="150" y2="46"/></g><rect class="block b1" x="152" y="78" width="22" height="10"/><rect class="block b2" x="152" y="66" width="22" height="10"/><rect class="block b3" x="152" y="54" width="22" height="10"/><g class="craneg"><line x1="46" y1="90" x2="46" y2="14"/><line x1="38" y1="22" x2="54" y2="28"/><line x1="38" y1="34" x2="54" y2="40"/><line x1="38" y1="46" x2="54" y2="52"/><rect x="26" y="8" width="40" height="6"/><line x1="12" y1="14" x2="200" y2="14"/><rect x="12" y="14" width="10" height="8"/><g class="trolley"><line class="cable" x1="118" y1="22" x2="118" y2="50"/><rect class="load" x="110" y="50" width="16" height="10"/></g></g>';
+const SITE_PHASE={queued:'in Warteschlange …',building:'baut …',validating:'prüft das Ergebnis …'};
+function siteEl(job){
+  const d=document.createElement('div');d.className='site'+(job&&job.state==='failed'?' failed':job&&job.state==='cancelled'?' cancelled':'');
+  if(job)d.dataset.jobid=job.id;
+  d.setAttribute('role','status');
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox','0 0 220 96');svg.setAttribute('class','crane');svg.setAttribute('aria-hidden','true');
+  svg.innerHTML=CRANE;
+  const meta=document.createElement('div');meta.className='sitemeta';
+  const l1=document.createElement('span');l1.className='sitelabel';l1.textContent=job&&job.kind==='refine'?'⌑ Element wird aktualisiert':'⌑ Element entsteht';
+  const l2=document.createElement('span');l2.className='sitephase';
+  meta.append(l1,l2);
+  if(job&&['queued','building','validating'].includes(job.state)){
+    l2.textContent=SITE_PHASE[job.state]||'…';
+    const c=document.createElement('button');c.type='button';c.textContent='Abbrechen';
+    c.setAttribute('aria-label','Elementbau abbrechen');c.onclick=()=>jobAction('cancel',job.id);
+    meta.append(c);
+  }else if(job&&job.state==='failed'){
+    l2.textContent=job.error||'Fehlgeschlagen.';
+    const r=document.createElement('button');r.type='button';r.textContent='Erneut versuchen';
+    r.onclick=()=>jobAction('retry',job.id);
+    meta.append(r);
+  }else if(job&&job.state==='cancelled'){
+    l2.textContent='Abgebrochen.';
+  }else l2.textContent='baut …';
+  d.append(svg,meta);
+  return d;
+}
+function pendingJobFor(msgId){
+  for(const j of jobs.values()){
+    if(j.state==='ready')continue;
+    if(j.messageId===msgId||j.targetMessageId===msgId)return j;
+  }
+  return null;
+}
+const ACTIVE_JOB=['queued','building','validating'];
+function applyJob(job,opts){
+  if(!job||!job.id)return;
+  const rerender=opts?opts.rerender!==false:true;
+  const prev=jobs.get(job.id);
+  if(prev&&Number(prev.rev)>=Number(job.rev)&&prev.state!=='queued'&&job.state!=='ready')return; // stale event
+  const wasActive=prev&&ACTIVE_JOB.includes(prev.state);
+  jobs.set(job.id,job);
+  if(job.state!=='ready'){
+    if(!prev){
+      // first sighting: bind the live construction site in place (no re-render
+      // mid-stream — re-rendering would tear down every sandbox worker)
+      const liveSite=document.querySelector('.message.live .site:not([data-jobid])');
+      if(liveSite){liveSite.replaceWith(siteEl(job));return}
+    }else if(wasActive&&ACTIVE_JOB.includes(job.state)){
+      // cosmetic phase change (queued→building→validating): patch text only
+      const ph=document.querySelector('.site[data-jobid="'+job.id+'"] .sitephase');
+      if(ph)ph.textContent=SITE_PHASE[job.state]||'…';
+      if(rerender===false)return;
+      return;
+    }
+  }
+  if(job.state==='ready'){
+    const s=current();
+    if(s&&s.id===job.conversationId&&attachReadyJob(s,job)){jobs.delete(job.id);save()}
+    else jobs.set(job.id,job); // ready before its message exists locally — reconcile() applies it
+  }
+  if(rerender&&!sendFinishing)renderPreservingScroll(); // send()'s single closing render covers it
+}
+function attachReadyJob(s,job){
+  if(!job.render)return false;
+  const target=s.messages.find(m=>m.id===(job.kind==='refine'?job.targetMessageId:job.messageId));
+  if(!target)return false;
+  try{
+    const render=validateRender(job.render);
+    if(job.kind==='refine'){pushVersion(target,target.render);target.render=render;if(job.prose)target.prose=String(job.prose).slice(0,8000);marked=null;toast('Element aktualisiert — frühere Version im Verlauf des Elements.')}
+    else target.render=render;
+    return true;
+  }catch{return false}
+}
+function reconcileReadyJobs(){
+  const s=current();if(!s)return;
+  let changed=false;
+  for(const j of [...jobs.values()]){
+    if(j.state!=='ready')continue;
+    if(attachReadyJob(s,j)){jobs.delete(j.id);changed=true}
+  }
+  if(changed)save();
+}
+async function jobAction(kind,id){
+  try{console.log('JOBACTION',kind,id);
+    const r=await fetch('/api/jobs/'+kind,{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify({jobId:id})});
+    const t=await r.json().catch(()=>({}));
+    if(!r.ok)throw Error(t.error||('HTTP '+r.status));
+    applyJob(t.job);
+  }catch(e){toast((kind==='cancel'?'Abbrechen':'Erneut versuchen')+' fehlgeschlagen: '+e.message)}
+}
+function connectJobs(){
+  if(!me||jobStream)return;
+  try{
+    jobStream=new EventSource('/api/jobs/stream');
+    jobStream.addEventListener('snapshot',e=>{try{
+      const list=JSON.parse(e.data).jobs||[];
+      let touched=false;
+      for(const j of list){const known=jobs.has(j.id);applyJob(j,{rerender:false});if(!known||j.state==='ready'||j.state==='failed'||j.state==='cancelled')touched=true}
+      if(touched||list.length)renderPreservingScroll();
+    }catch{}});
+    jobStream.addEventListener('job',e=>{try{applyJob(JSON.parse(e.data))}catch{}});
+    jobStream.onerror=()=>{ // auth lost or stream failed: reconnect with fresh snapshot
+      try{jobStream.close()}catch{}
+      jobStream=null;
+      if(me)setTimeout(connectJobs,3000);
+    };
+  }catch{}
+}
+function disconnectJobs(){try{jobStream&&jobStream.close()}catch{}jobStream=null;jobs=new Map()}
+// (sketchEl removed: live phases are the growing ⌑ wireframe + construction site)
 function busy(on){$('#stop').classList.toggle('hidden',!on);$('#send').classList.toggle('hidden',on)}
 async function stop(){if(!pending)return;pending.controller.abort();pending=null;busy(false);toast('Antwort gestoppt.');await syncFromServer()}
-async function syncFromServer(){if(await loadFromServer())render()}
+async function syncFromServer(){if(await loadFromServer())renderPreservingScroll()}
 async function newSession(){
   if(pending)await stop();
   closeOverlay();
@@ -268,6 +419,7 @@ function render(){  views.forEach(v=>v.destroy());views=[];
         if(m.error){const n=document.createElement('div');n.className='notice error';n.textContent=m.error;article.append(n)}
         else{
           if(m.prose){const p=document.createElement('p');p.className='prose';p.textContent=m.prose;article.append(p)}
+          const job=pendingJobFor(m.id);
           if(m.render){
             const wrap=document.createElement('div');
             wrap.className='elwrap'+((marked&&marked.msgId===m.id&&marked.sessionId===db.current)?' marked':'');
@@ -299,6 +451,10 @@ function render(){  views.forEach(v=>v.destroy());views=[];
             article.append(wrap,note);
             const b=document.createElement('button');b.textContent='Mit diesen Werten weiterdenken ↗';b.onclick=()=>{$('#prompt').value='Denke mit meinen aktuellen Einstellungen weiter.';$('#prompt').focus();toast('Werte werden erst mit deiner Nachricht gesendet.')};article.append(b);
           }
+          // background build: construction site stands in for the future element
+          // (create) or marks an in-flight in-place refinement below the original
+          else if(job&&job.kind==='create'){article.append(siteEl(job))}
+          if(job&&job.kind==='refine'&&m.render){article.append(siteEl(job))}
         }
       }
       feed.append(article);
@@ -311,18 +467,42 @@ function render(){  views.forEach(v=>v.destroy());views=[];
   updateComposer();
 }
 
-function liveMessage(mode){
+function liveMessage(mode,modelLabel){
   const feed=$('#feed');
   const a=document.createElement('article');a.className='message assistant live';
   a.innerHTML='<div class="byline"><span>⌑</span> FORM <small>/ '+(mode==='refine'?'AKTUALISIERT':'STREAMT')+'</small></div>';
+  // Phase 1 „Denken": the ⌑ node grows a wireframe — time becomes structure,
+  // no fake loop. After 10 s the label names the actual model.
+  const think=document.createElement('div');think.className='think';
+  const tsvg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  tsvg.setAttribute('viewBox','0 0 120 66');tsvg.setAttribute('aria-hidden','true');
+  const wire=document.createElementNS('http://www.w3.org/2000/svg','g');wire.setAttribute('class','wire');
+  tsvg.append(wire);
+  const tl=document.createElement('small');tl.className='thinklabel';tl.textContent='denkt …';
+  think.append(tsvg,tl);
+  let edges=0;
+  const NODES=[[14,52],[38,14],[64,48],[92,10],[112,40],[50,60],[84,30],[26,32],[104,58],[70,8],[40,54],[96,22]];
+  const grow=setInterval(()=>{
+    if(!think.isConnected){clearInterval(grow);clearTimeout(slowLbl);return}
+    if(edges>=NODES.length-2)return;
+    const [x1,y1]=NODES[edges],[x2,y2]=NODES[edges+1];
+    const ln=document.createElementNS('http://www.w3.org/2000/svg','line');
+    ln.setAttribute('x1',x1);ln.setAttribute('y1',y1);ln.setAttribute('x2',x2);ln.setAttribute('y2',y2);
+    ln.setAttribute('class','edge');wire.append(ln);edges++;
+  },700);
+  const slowLbl=setTimeout(()=>{tl.textContent=(modelLabel||'Das Modell')+' denkt nach'},10000);
+  // Phase 2 „Schreiben": the streamed text IS the movement; caret pulses.
   const p=document.createElement('p');p.className='prose';p.setAttribute('aria-live','polite');
   const slot=document.createElement('div');slot.className='artslot';
   const note=document.createElement('div');note.className='small';
-  slot.append(sketchEl());
-  a.append(p,slot,note);feed.append(a);a.scrollIntoView({block:'end'});
+  a.append(think,p,slot,note);feed.append(a);
   return {
-    prose:t=>{p.textContent=t;a.scrollIntoView({block:'nearest'})},
-    sketch:()=>{slot.replaceChildren(sketchEl())},
+    prose:t=>{
+      if(!p.textContent&&t){think.remove();clearInterval(grow);clearTimeout(slowLbl);p.classList.add('writing')}
+      p.textContent=t;
+      if(nearBottom())feed.scrollTop=feed.scrollHeight;
+    },
+    site:job=>{think.remove();clearInterval(grow);clearTimeout(slowLbl);slot.replaceChildren(siteEl(job))},
     note:t=>{note.textContent=t;note.className='notice'},
     error:t=>{note.textContent=t;note.className='notice error'}
   };
@@ -359,11 +539,16 @@ async function send(text){
   const um={role:'user',id:uid(),text};
   s.messages.push(um);
   if(s.messages.length===1){s.title=text.slice(0,45);const btn=$('#sessions').firstElementChild;if(btn)btn.textContent=s.title}
-  $('#prompt').value='';save();render();
-  const live=liveMessage(target?'refine':'new');
+  $('#prompt').value='';save();
+  // scroll anchor preserved across composer reset + feed re-render: neither a
+  // jump to the top nor an automatic jump to the end
+  const st=scrollState();
+  render();
+  const live=liveMessage(target?'refine':'new',models.find(m=>m.id===modelId)?.label);
+  restoreScroll(st);
   const request={id:uid(),controller:new AbortController()};
   pending=request;busy(true);
-  let prose='',artifact=null,errorMsg=null,doneUser=null,doneAssist=null;
+  let prose='',artifact=null,errorMsg=null,doneUser=null,doneAssist=null,jobStarted=null;
   try{
     if(!csrf)throw Error('Sitzung abgelaufen — bitte neu anmelden.');
     const body={version:1,sessionId:s.id,requestId:request.id,text,model:modelId||undefined};
@@ -373,8 +558,9 @@ async function send(text){
     await readSSE(r,(event,data)=>{
       if(pending!==request)return;
       if(event==='prose-chunk'&&typeof data.text==='string'){prose+=data.text.slice(0,4000);live.prose(prose)}
-      else if(event==='artifact-start')live.sketch();
+      else if(event==='artifact-start'){if(!jobStarted)live.site(null)} // Phase 3 beginnt mit dem Artefakt
       else if(event==='retry')live.note('Ungültiges Artefakt — ein Korrekturversuch läuft …');
+      else if(event==='element-job'&&data.job&&data.job.id){jobStarted=data.job;applyJob(data.job)}
       else if(event==='render'){try{artifact=validateRender(data.render)}catch{errorMsg='Ungültige Antwort der Gegenseite.'}}
       else if(event==='error'){errorMsg=String(data.message||'Antwort fehlgeschlagen.');}
       else if(event==='done'){doneUser=data.userMessageId||null;doneAssist=data.assistantMessageId||null}
@@ -382,30 +568,40 @@ async function send(text){
   }catch(e){if(pending===request&&e.name!=='AbortError')errorMsg=e.message}
   if(pending!==request)return; // aborted: syncFromServer() rebuilds truth
   pending=null;busy(false);
-  if(doneUser)um.id=doneUser;
+  sendFinishing=true; // exactly ONE closing render (a concurrent ready-event render would double-render)
+  try{
+  const st2=scrollState();
   if(target){
-    // In-place refinement: replace the marked element, never append below it.
-    if(artifact){
+    // In-place refinement: the marked element is replaced only when the
+    // background job completes (atomic swap server-side); original stays until then.
+    if(jobStarted){marked=null;reconcileReadyJobs();save();render()}
+    else if(artifact){
       pushVersion(target,target.render);
       target.render=artifact;
       if(prose)target.prose=prose.slice(0,8000);
       marked=null;
-      save();render();
+      reconcileReadyJobs();save();render();
       document.querySelector('[data-mid="'+target.id+'"]')?.classList.add('updated');
       toast('Element aktualisiert — frühere Version im Verlauf des Elements.');
     }else{
-      save();render();
+      reconcileReadyJobs();save();render();
       toast(errorMsg?('Nicht aktualisiert: '+errorMsg):'Kein aktualisiertes Element erhalten.');
     }
-    document.querySelector('[data-mid="'+target.id+'"]')?.scrollIntoView({block:'center'});
+    restoreScroll(st2);
     return;
   }
-  if(artifact)s.messages.push({role:'assistant',id:doneAssist||uid(),prose,render:artifact});
+  if(jobStarted&&doneAssist){
+    // assistant prose is here; the element arrives when its server job finishes
+    s.messages.push({role:'assistant',id:doneAssist,prose});
+  }
+  else if(artifact)s.messages.push({role:'assistant',id:doneAssist||uid(),prose,render:artifact});
   else if(errorMsg){if(prose)live.error(errorMsg);s.messages.push({role:'assistant',id:doneAssist||uid(),prose,error:errorMsg})}
   else if(prose)s.messages.push({role:'assistant',id:doneAssist||uid(),prose});
   else await syncFromServer(); // nothing usable arrived: server holds the truth
+  reconcileReadyJobs(); // AFTER the local push: fast jobs attach here, one single render
   save();render();
-  $('#feed').lastElementChild?.scrollIntoView({block:'start'});
+  restoreScroll(st2);
+  }finally{sendFinishing=false}
 }
 
 async function doPing(host){

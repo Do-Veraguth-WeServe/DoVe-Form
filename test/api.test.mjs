@@ -69,7 +69,8 @@ async function addModel(sess, overrides = {}) {
   return { status: r.status, body: await r.json() };
 }
 async function chat(sess, text, extra = {}) {
-  return api(sess, '/api/chat', { method: 'POST', body: { version: 1, sessionId: convId, requestId: uid(), text, history: [], states: [], ...extra } });
+  const { __conv, ...body } = extra;
+  return api(sess, '/api/chat', { method: 'POST', body: { version: 1, sessionId: __conv || convId, requestId: uid(), text, history: [], states: [], ...body } });
 }
 function parseSSE(text) {
   const events = [];
@@ -84,6 +85,16 @@ function parseSSE(text) {
   return events;
 }
 const mockStats = async () => (await (await fetch(MOCK + '/admin/stats')).json());
+// element builds finish in durable background jobs — wait until nothing is active
+async function waitJobsSettled(sess = owner, timeout = 6000) {
+  const t0 = Date.now();
+  while (Date.now() - t0 < timeout) {
+    const s = await (await api(sess, '/api/jobs')).json();
+    if (!s.jobs.some(j => ['queued', 'building', 'validating'].includes(j.state))) return s;
+    await sleep(40);
+  }
+  throw Error('background jobs did not settle');
+}
 
 const owner = makeSession(), userB = makeSession(), fresh = makeSession(), pingUser = makeSession();
 
@@ -214,6 +225,13 @@ test('chat streams prose chunks before render, then done with persisted ids', as
   const done = events[events.length - 1].data;
   assert.match(done.userMessageId, /^[0-9a-f-]{36}$/, 'user message id returned');
   assert.match(done.assistantMessageId, /^[0-9a-f-]{36}$/, 'assistant message id returned');
+  // element completion is a durable background job bound to the assistant message
+  const jobEv = events.find(e => e.event === 'element-job');
+  assert.ok(jobEv, 'element-job event present');
+  assert.equal(jobEv.data.job.kind, 'create');
+  assert.equal(jobEv.data.job.messageId, done.assistantMessageId);
+  assert.equal(jobEv.data.job.state, 'queued');
+  await waitJobsSettled();
   assert.ok(!text.includes(KEY), 'key never leaks into SSE stream');
   const st = await mockStats();
   assert.equal(st.lastAuthOk, true, 'server sent Bearer key upstream');
@@ -221,11 +239,13 @@ test('chat streams prose chunks before render, then done with persisted ids', as
 });
 
 test('server-side conversations survive a FRESH session (device switch)', async () => {
+  await waitJobsSettled();
   const again = makeSession();
   assert.equal((await login(again, 'owner1', 'password123')).status, 200);
   const list = await (await api(again, '/api/conversations')).json();
-  assert.equal(list.conversations.length, 1);
-  const conv = list.conversations[0];
+  assert.ok(list.conversations.length >= 1);
+  const conv = list.conversations.find(c => c.messages.some(m => m.render && m.render.name === 'Spar-Rechner'));
+  assert.ok(conv, 'conversation with the element found');
   assert.equal(conv.messages.length, 2, 'user + assistant persisted server-side');
   assert.equal(conv.messages[0].role, 'user');
   assert.equal(conv.messages[1].role, 'assistant');
@@ -243,6 +263,7 @@ test('windowed history reaches upstream from the server store', async () => {
 });
 
 test('element state sync: /api/state updates the stored render, ownership-checked', async () => {
+  await waitJobsSettled();
   const list = await (await api(owner, '/api/conversations')).json();
   const elementId = list.conversations[0].messages.find(m => m.render).id;
   const ok = await api(owner, '/api/state', { method: 'POST', body: { messageId: elementId, state: { value: 7 } } });
@@ -374,9 +395,14 @@ test('refinement: refineTarget reaches upstream, element replaced IN PLACE serve
   assert.ok(render, 'refined render arrives');
   assert.equal(render.data.render.name, 'Spar-Rechner');
   assert.ok(render.data.render.css.includes('#7fd4ef'), 'artifact is the updated version');
+  const refineJob = events.find(e => e.event === 'element-job');
+  assert.ok(refineJob, 'refinement completes via a background job');
+  assert.equal(refineJob.data.job.kind, 'refine');
+  assert.equal(refineJob.data.job.targetMessageId, element.id);
   const done = events[events.length - 1];
   assert.equal(done.event, 'done');
   assert.equal(done.data.assistantMessageId, null, 'refine never appends a message');
+  await waitJobsSettled();
   const after = await (await api(owner, '/api/conversations')).json();
   const conv = after.conversations[0];
   assert.equal(conv.messages.filter(m => m.render).length, elementsBefore, 'refine replaced in place, no new element');
@@ -393,7 +419,9 @@ test('refinement: invalid refineTarget rejected with size caps', async () => {
   assert.equal((await chat(owner, 'x', { refineTarget: { id: uid(), html: 'x'.repeat(33000), css: '', js: '', state: {} } })).status, 400);
   assert.equal((await chat(owner, 'x', { refineTarget: { id: uid(), html: '<p>x</p>', css: '', js: '', state: 'nope' } })).status, 400);
   assert.equal((await chat(owner, 'x', { refineTarget: { id: element.id, html: '<p>x</p>', css: '', js: '', state: {} } })).status, 200, 'name is optional, real element accepted');
+  await waitJobsSettled();
   await (await chat(owner, 'nochmal slider')).text();
+  await waitJobsSettled();
 });
 
 test('db endpoint: auth guards mirror chat/ping', async () => {
@@ -404,6 +432,7 @@ test('db endpoint: auth guards mirror chat/ping', async () => {
 });
 
 test('db endpoint: CRUD lifecycle on a REAL element, quotas + scoping enforced', async () => {
+  await waitJobsSettled();
   const list = await (await api(owner, '/api/conversations')).json();
   const elementId = list.conversations[0].messages.find(m => m.render).id;
   const D = (body, sess = owner) => api(sess, '/api/db', { method: 'POST', body: { sessionId: convId, elementId, ...body } });
@@ -488,6 +517,39 @@ test('logout invalidates the session server-side', async () => {
   assert.equal(out.status, 200);
   assert.match(out.headers.get('set-cookie') || '', /Max-Age=0/);
   assert.equal((await api(sess, '/api/bootstrap')).status, 401, 'session token dead after logout');
+});
+
+test('jobs: snapshot/stream require auth; scoping, cancel ownership, retry guardrails', async () => {
+  assert.equal((await fetch(BASE + '/api/jobs')).status, 401);
+  assert.equal((await fetch(BASE + '/api/jobs/stream')).status, 401);
+  // own conversation so later history/persistence assertions stay pristine
+  const cr = await api(owner, '/api/conversations', { method: 'POST', body: {} });
+  const jc = (await cr.json()).conversation.id;
+  // deterministic slow build via test hook (FORM3_JOB_TEST_DELAYS=1 in run-all)
+  const r = await chat(owner, 'baue etwas slowbuild mit build:6000', { __conv: jc });
+  const events = parseSSE(await r.text());
+  const job = events.find(e => e.event === 'element-job').data.job;
+  const snap = await (await api(owner, '/api/jobs')).json();
+  assert.ok(snap.jobs.some(j => j.id === job.id), 'job visible in own snapshot');
+  const bobSnap = await (await api(userB, '/api/jobs')).json();
+  assert.ok(!bobSnap.jobs.some(j => j.id === job.id), "foreign user cannot see other users' jobs");
+  // foreign user cannot cancel (404, no existence leak)
+  assert.equal((await api(userB, '/api/jobs/cancel', { method: 'POST', body: { jobId: job.id } })).status, 404);
+  // retry while still building is rejected
+  const early = await api(owner, '/api/jobs/retry', { method: 'POST', body: { jobId: job.id } });
+  assert.equal(early.status, 409);
+  // owner cancels: no element ever lands on the message
+  const cancel = await api(owner, '/api/jobs/cancel', { method: 'POST', body: { jobId: job.id } });
+  assert.equal(cancel.status, 200);
+  assert.equal((await cancel.json()).job.state, 'cancelled');
+  await waitJobsSettled();
+  const list = await (await api(owner, '/api/conversations')).json();
+  const conv = list.conversations.find(c => c.id === jc);
+  const msg = conv.messages.find(m => m.id === job.messageId);
+  assert.ok(msg && !msg.render, 'cancelled build never attaches an element');
+  // cancel of a finished/cancelled job is a no-op 409
+  assert.equal((await api(owner, '/api/jobs/cancel', { method: 'POST', body: { jobId: job.id } })).status, 409);
+  assert.equal((await api(owner, '/api/jobs/retry', { method: 'POST', body: { jobId: 'nope' } })).status, 400);
 });
 
 test('delete model, then chat is blocked with friendly error', async () => {

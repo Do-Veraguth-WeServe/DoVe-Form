@@ -1,10 +1,15 @@
-# Form v3.2 — lokal denken, serverseitig gespeichert
+# Form v3.3 — lokal denken, serverseitig gespeichert
 
 Ein privater, interaktiver KI-Chat auf deinem eigenen Server. Du verbindest dein eigenes OpenAI-kompatibles Modell (z. B. z.ai, OpenAI, OpenRouter, Ollama) — der API-Key bleibt in einer lokalen Datei auf dem Server.
 
 Antworten kommen in **zwei Phasen**: erst kurzer, klarer Text (live gestreamt), dann — nur wenn es wirklich hilft — **ein** interaktives Artefakt (HTML/CSS/JS), das in einem gehärteten Sandbox-Renderer läuft (QuickJS-WASM-Interpreter + DOMPurify + opakes iframe, portiert aus dem bewährten Form v2).
 
 **v3.1 «Elements»**: Artefakte sind benannte **Elemente** — ⌑ Name antippen zum Markieren, ★ anpinnen, ↗ öffnen (Vollbild-Overlay mit «Mit KI bearbeiten», «Code bearbeiten» und Versionen). Markierte Elemente werden mit der nächsten Nachricht **an Ort und Stelle verfeinert** (keine Duplikate, alte Version bleibt im Element-Verlauf). Lab-Shell-Elemente bekommen mit `ui.ping(host, cb)` genau eine begrenzte Netzwerk-Primitive: einen echten ICMP-Ping über den Server (nur öffentliche Hosts, 10/Minute, geloggt).
+
+**v3.3 «Echte Hintergrund-Baustelle & Scroll-Anker»**:
+- Element-Erstellung ist ein **servereigener Hintergrundjob** (SQLite-Tabelle `jobs`): Der Chat endet, während das Element weiterbaut — weitere Nachrichten werden sofort beantwortet. Jobs überleben Reload und Tab-Schliessen (Snapshot + Event-Stream, keine Duplikate, kein zweiter Provider-Aufruf), Abbrechen/Wiederholen pro Baustellen-Container, Restart markiert unterbrochene Jobs ehrlich als fehlgeschlagen.
+- Jedes künftige Element hat seinen **Baustellen-Container** (Kran, Gerüst, Blöcke — reduced-motion statisch) mit ehrlichen Phasentexten (in Warteschlange/baut/prüft) statt Fake-Prozenten; davor «Denken» (wachsendes ⌑-Drahtgitter) und «Schreiben» (Cursor-Puls) live am Stream.
+- **Scroll-Anker**: Absenden (Enter/Button), Streaming und Element-Fertigstellung springen den Viewport weder an den Anfang noch automatisch ans Ende; 390px inklusive.
 
 **v3.2 «Accounts & Daten»**:
 - **Login** mit Benutzername + Passwort (scrypt+Salt, Node-Bordmittel). Session-Cookie HttpOnly + SameSite=Strict (+Secure hinter HTTPS-Ingress). Der **erste registrierte Benutzer wird Owner**; danach ist Registrierung standardmässig **zu** (Config-Flag `form.config.json`). Passwort-Reset nur serverseitig per CLI (siehe unten).

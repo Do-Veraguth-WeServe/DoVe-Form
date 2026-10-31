@@ -57,7 +57,26 @@ export class Store {
         message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
         seq INTEGER NOT NULL, at TEXT NOT NULL, render TEXT NOT NULL,
         PRIMARY KEY(message_id, seq));
+      CREATE TABLE IF NOT EXISTS jobs(
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+        message_id TEXT,
+        target_message_id TEXT,
+        kind TEXT NOT NULL,
+        state TEXT NOT NULL,
+        rev INTEGER NOT NULL,
+        error TEXT,
+        delay_ms INTEGER NOT NULL DEFAULT 0,
+        render TEXT NOT NULL,
+        prose TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL);
+      CREATE INDEX IF NOT EXISTS jobs_user ON jobs(user_id, state);
     `);
+    // honest restart handling: a build interrupted by a process restart is
+    // marked failed (never silently resumed — no automatic duplicate work)
+    this.interruptedOnStart = this.markInterruptedJobs();
   }
 
   // --- users & sessions ---
@@ -239,6 +258,72 @@ export class Store {
     return true;
   }
 
+  // --- background element jobs (server-owned construction sites) ---
+  nextJobRev() { return Number(this.db.prepare('SELECT COALESCE(MAX(rev),0)+1 AS r FROM jobs').get().r); }
+
+  createJob({ userId, conversationId, messageId = null, targetMessageId = null, kind, render, prose = null, delayMs = 0 }) {
+    const id = crypto.randomUUID(), now = new Date().toISOString();
+    const rev = this.nextJobRev();
+    this.db.prepare(
+      'INSERT INTO jobs(id, user_id, conversation_id, message_id, target_message_id, kind, state, rev, error, delay_ms, render, prose, created_at, updated_at) VALUES (?,?,?,?,?,?,?, ?,NULL,?,?,?,?,?)'
+    ).run(id, userId, conversationId, messageId, targetMessageId, kind, 'queued', rev,
+      Math.max(0, Math.min(Number(delayMs) || 0, 30000)),
+      JSON.stringify(render), prose != null ? String(prose).slice(0, 8000) : null, now, now);
+    return this.getJob(id);
+  }
+
+  getJob(id) {
+    const r = this.db.prepare('SELECT * FROM jobs WHERE id = ?').get(String(id || ''));
+    if (!r) return null;
+    let render = null;
+    try { render = JSON.parse(r.render); } catch {}
+    return { id: r.id, userId: r.user_id, conversationId: r.conversation_id, messageId: r.message_id, targetMessageId: r.target_message_id, kind: r.kind, state: r.state, rev: r.rev, error: r.error, delayMs: r.delay_ms, render, prose: r.prose, createdAt: r.created_at, updatedAt: r.updated_at };
+  }
+
+  // atomic compare-and-set transition; returns the updated job or null
+  transitionJob(id, fromStates, state, error = null) {
+    if (state === 'cancelled') console.log('CANCEL-TRACE', String(id).slice(0, 8), new Error('trace').stack.split('\n').slice(1, 5).join(' | '));
+    const rev = this.nextJobRev();
+    const r = this.db.prepare(
+      `UPDATE jobs SET state = ?, error = ?, rev = ?, updated_at = ? WHERE id = ? AND state IN (${fromStates.map(() => '?').join(',')})`
+    ).run(state, error, rev, new Date().toISOString(), String(id || ''), ...fromStates);
+    return r.changes ? this.getJob(id) : null;
+  }
+
+  // Completion is one synchronous transaction: only a job still in
+  // building/validating can attach its render — a cancel (or conversation
+  // delete) always wins over a late result.
+  completeJob(id, apply) {
+    const job = this.getJob(id);
+    if (!job) return null;
+    const rev = this.nextJobRev(), now = new Date().toISOString();
+    this.db.exec('BEGIN');
+    try {
+      const r = this.db.prepare("UPDATE jobs SET state='ready', error=NULL, rev=?, updated_at=? WHERE id=? AND state IN ('building','validating')").run(rev, now, String(id));
+      if (!r.changes) { this.db.exec('ROLLBACK'); return null; }
+      apply(job);
+      this.db.exec('COMMIT');
+    } catch (e) { try { this.db.exec('ROLLBACK'); } catch {} throw e; }
+    return this.getJob(id);
+  }
+
+  attachRender(convId, msgId, render) {
+    const r = this.db.prepare('UPDATE messages SET render = ? WHERE id = ? AND conversation_id = ? AND render IS NULL')
+      .run(JSON.stringify(render), String(msgId || ''), String(convId || ''));
+    if (!r.changes) throw Error('Element nicht mehr vorhanden');
+  }
+
+  markInterruptedJobs() {
+    return this.db.prepare(
+      "UPDATE jobs SET state='failed', error='Durch einen Server-Neustart unterbrochen — hier erneut versuchen.', updated_at=? WHERE state IN ('queued','building','validating')"
+    ).run(new Date().toISOString()).changes;
+  }
+
+  listJobs(userId) {
+    return this.db.prepare("SELECT * FROM jobs WHERE user_id = ? AND state != 'ready' ORDER BY created_at LIMIT 100").all(String(userId || ''))
+      .map(r => { let render = null; try { render = JSON.parse(r.render); } catch {} return { id: r.id, conversationId: r.conversation_id, messageId: r.message_id, targetMessageId: r.target_message_id, kind: r.kind, state: r.state, rev: r.rev, error: r.error, delayMs: r.delay_ms, render, prose: r.prose, createdAt: r.created_at, updatedAt: r.updated_at, userId: r.user_id }; });
+  }
+
   setPinned(userId, msgId, pinned) {
     const owner = this.messageOwner(msgId);
     if (!owner || owner.userId !== userId || !owner.hasRender) throw Error('Element nicht gefunden');
@@ -251,7 +336,8 @@ export class Store {
     return true;
   }
 
-  // Full snapshot for one user: conversations (newest first) with messages, pins, versions.
+  // Full snapshot for one user: conversations (newest first) with messages, pins,
+  // versions — plus active background jobs (construction sites) for reconciliation.
   listConversations(userId) {
     const convs = this.db.prepare('SELECT id, title, updated_at FROM conversations WHERE user_id = ? ORDER BY updated_at DESC LIMIT 40').all(userId);
     const out = [];
@@ -274,7 +360,7 @@ export class Store {
       const rows = this.db.prepare('SELECT at, render FROM versions WHERE message_id = ? ORDER BY seq LIMIT 5').all(m.id);
       if (rows.length) versions[m.id] = rows.map(r => { try { return { at: r.at, render: JSON.parse(r.render) }; } catch { return null; } }).filter(Boolean);
     }
-    return { conversations: out, versions };
+    return { conversations: out, versions, jobs: this.listJobs(userId).map(({ userId: _u, render: _r, prose: _p, delayMs: _d, ...j }) => j) };
   }
 
   // Import validated archive sessions (ids regenerated, pins/versions remapped).

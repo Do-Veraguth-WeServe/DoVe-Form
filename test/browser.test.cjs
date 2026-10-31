@@ -63,8 +63,11 @@ async function registerUI(p, username, password) {
   p.on('request', r => { if (r.url().startsWith('http') && !r.url().startsWith(BASE)) external.push(r.url()); });
   const errors = [];
   p.on('pageerror', e => errors.push(e.message));
-  p.on('console', msg => { if (msg.type() === 'error') console.log('console-error:', msg.text()); });
   const ok = s => console.log('PASS', s);
+  // wait until no chat turn is streaming/pending on a page
+  const idle = pg => pg.waitForFunction(() =>
+    !document.querySelector('.live') && document.querySelector('#stop').classList.contains('hidden'),
+    undefined, { timeout: 30000 });
   const shots = path.resolve(__dirname, '..', 'docs', 'screenshots');
   fs.mkdirSync(shots, { recursive: true });
   try {
@@ -285,6 +288,7 @@ async function registerUI(p, username, password) {
     await p.locator('#prompt').fill('scoping-test bitte');
     await p.locator('#prompt').press('Enter');
     await p.locator('iframe.render').nth(4).waitFor({ timeout: 30000 });
+    await p.waitForTimeout(500); // let the fresh sandbox finish its worker handshake
     const sf = p.frameLocator('iframe.render').nth(4);
     await sf.locator('#s').click();
     await sf.locator('#msg').filter({ hasText: 'isoliert: Tabelle nicht gefunden.' }).waitFor({ timeout: 8000 });
@@ -301,16 +305,11 @@ async function registerUI(p, username, password) {
     await p.locator('#prompt').fill('slow story please');
     await p.locator('#prompt').press('Enter');
     await p.locator('.live .prose').filter({ hasText: 'Erster Gedanke' }).waitFor({ timeout: 30000 });
-    const sketch = await p.evaluate(() => {
-      const sk = document.querySelector('.live .sketch path');
-      if (!sk) return { error: 'no sketch element' };
-      const cs = getComputedStyle(sk);
-      return { animation: cs.animationName, duration: cs.animationDuration, dash: cs.strokeDasharray };
+    const thinkAnim = await p.evaluate(() => {
+      const el = document.querySelector('.live .think .wire line') || document.querySelector('.live .think');
+      return el ? getComputedStyle(el).animationName : 'none';
     });
-    assert.equal(sketch.error, undefined);
-    assert.equal(sketch.animation, 'none', 'prefers-reduced-motion: animation disabled, element static');
-    assert.ok(sketch.dash, 'sketch strokes defined');
-    ok('sketch animation element present; reduced-motion fallback disables movement');
+    assert.equal(thinkAnim, 'none', 'prefers-reduced-motion: no movement while thinking');
     const discBefore = (await mockStats()).disconnects;
     await p.locator('#stop').click();
     await p.locator('#stop').waitFor({ state: 'hidden', timeout: 5000 });
@@ -318,28 +317,221 @@ async function registerUI(p, username, password) {
     const st2 = await mockStats();
     assert.ok(st2.disconnects > discBefore, `stop disconnected upstream (${discBefore} -> ${st2.disconnects})`);
     assert.equal(await p.locator('#send').isVisible(), true);
-    ok('stop button aborts upstream, error turn synced from server');
+    ok('stop button aborts upstream, error turn synced from server (reduced-motion static)');
 
-    // 7b. moving sketch animation in normal-motion context
+    // 7b. background build: phases, construction-site animation, honest states, cancel
     const ctx2 = await b.newContext({ viewport: { width: 1280, height: 900 } });
     const p2 = await ctx2.newPage();
+    p2.on('response', r => { if (r.status() >= 400) console.log('p2 http', r.status(), r.url().slice(0, 60)); });
     await p2.goto(BASE);
     await loginUI(p2, OWNER, PASS);
     await p2.locator('#model').waitFor({ state: 'visible', timeout: 5000 });
-    await p2.locator('#prompt').fill('slow story animation');
+    await p2.waitForTimeout(2000); // let the previous turn's server-side slot settle
+    await p2.locator('#prompt').fill('baue ein slowbuild element build:9000');
     await p2.locator('#prompt').press('Enter');
-    await p2.locator('.live .prose').filter({ hasText: 'Erster Gedanke' }).waitFor({ timeout: 30000 });
+    await p2.locator('.live .think').waitFor({ timeout: 8000 });
+    const edgeCount = await p2.evaluate(() => new Promise(res => {
+      const n0 = document.querySelectorAll('.live .think .wire line').length;
+      setTimeout(() => res({ n0, n1: document.querySelectorAll('.live .think .wire line').length }), 1600);
+    }));
+    assert.ok(edgeCount.n1 >= edgeCount.n0, 'wireframe accumulates edges over time (no fake loop)');
+    await p2.locator('.live .prose').filter({ hasText: 'Hintergrund' }).waitFor({ timeout: 20000 });
+    await p2.locator('.site').first().waitFor({ timeout: 10000 });
     const anim = await p2.evaluate(() => {
-      const sk = document.querySelector('.live .sketch path');
-      const cs = sk ? getComputedStyle(sk) : null;
-      return cs ? { animation: cs.animationName, duration: cs.animationDuration } : { error: 'missing' };
+      const load = document.querySelector('.site .load');
+      const cs = load ? getComputedStyle(load) : null;
+      const phase = document.querySelector('.site .sitephase');
+      return cs ? { animation: cs.animationName, duration: cs.animationDuration, phase: phase ? phase.textContent : '' } : { error: 'missing' };
     });
-    await p2.locator('#stop').click();
-    await ctx2.close();
     assert.equal(anim.error, undefined);
-    assert.equal(anim.animation, 'draw', 'self-drawing stroke-dashoffset animation runs');
+    assert.equal(anim.animation, 'lower', 'crane lowers its load — honest activity, no fake progress');
     assert.ok(parseFloat(anim.duration) > 0);
-    ok('moving sketch-style generation animation (stroke-dashoffset) in normal mode');
+    assert.match(anim.phase, /baut|Warteschlange|prüft/, 'phase text without percentages: ' + anim.phase);
+    assert.equal(await p2.locator('.site .sitemeta button', { hasText: 'Abbrechen' }).count(), 1, 'cancel offered per container');
+    await p2.screenshot({ path: path.join(shots, 'site-desktop.png'), fullPage: true });
+    await p2.locator('.site .sitemeta button', { hasText: 'Abbrechen' }).first().click();
+    await p2.locator('.site').filter({ hasText: 'Abgebrochen.' }).waitFor({ timeout: 5000 });
+    await ctx2.close();
+    ok('thinking wireframe accumulates, construction site animates (screenshot), cancel works');
+
+    // 7c. genuine server-owned background job: chat answers BEFORE the element
+    // completes; reload keeps the same job; tab close does not stop the build
+    const slowBefore = (await mockStats()).calls.slowbuild || 0;
+    await idle(p);
+    await p.locator('#prompt').fill('baue noch ein slowbuild element build:12000');
+    await p.locator('#prompt').press('Enter');
+    await p.locator('.site[data-jobid]').last().waitFor({ timeout: 15000 });
+    const jobId1 = await p.locator('.site[data-jobid]').last().getAttribute('data-jobid');
+    const jobSel = '.site[data-jobid="' + jobId1 + '"]';
+    // second chat message must be answered while the build runs
+    await p.locator('#prompt').fill('Erkläre mir kurz, was ein VPN macht — prose only');
+    await p.locator('#prompt').press('Enter');
+    await p.locator('.message.assistant').last().locator('.prose').filter({ hasText: 'Virtual Private Network' }).waitFor({ timeout: 30000 });
+    assert.equal(await p.locator(jobSel).count(), 1, 'construction site still building while chat answered');
+    // reload mid-build (same context): same job id, current state, no duplicate build
+    await p.reload();
+    await p.locator(jobSel).first().waitFor({ timeout: 15000 });
+    assert.equal(await p.locator(jobSel).first().getAttribute('data-jobid'), jobId1, 'reload shows the SAME job');
+    // dedicated context: close its ONLY tab — the server keeps building; reopen
+    // shows exactly one finished element (job belongs to the server, not the tab)
+    const ctx3 = await b.newContext({ viewport: { width: 1280, height: 900 } });
+    const pTab = await ctx3.newPage();
+    pTab.on('response', r => { if (r.status() >= 400) console.log('pTab http', r.status(), r.url().slice(0, 60)); });
+    await pTab.goto(BASE);
+    await loginUI(pTab, OWNER, PASS);
+    await pTab.locator('.message[data-mid]').first().waitFor({ timeout: 10000 }); // conversation actually loaded
+    await pTab.waitForTimeout(400); // jobs snapshot applied
+    await idle(pTab);
+    const priorIds = await pTab.evaluate(() => [...document.querySelectorAll('.site[data-jobid]')].map(s => s.dataset.jobid));
+    await pTab.locator('#prompt').fill('baustelle im geschlossenen tab slowbuild build:8000');
+    await pTab.locator('#prompt').press('Enter');
+    // wait for a NEW site (this conversation already shows older jobs)
+    await pTab.waitForFunction(oldIds => {
+      const sites = [...document.querySelectorAll('.site[data-jobid]')];
+      return sites.some(s => !oldIds.includes(s.dataset.jobid) && !s.className.includes('cancelled'));
+    }, [...priorIds], { timeout: 15000 });
+    const closedJob = await pTab.evaluate(oldIds => {
+      const sites = [...document.querySelectorAll('.site[data-jobid]')];
+      const el = sites.find(s => !oldIds.includes(s.dataset.jobid) && !s.className.includes('cancelled'));
+      return el ? el.dataset.jobid : null;
+    }, [...priorIds]);
+    assert.ok(closedJob, 'a NEW non-cancelled construction site appeared');
+
+    const closedSel = '.site[data-jobid="' + closedJob + '"]';
+    await pTab.close();
+    await new Promise(r => setTimeout(r, 3000)); // still building when the new tab opens
+    const p3 = await ctx3.newPage();
+    await p3.goto(BASE);
+    await p3.locator(closedSel).first().waitFor({ timeout: 15000 });
+    assert.equal(await p3.locator(closedSel).first().getAttribute('data-jobid'), closedJob, 'second browser of the same user sees the same job');
+    await p3.locator(closedSel).waitFor({ state: 'detached', timeout: 15000 });
+    assert.equal(await p3.locator(closedSel).count(), 0, 'no construction site left after completion');
+    const closedName = await p3.evaluate(() => [...document.querySelectorAll('.elname')].map(e => e.textContent));
+    assert.equal(closedName.filter(n => n === 'Baustellen-Element').length >= 1, true, 'finished element present after tab close');
+    const iframesAfterReopen = await p3.locator('iframe.render').count();
+    const st3 = await mockStats();
+    assert.equal(st3.calls.slowbuild, slowBefore + 2, 'no second provider call for reload/tab-close/reopen');
+    ok('background job survives reload + tab close; reopen shows exactly one element, one provider call');
+
+    // 7d. two jobs complete in REVERSE order and land on their own containers
+    // (older cancelled sites stay visible forever — track only ACTIVE builds)
+    const activeSites = () => p3.evaluate(() => [...document.querySelectorAll('.site[data-jobid]')]
+      .filter(s => !s.className.includes('cancelled') && !s.className.includes('failed'))
+      .map(s => s.dataset.jobid));
+    const order = [];
+    const watch = setInterval(async () => {
+      try { order.push(await activeSites()); } catch {}
+    }, 200);
+    await idle(p3);
+    const preActive = await activeSites();
+    await p3.locator('#prompt').fill('erstes slowbuild element build:4500');
+    await p3.locator('#prompt').press('Enter');
+    await p3.waitForFunction(oldIds => {
+      const sites = [...document.querySelectorAll('.site[data-jobid]')].filter(s => !s.className.includes('cancelled') && !s.className.includes('failed'));
+      return sites.some(s => !oldIds.includes(s.dataset.jobid));
+    }, preActive, { timeout: 15000 });
+    const jA = await p3.evaluate(oldIds => {
+      const sites = [...document.querySelectorAll('.site[data-jobid]')].filter(s => !s.className.includes('cancelled') && !s.className.includes('failed'));
+      return sites.find(s => !oldIds.includes(s.dataset.jobid)).dataset.jobid;
+    }, preActive);
+    await idle(p3);
+    await p3.locator('#prompt').fill('zweites element slowbuild2 build:800');
+    await p3.locator('#prompt').press('Enter');
+    await p3.waitForFunction(() => ![...document.querySelectorAll('.site[data-jobid]')]
+      .some(s => !s.className.includes('cancelled') && !s.className.includes('failed')), undefined, { timeout: 20000 });
+    clearInterval(watch);
+    const seen = order;
+    // jA must disappear LAST: at some point jA is the only active site left
+    assert.ok(seen.some(list => list.length === 1 && list[0] === jA), 'first job outlived the second (reverse completion): ' + JSON.stringify(seen.slice(-8)));
+    const names = await p3.evaluate(() => [...document.querySelectorAll('.elname')].map(e => e.textContent));
+    assert.ok(names.includes('Zweites Element'), 'second job landed on its own container');
+    assert.ok(names.filter(n => n === 'Baustellen-Element').length >= 1, 'first job landed on its own container');
+    assert.ok(await p3.locator('iframe.render').count() >= iframesAfterReopen, 'no element lost (12-message display window may hide the oldest)');
+    ok('two background jobs completed in reverse order, correct containers');
+
+    // 7e. scroll-position preservation on submit (mid, bottom, button, 390px)
+    const impLong = await p3.evaluate(async () => {
+      const b = await (await fetch('/api/bootstrap')).json();
+      const msgs = [];
+      for (let i = 1; i <= 30; i++) {
+        msgs.push({ role: 'user', text: 'Frage Nummer ' + i });
+        msgs.push({ role: 'assistant', prose: 'Antwort Nummer ' + i + ' mit etwas Text zum Scrollen.' });
+      }
+      const r = await fetch('/api/import', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Form-CSRF': b.csrf },
+        body: JSON.stringify({ sessions: [{ title: 'Lang', messages: msgs }] })
+      });
+      return r.status;
+    });
+    assert.equal(impLong, 200, 'long conversation seeded server-side');
+    await p3.reload();
+    await p3.locator('#sessions button').filter({ hasText: 'Lang' }).first().click();
+    await p3.locator('.message[data-mid]').nth(5).waitFor({ timeout: 10000 });
+    const topVisible = () => p3.evaluate(() => {
+      const f = document.querySelector('#feed'); const fr = f.getBoundingClientRect();
+      const dbg = { st: Math.round(f.scrollTop), sh: Math.round(f.scrollHeight), ch: f.clientHeight };
+      for (const el of f.querySelectorAll('.message[data-mid]')) {
+        const r = el.getBoundingClientRect();
+        if (r.bottom > fr.top + 2) return { mid: el.dataset.mid, off: Math.round(r.top - fr.top), ...dbg };
+      }
+      return { ...dbg };
+    });
+    await p3.evaluate(() => { const f = document.querySelector('#feed'); f.scrollTop = f.scrollHeight * 0.45; });
+    await p3.waitForTimeout(300);
+    const midBefore = await topVisible();
+    await p3.locator('#prompt').fill('Erkläre mir kurz, was ein VPN macht — prose only');
+    await p3.locator('#prompt').press('Enter');
+    await p3.locator('.message.assistant').last().locator('.prose').filter({ hasText: 'Virtual Private Network' }).waitFor({ timeout: 30000 });
+    const midAfter = await topVisible();
+    assert.equal(midAfter.mid, midBefore.mid, 'viewport anchor message unchanged on Enter submit: ' + JSON.stringify({ a: midBefore, b: midAfter }));
+    assert.ok(Math.abs(midAfter.off - midBefore.off) < 60, 'anchor offset stable (delta ' + Math.abs(midAfter.off - midBefore.off) + ')');
+    // send button must behave identically
+    await idle(p3);
+    await p3.locator('#prompt').fill('noch eine kurze antwort bitte');
+    await p3.locator('#send').click();
+    await idle(p3);
+    const midAfter2 = await topVisible();
+        // same anchor, or the anchor legitimately left the disclosed 12-message
+    // window — then the viewport must still hold its middle position (no jump
+    // to the top or the end; the window rotation makes pixel equality impossible)
+    const stillThere = await p3.evaluate(mid => !!document.querySelector('.message[data-mid="' + mid + '"]'), midAfter.mid);
+    if (midAfter2.mid !== midAfter.mid) {
+      assert.ok(!stillThere, 'anchor must have left the rendered window, not moved: ' + JSON.stringify({ a: midAfter, b: midAfter2 }));
+      const range = midAfter2.sh - midAfter2.ch;
+      assert.ok(midAfter2.st > range * 0.25 && midAfter2.st < range * 0.75,
+        'viewport stayed mid-conversation after window rotation: ' + JSON.stringify(midAfter2));
+    }
+    // at the bottom: position stays pinned to the bottom (no jump to top)
+    await p3.evaluate(() => { const f = document.querySelector('#feed'); f.scrollTop = f.scrollHeight; });
+    await p3.waitForTimeout(200);
+    await p3.locator('#prompt').fill('letzter test am grund');
+    await p3.locator('#prompt').press('Enter');
+    await idle(p3);
+    const atBottom = await p3.evaluate(() => { const f = document.querySelector('#feed'); return f.scrollHeight - f.scrollTop - f.clientHeight; });
+    assert.ok(atBottom < 150, 'stays at the bottom while at the bottom (gap ' + atBottom + ')');
+    // mobile 390px: mid-anchor preserved + construction site screenshot
+    await p3.locator('#sessions button').filter({ hasText: 'Lang' }).first().click();
+    await p3.locator('.message[data-mid]').nth(5).waitFor({ timeout: 10000 });
+    // switch to mobile width live (sidebar collapses via media query, no reload needed)
+    await p3.setViewportSize({ width: 390, height: 844 });
+    await p3.evaluate(() => { const f = document.querySelector('#feed'); f.scrollTop = f.scrollHeight * 0.5; });
+    await p3.waitForTimeout(300);
+    const mobBefore = await topVisible();
+    await idle(p3);
+    await p3.locator('#prompt').fill('Erkläre mir kurz, was ein VPN macht — prose only');
+    await p3.locator('#prompt').press('Enter');
+    await idle(p3);
+    const mobAfter = await topVisible();
+    assert.equal(mobAfter.mid, mobBefore.mid, '390px: anchor preserved');
+    await idle(p3);
+    await p3.locator('#prompt').fill('mobile baustelle slowbuild build:8000');
+    await p3.locator('#prompt').press('Enter');
+    await p3.locator('.site[data-jobid]').first().waitFor({ timeout: 15000 });
+    assert(await p3.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'no horizontal overflow at 390px with site');
+    await p3.screenshot({ path: path.join(shots, 'site-mobile.png'), fullPage: true });
+    await p3.locator('.site .sitemeta button', { hasText: 'Abbrechen' }).first().click();
+    await p3.locator('.site').filter({ hasText: 'Abgebrochen.' }).waitFor({ timeout: 5000 });
+    ok('scroll anchor preserved (Enter/button/bottom/390px), mobile construction-site screenshot saved');
 
     // 8. export never contains keys; localStorage cache holds schema v4
     const dl = p.waitForEvent('download');

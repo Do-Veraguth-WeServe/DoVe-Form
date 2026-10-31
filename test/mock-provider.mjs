@@ -67,6 +67,23 @@ const boundaryArtifact = {
   state: {}
 };
 
+const slowArtifact = {
+  version: 1,
+  name: 'Baustellen-Element',
+  html: '<div><h2>Baustellen-Element</h2><input id="amt" type="range" min="1" max="10"><p id="out"></p></div>',
+  css: 'h2{color:#d4ef8b}p{color:#9ca49f}',
+  js: 'function draw(){ui.text("out","Wert: "+(state.value||3))}ui.value("amt",String(state.value||3));ui.on("amt","input",e=>{state.value=Number(e.value);draw();ui.persist()});draw();',
+  state: { value: 3 }
+};
+const slowArtifact2 = {
+  version: 1,
+  name: 'Zweites Element',
+  html: '<div><h2>Zweites Element</h2><p id="out">ok</p></div>',
+  css: 'h2{color:#d4ef8b}p{color:#9ca49f}',
+  js: 'ui.text("out","zweites fertig");',
+  state: {}
+};
+
 function sseWrite(res, obj) { res.write('data: ' + JSON.stringify(obj) + '\n\n'); }
 
 async function stream(res, chunks) {
@@ -80,6 +97,15 @@ async function stream(res, chunks) {
 
 async function run(scenario, res) {
   const P = (t, pause, fr) => ({ t, pause, fr });
+  if (scenario === 'slowbuild' || scenario === 'slowbuild2') await sleep(900); // Phase-1-Sichtbarkeit
+  if (scenario === 'slowbuild') return stream(res, [
+    P('Ich baue das im Hintergrund. ', 1500),
+    P('```json\n' + JSON.stringify(slowArtifact) + '\n```', 10)
+  ]);
+  if (scenario === 'slowbuild2') return stream(res, [
+    P('Zweites Element unterwegs. ', 600),
+    P('```json\n' + JSON.stringify(slowArtifact2) + '\n```', 10)
+  ]);
   if (scenario === 'slider') return stream(res, [
     P('Hier ist dein Spar-Rechner mit Regler. ', 60),
     P('Damit siehst du sofort, ', 60),
@@ -172,6 +198,8 @@ const server = http.createServer(async (req, res) => {
   let scenario = 'prose';
   if (corrective) scenario = 'corrected';
   else if (refine) scenario = 'refine';
+  else if (text.includes('slowbuild2')) scenario = 'slowbuild2';
+  else if (text.includes('slowbuild')) scenario = 'slowbuild';
   else if (text.includes('netz-labor')) scenario = 'pingshell';
   else if (text.includes('aufgaben-db')) scenario = 'dbschema';
   else if (text.includes('scoping-test')) scenario = 'dbscope';

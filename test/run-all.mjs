@@ -34,18 +34,20 @@ const dataDir = path.join(os.tmpdir(), `form3-test-data-${Date.now()}`);
 const dataDir2 = path.join(os.tmpdir(), `form3-test-browser-data-${Date.now()}`);
 try { fs.rmSync(modelsFile, { force: true }); } catch {}
 const mock = spawn('node', ['test/mock-provider.mjs'], { cwd: root, env: { ...process.env, MOCK_PORT }, stdio: ['ignore', 'pipe', 'inherit'] });
-const server = spawn('node', ['server.mjs'], { cwd: root, env: { ...process.env, PORT, FORM3_MODELS: modelsFile, FORM3_DATA: dataDir, FORM3_PING_FIXTURE: '1', FORM3_DB_RATE: '600', FORM3_REGISTRATION: '1' }, stdio: ['ignore', 'pipe', 'inherit'] });
+const server = spawn('node', ['server.mjs'], { cwd: root, env: { ...process.env, PORT, FORM3_MODELS: modelsFile, FORM3_DATA: dataDir, FORM3_PING_FIXTURE: '1', FORM3_DB_RATE: '600', FORM3_REGISTRATION: '1', FORM3_JOB_TEST_DELAYS: '1', FORM3_JOB_CONCURRENCY: '2', FORM3_JOB_TRACE: '1' }, stdio: ['ignore', 'pipe', 'inherit'] });
 let apiOk = false, browserOk = false;
 try {
   await waitReady(mock, 'mock provider');
   await waitReady(server, 'dev server');
   apiOk = run('node', ['--test', 'test/api.test.mjs'], { BASE_URL: BASE, MOCK_URL: MOCK, MODELS_FILE: modelsFile });
-  step('api tests (auth, scoping, models, SSE, retry, stop, CSRF, ui.db)', apiOk);
+  step('api tests (auth, scoping, models, SSE, retry, stop, CSRF, ui.db, jobs)', apiOk);
+  const jobsOk = run('node', ['--test', 'test/jobs.test.mjs'], { BASE_URL: BASE, MOCK_URL: MOCK });
+  step('jobs tests (background builds, reverse order, cancel, delete race, restart)', jobsOk);
   // browser suite gets its OWN server + fresh data dir so its first
   // registration is the owner (api tests already claimed that role)
   server.kill('SIGTERM');
   const modelsFile2 = modelsFile + '.browser';
-  const server2 = spawn('node', ['server.mjs'], { cwd: root, env: { ...process.env, PORT, FORM3_MODELS: modelsFile2, FORM3_DATA: dataDir2, FORM3_PING_FIXTURE: '1', FORM3_DB_RATE: '600', FORM3_REGISTRATION: '1' }, stdio: ['ignore', 'pipe', 'inherit'] });
+  const server2 = spawn('node', ['server.mjs'], { cwd: root, env: { ...process.env, PORT, FORM3_MODELS: modelsFile2, FORM3_DATA: dataDir2, FORM3_PING_FIXTURE: '1', FORM3_DB_RATE: '600', FORM3_REGISTRATION: '1', FORM3_JOB_TEST_DELAYS: '1', FORM3_JOB_CONCURRENCY: '2', FORM3_JOB_TRACE: '1' }, stdio: ['ignore', 'pipe', 'inherit'] });
   try {
     await waitReady(server2, 'browser server');
     browserOk = run('node', ['test/browser.test.cjs'], { BASE_URL: BASE, MOCK_URL: MOCK });

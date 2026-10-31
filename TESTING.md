@@ -76,6 +76,14 @@ Die Browser-Suite bekommt von `run-all.mjs` einen **eigenen Server mit frischem 
 - 390px ohne horizontalen Overflow, Screenshots: `docs/screenshots/{desktop,mobile}.png`
 - Keine uncaught JS-Fehler
 
+## v3.3 Hintergrund-Jobs & Scroll-Anker
+
+- `test/jobs.test.mjs` (eigener Server + eigener Data-Dir): zweite Chat-Nachricht wird beantwortet, BEVOR das erste Element fertig ist; zwei Jobs in umgekehrter Reihenfolge auf den richtigen Containern; Cancel (Nachricht erhält nie ein Render); Conversations-Löschung während des Builds (keine Wiederherstellung, Server gesund); **Server-Restart** markiert laufende Jobs ehrlich `failed`, explizites Retry schliesst ab — Provider-Aufrufzähler beweist keinen Doppelstart.
+- API-Tests: `element-job`-Event, Job-Snapshot/Stream nur mit Session, fremde User sehen/cancellen nichts (404), Retry-Guardrails (409), Cancel ohne Render.
+- Browser: Baustellen-Animation (Kran `lower` läuft, reduced-motion statisch, Phasentext ohne Prozent), Phasen «Denken» (akkumulierendes Drahtgitter) / «Schreiben» (Prose streamt); Reload zeigt denselben Job; Tab schliessen → Server baut fertig → Wiederöffnen zeigt genau ein Element mit genau einem Provider-Aufruf; zweiter Browser desselben Users sieht denselben Job; Cancel pro Container; Mobile 390px inkl. Screenshot `docs/screenshots/site-{desktop,mobile}.png`.
+- Scroll-Anker: langer Chat (per Server-Import geseedet), Position Mitte — Enter- und Button-Absendungen halten den Anker (oder die Mitte, wenn der Anker aus dem angezeigten 12-Nachrichten-Fenster rotiert); Position Ende bleibt Ende; 390px gleich. Screenshots wie oben.
+- `FORM3_JOB_TEST_DELAYS=1` + `build:<ms>` im Text schalten im Testserver deterministische Build-Dauern frei (siehe ARCHITECTURE).
+
 ## Browser-Tests auf deinem Rechner
 
 Benötigen ein Chrome/Chromium (Headless). Erkannt wird CHROME_PATH, dann bekannte Pfade, dann `chromium`/`google-chrome` im PATH. Ohne Chrome: die Browser-Suite wird übersprungen (`SKIP`), unit+api laufen weiter.

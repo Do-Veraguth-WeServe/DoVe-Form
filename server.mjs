@@ -9,6 +9,7 @@ import {loadModels,saveModels,validateModelInput,toPublic} from './models.mjs';
 import {runPing,setPingBackend,validHost} from './ping.mjs';
 import {Store,loadConfig} from './store.mjs';
 import {ElementDB} from './db.mjs';
+import {JobRunner} from './jobs.mjs';
 
 // Form v3.2 — local server with user accounts, server-side conversations and
 // per-element app databases. Binds 127.0.0.1 only (tailnet via tailscale serve).
@@ -26,6 +27,23 @@ const COOKIE = 'form3sess';
 let store;
 try { store = new Store(DATA_DIR); }
 catch (e) { console.error('store init failed:', e.message); process.exit(1); }
+if (store.interruptedOnStart > 0)
+  console.log(`[jobs] marked ${store.interruptedOnStart} interrupted job(s) as failed (server restart)`);
+const runner = new JobRunner(store, {
+  concurrency: Number(process.env.FORM3_JOB_CONCURRENCY || 2),
+  perUser: Number(process.env.FORM3_JOB_PER_USER || 2)
+});
+// Test-only deterministic build delay: env-gated marker in the chat text
+// (FORM3_JOB_TEST_DELAYS=1 + "build:2500"). Production ignores it entirely.
+function jobDelayMs(text) {
+  const cap = 30000;
+  if (process.env.FORM3_JOB_TEST_DELAYS === '1') {
+    const m = String(text || '').match(/build:(\d{1,5})/);
+    if (m) return Math.min(Number(m[1]), cap);
+  }
+  return Math.min(Number(process.env.FORM3_JOB_BUILD_MS || 0), cap);
+}
+function createJob(opts) { const job = store.createJob(opts); setImmediate(() => runner.enqueue(job)); return job; }
 const config = loadConfig(CONFIG_FILE);
 let storeModels = loadModels(MODELS_FILE);
 // Per-element app databases: ONE namespaced SQLite file (data/elements.sqlite).
@@ -166,6 +184,31 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.method === 'GET' && pathname === '/api/conversations') {
     return reply(res, 200, store.listConversations(user.id));
+  }
+
+  // --- background element jobs: snapshot + gapless event stream + cancel/retry ---
+  if (req.method === 'GET' && pathname === '/api/jobs') {
+    return reply(res, 200, runner.snapshot(user.id));
+  }
+  if (req.method === 'GET' && pathname === '/api/jobs/stream') {
+    res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no', 'Connection': 'keep-alive' });
+    res.write(':form3-jobs\n\n');
+    sse(res, 'snapshot', runner.snapshot(user.id)); // reconcile first, then live events
+    const unsub = runner.subscribe(user.id, job => { if (!res.destroyed) sse(res, 'job', job); else unsub(); });
+    const hb = setInterval(() => { if (!res.destroyed) res.write(':hb\n\n'); }, 15000);
+    res.on('close', () => { clearInterval(hb); unsub(); });
+    return;
+  }
+  if (req.method === 'POST' && (pathname === '/api/jobs/cancel' || pathname === '/api/jobs/retry')) {
+    let d;
+    try { d = JSON.parse(await readBody(req, 2000)); } catch { return reply(res, 400, { error: 'Ungültige Anfrage' }); }
+    if (!UUID.test(d.jobId || '')) return reply(res, 400, { error: 'Ungültige Anfrage' });
+    const job = store.getJob(d.jobId);
+    if (!job || job.userId !== user.id) return reply(res, 404, { error: 'Job nicht gefunden' });
+    if (process.env.FORM3_JOB_TRACE === '1') console.log('[jobs] endpoint', pathname, 'job=' + d.jobId.slice(0, 8), 'user=' + user.username);
+    const r = pathname === '/api/jobs/cancel' ? runner.cancel(d.jobId) : runner.retry(d.jobId);
+    if (!r.ok) return reply(res, r.status, { error: r.error });
+    return reply(res, 200, { ok: true, job: runner.publicJob(r.job) });
   }
 
   if (req.method === 'POST' && pathname === '/api/conversations') {
@@ -403,20 +446,36 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    if (finalRender) sse(res, 'render', { render: finalRender });
+    if (finalRender) {
+      sse(res, 'render', { render: finalRender });
+      // Element completion is a durable server-owned background job: the chat
+      // turn ends here, the construction site keeps building across reloads
+      // and tab close, and further chat messages answer while it runs.
+      try {
+        if (d.refineTarget) {
+          const job = createJob({ userId: user.id, conversationId: d.sessionId, targetMessageId: d.refineTarget.id, kind: 'refine', render: finalRender, prose: liveProse.slice(0, 8000) || null, delayMs: jobDelayMs(d.text) });
+          sse(res, 'element-job', { job: runner.publicJob(job) });
+        } else {
+          persistAssistant({ prose: liveProse.slice(0, 8000) || undefined });
+          if (assistantMessageId) {
+            const job = createJob({ userId: user.id, conversationId: d.sessionId, messageId: assistantMessageId, kind: 'create', render: finalRender, delayMs: jobDelayMs(d.text) });
+            sse(res, 'element-job', { job: runner.publicJob(job) });
+          }
+        }
+      } catch (e) { console.error('[jobs] create failed:', e.message); }
+    }
     if (failure) sse(res, 'error', { message: failure, code: failureCode && !round2?.render ? failureCode : undefined });
 
     // sanitized diagnostics: counts/flags only, no content, no secrets
     console.log(`[chat] user=${user.username} conv=${d.sessionId.slice(0, 8)} dur=${Date.now() - t0}ms rounds=${failureCode ? 2 : 1} finish=${round1.finishReason || '-'}${round2 ? '/' + (round2.finishReason || '-') : ''} content=${round1.contentChars}${round2 ? '/' + round2.contentChars : ''} render=${finalRender ? 'yes' : 'no'} fail=${failureCode || '-'}`);
 
-    // server-side persistence: in-place refine replaces the element; normal turns append
+    // server-side persistence: in-place refine replaces the element VIA the
+    // background job (original kept until the atomic swap); normal turns append
     if (d.refineTarget) {
-      if (finalRender) {
-        try { store.replaceRender(d.sessionId, d.refineTarget.id, finalRender, liveProse.slice(0, 8000)); }
-        catch (e) { console.error('[chat] refine persist failed:', e.message); }
-      }
+      // render application happens in the job's completion transaction
     } else if (finalRender) {
-      persistAssistant({ render: finalRender });
+      // message already persisted above with prose; render attaches on job ready
+      if (!assistantMessageId) persistAssistant({ prose: liveProse.slice(0, 8000) || undefined });
     } else if (failure) {
       persistAssistant({ prose: liveProse.slice(0, 8000) || undefined, error: failure });
     } else {
@@ -447,4 +506,4 @@ const server = http.createServer(async (req, res) => {
 
 server.requestTimeout = 300000;
 server.headersTimeout = 10000;
-server.listen(PORT, HOST, () => console.log(`Form v3.2 ready on http://${HOST}:${PORT} (data: ${DATA_DIR}, models: ${MODELS_FILE}, ${storeModels.models.length} model(s), ${store.userCount()} user(s), registration: ${registrationAllowed() ? 'on' : 'off'})`));
+server.listen(PORT, HOST, () => console.log(`Form v3.3 ready on http://${HOST}:${PORT} (data: ${DATA_DIR}, models: ${MODELS_FILE}, ${storeModels.models.length} model(s), ${store.userCount()} user(s), registration: ${registrationAllowed() ? 'on' : 'off'})`));

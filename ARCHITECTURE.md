@@ -36,6 +36,16 @@ data/ (ein Backup-Verzeichnis)
 5. Ungültiges Artefakt (kein validierbares JSON/Render) → **genau ein** Korrektur-Lauf (Assistent+Korrektur-Anweisung als zweite Upstream-Runde), dessen Prosa/Artefakt erneut gestreamt wird. Bleibt es ungültig: `error`, Prosa bleibt erhalten.
 6. Client validiert `render` erneut (`validateRender`) und übergibt es der v2-Renderer-Pipeline.
 
+## Hintergrund-Jobs für Elemente (v3.3)
+
+Element-Abschluss ist kein Bestandteil der Chat-Antwort mehr: Der Chat-Stream endet mit `element-job` (Job-ID, Zustand `queued`), gebunden an User/Coverstation/Message. `jobs.mjs` (`JobRunner`) baut mit begrenzter Parallelität (Standard 2 global, 2 pro User) in einer echte Zustandskette `queued → building → validating → ready` (oder `cancelled`/`failed`) fertig; die Completion ist EINE synchrone SQLite-Transaktion — Abbrechen und Löschungen gewinnen immer gegen späte Ergebnisse, kein Teil-HTML, keine Wiederherstellung gelöschter Elemente.
+
+- Persistenz: additive Tabelle `jobs` in `data/form.db` (Migration: CREATE TABLE IF NOT EXISTS; Rollback: `DROP TABLE jobs` — Nachrichten/Elemente bleiben unberührt, fertiggestellte Elemente hängen an `messages.render`).
+- Der Job speichert das bereits validierte Render; Retry baut NUR daraus neu — **kein zweiter Provider-Aufruf** (auch nicht nach Server-Restart: unterbrochene Jobs werden beim Start ehrlich als `failed` markiert, Wiederholen ist explizit).
+- Endpunkte: `GET /api/jobs` (Snapshot), `GET /api/jobs/stream` (SSE: Snapshot zuerst, dann Live-Events mit monotoner `rev` — Reconnect reconciliert lückenlos), `POST /api/jobs/cancel`, `POST /api/jobs/retry` (nur `failed`; alles session- + CSRF-geschützt und user-scoped, 404 ohne Existenz-Leak).
+- Client: Baustellen-Container pro Nachricht (Create) bzw. unter dem Original (Refinement — Original bleibt bis zum atomaren Tausch). Phasentexte werden in-place gepatcht; Rendern passiert nur bei Strukturwechsel, damit laufende Sandbox-Worker nicht zerlegt werden.
+- Test-Hook (nur Tests, env-gegate): `FORM3_JOB_TEST_DELAYS=1` + Marker `build:<ms>` im Chat-Text bzw. `FORM3_JOB_BUILD_MS` für deterministisch langsame Builds. Produktiv ignoriert.
+
 ## SSE-Protokoll (Server → Browser)
 
 | Event | Payload | Bedeutung |
