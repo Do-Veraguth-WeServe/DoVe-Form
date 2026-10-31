@@ -1,8 +1,10 @@
-# Form v3 — lokal denken
+# Form v3.1 — lokal denken
 
 Ein privater, interaktiver KI-Chat, der **komplett auf deinem Rechner** läuft. Kein Gateway, kein Server-Deployment, keine Cloud. Du verbindest dein eigenes OpenAI-kompatibles Modell (z. B. z.ai, OpenAI, OpenRouter, Ollama) — der API-Key bleibt in einer lokalen Datei.
 
 Antworten kommen in **zwei Phasen**: erst kurzer, klarer Text (live gestreamt), dann — nur wenn es wirklich hilft — **ein** interaktives Artefakt (HTML/CSS/JS), das in einem gehärteten Sandbox-Renderer läuft (QuickJS-WASM-Interpreter + DOMPurify + opakes iframe, portiert aus dem bewährten Form v2).
+
+**v3.1 «Elements»**: Artefakte sind jetzt benannte **Elemente** — ⌑ Name antippen zum Markieren, ★ anpinnen, ↗ öffnen (Vollbild-Overlay mit «Mit KI bearbeiten», «Code bearbeiten» und Versionen). Markierte Elemente werden mit der nächsten Nachricht **an Ort und Stelle verfeinert** (keine Duplikate, alte Version bleibt im Element-Verlauf). Lab-Shell-Elemente bekommen mit `ui.ping(host, cb)` genau eine begrenzte Netzwerk-Primitive: einen echten ICMP-Ping über den Server (nur öffentliche Hosts, 10/Minute, geloggt).
 
 ## Quickstart
 

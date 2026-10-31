@@ -176,6 +176,58 @@ test('request validation: unknown fields, bad history, bad states rejected', asy
   assert.equal((await chat('x', { states: [{ id: 'a', state: 'not-object' }] })).status, 400);
 });
 
+test('refinement: refineTarget reaches upstream, returns full updated artifact', async () => {
+  const rt = { id: uid(), name: 'Spar-Rechner', html: '<div><h2>Spar-Rechner</h2><input id="amt" type="range"></div>', css: 'h2{color:#d4ef8b}', js: 'ui.on("amt","input",()=>{})', state: { value: 3 } };
+  const r = await chat('mache den Akzent blau', { refineTarget: rt });
+  assert.equal(r.status, 200);
+  const events = parseSSE(await r.text());
+  const render = events.find(e => e.event === 'render');
+  assert.ok(render, 'refined render arrives');
+  assert.equal(render.data.render.name, 'Spar-Rechner');
+  assert.ok(render.data.render.css.includes('#7fd4ef'), 'artifact is the updated version');
+  assert.equal(events[events.length - 1].event, 'done');
+  const st = await mockStats();
+  assert.ok(st.lastUserContent.includes('[marked-element'), 'element code attached as untrusted data');
+  assert.ok(st.lastRoles[0] === 'system');
+});
+
+test('refinement: invalid refineTarget rejected with size caps', async () => {
+  assert.equal((await chat('x', { refineTarget: { id: 'a' } })).status, 400);
+  assert.equal((await chat('x', { refineTarget: { id: uid(), html: 'x'.repeat(33000), css: '', js: '', state: {} } })).status, 400);
+  assert.equal((await chat('x', { refineTarget: { id: uid(), html: '<p>x</p>', css: '', js: '', state: 'nope' } })).status, 400);
+  assert.equal((await chat('x', { refineTarget: { id: uid(), html: '<p>x</p>', css: '', js: '', state: {} } })).status, 200, 'name is optional');
+});
+
+test('ping endpoint: CSRF, strict host validation, fixture ok/blocked/dns, rate limit', async () => {
+  const P = (body, headers = {}) => fetch(BASE + '/api/ping', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Form-CSRF': csrf, Origin: BASE, ...headers },
+    body: JSON.stringify(body)
+  });
+  // CSRF + origin + content-type ride the same mutation guard as chat
+  assert.equal((await fetch(BASE + '/api/ping', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: BASE }, body: '{}' })).status, 403);
+  assert.equal((await P({}, { 'Content-Type': 'text/plain' })).status, 415);
+  assert.equal((await P({ sessionId: uid(), host: '192.168.1.1' })).status, 400, 'IP literal rejected');
+  assert.equal((await P({ sessionId: 'nope', host: 'good.example' })).status, 400);
+  assert.equal((await P({ sessionId: uid(), host: 'https://example.com/x' })).status, 400);
+  assert.equal((await P({ sessionId: uid(), host: 'localhost' })).status, 400);
+  const ok = await P({ sessionId: uid(), host: 'good.example' });
+  assert.equal(ok.status, 200);
+  assert.deepEqual(await ok.json(), { ok: true, ip: '93.184.216.34', ms: 23 });
+  const blocked = await P({ sessionId: uid(), host: 'private.example' });
+  assert.equal(blocked.status, 403);
+  assert.equal((await blocked.json()).ok, false);
+  const dual = await P({ sessionId: uid(), host: 'dual.example' });
+  assert.equal(dual.status, 403, 'mixed public/private resolution blocked');
+  const nx = await P({ sessionId: uid(), host: 'nope.example' });
+  assert.equal(nx.status, 200);
+  assert.equal((await nx.json()).ok, false);
+  const sid = uid();
+  for (let i = 0; i < 10; i++) { const rr = await P({ sessionId: sid, host: 'good.example' }); assert.equal(rr.status, 200); }
+  const limited = await P({ sessionId: sid, host: 'good.example' });
+  assert.equal(limited.status, 429);
+});
+
 test('models file is not served and static surface is minimal', async () => {
   assert.equal((await fetch(BASE + '/form.models.json')).status, 404);
   assert.equal((await fetch(BASE + '/api/../server.mjs')).status, 404);

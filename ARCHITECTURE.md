@@ -37,9 +37,21 @@ server.mjs (node, nur 127.0.0.1)
 
 Stop = Client bricht den fetch ab → Server sieht `res.close` → `AbortController` killt die Upstream-Verbindung.
 
+## Elements v3.1 (Benennung, Pinning, Overlay, In-Place-Verfeinerung)
+
+- Artefakt-JSON: optionales `name` (Text ≤ 80, bereinigt); Fallback über `deriveName` (erste Überschrift, sonst Prosa-Schnipsel). Alte v3-Renders werden lazy beim Anzeigen benannt.
+- localStorage-Schema v4 (`form.v3`-Key bleibt): `elements:{pins:[msgId], versions:{msgId:[{at,render}]}}` (max 5/Element, global ~3 MB getrimmt). Normalize akzeptiert v3 und v4; Message-IDs bleiben über Reloads stabil (Pins/Versionen hängen daran).
+- Pro Element: Kopfzeile mit Name (Markieren), Pin (★/☆, Quick-Access-Leiste über dem Composer) und ↗ (Overlay). Overlay: Vollbild-Render (gleiche renderUI-Pipeline), «Mit KI bearbeiten» (markiert + Fokus), «Code bearbeiten» (HTML/CSS/JS/State-Textfelder; Apply läuft durch validateRender + safeHTML/safeCSS — identisch bereinigt/abgelehnt wie Modell-Ausgaben), «Versionen» (letzte 5, Wiederherstellen).
+- In-Place-Verfeinerung: Chat-Request bekommt optionales `refineTarget {id,name,html,css,js,state}` (Caps 32k/12k/32k/4k, Body-Limit 120 KB); Server hängt den Element-Code als `[marked-element]` (untrusted data) an die User-Message und ergänzt den Systemprompt um eine full-update-Anweisung. Der Client ersetzt das markierte Element (alte Version → Verlauf), fügt keine neue Assistant-Message an; Abort/Fehler lassen das Original unberührt.
+
+## ui.ping (einzige Netzwerk-Primitive für Elemente)
+
+- Sandbox-API `ui.ping(host, callback)`: Bridge schickt `{op:"ping"}` an die App; die App ruft `POST /api/ping` (CSRF/Origin/JSON wie Chat) auf; das Ergebnis wird als synthetisches Event an den Worker zurückgeliefert (Callback bekommt `{host, ok, ip, ms}` bzw. `{ok:false, error}`). Queue-Max 8, Ungültige Hosts sofort `ok:false`.
+- Server (`ping.mjs`): strikter Hostname (≥2 Labels, keine IP-Literale/URLs/Ports, keine rein numerischen TLDs), DNS-Auflösung aller A/AAAA, jede Adresse gegen private/reservierte Bereiche (net.BlockList, v4+v6 inkl. IPv4-mapped per Fallback — `::ffff:0:0/96` darf NICHT in die BlockList, sonst sperrt es alles IPv4), dann `execFile('/bin/ping',['-c','1','-W','2',ip])` mit Timeout. Antwort `{ok,ip,ms}` / `{ok:false,error}`; 403 bei blockierten Ranges, 400 bei invalidem Host, 429 bei >10 Pings/Minute/Session; jeder Ping geloggt (`[ping] session host ip ok`). Kein fetch, keine Sockets, kein exec aus Elementen — die Sandbox bleibt netzfrei.
+
 ## Renderer-Pipeline (portiert aus v2, unveränderte Security-Eigenschaften)
 
-- **QuickJS-Worker** (`src/worker.js`): 16 MB Heap, 256 KB Stack, Interrupt-Deadline pro Evaluation, Op-Budget 250, Grössenlimits pro Op. Generiertes JS bekommt *nur* `state` + `ui.*` (text/value/html/attr/on/persist/suggest) — keine Browser-Objekte.
+- **QuickJS-Worker** (`src/worker.js`): 16 MB Heap, 256 KB Stack, Interrupt-Deadline pro Evaluation, Op-Budget 250, Grössenlimits pro Op. Generiertes JS bekommt *nur* `state` + `ui.*` (text/value/html/attr/on/persist/suggest/ping) — keine Browser-Objekte; `ping` läuft als op über die App, nicht im Sandbox-Netz.
 - **Sanitizer** (`src/sanitize.js`): DOMPurify-Positivliste; CSS über css-tree ohne URLs/@rules/Positions-Eigenschaften; `safeFragment` macht SVG-Fragmente namespace-bewusst (zweiter Pass in `<svg>`-Kontext, Flatten, Wahl html vs. svg anhand `namespaceURI`).
 - **Opaker iframe** (`src/renderer.js`): `sandbox="allow-scripts"`, eigener CSP-Nonce, kein Netz, kein Parent-DOM; Kommunikation nur über verifizierten MessageChannel; Resize begrenzt; Missbrauch von `ui.value` auf Containern wird sichtbar bemängelt statt still ignoriert.
 - **Seiten-CSP** erlaubt inline im srcdoc nur den exakten Bootstrap-Code (sha256 aus `dist/bridge-hash.txt`, beim Build berechnet).

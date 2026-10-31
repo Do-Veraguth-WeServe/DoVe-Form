@@ -46,6 +46,7 @@ const mockStats = async () => (await (await fetch(MOCK + '/admin/stats')).json()
   p.on('request', r => { if (r.url().startsWith('http') && !r.url().startsWith(BASE)) external.push(r.url()); });
   const errors = [];
   p.on('pageerror', e => errors.push(e.message));
+  p.on('console', msg => { if (msg.type() === 'error') console.log('console-error:', msg.text()); });
   const ok = s => console.log('PASS', s);
   const shots = path.resolve(__dirname, '..', 'docs', 'screenshots');
   fs.mkdirSync(shots, { recursive: true });
@@ -124,6 +125,115 @@ const mockStats = async () => (await (await fetch(MOCK + '/admin/stats')).json()
     assert.equal(await p.locator('iframe.render').count(), 2);
     ok('prose-only answer without artifact');
 
+    // 6b. v3.1 elements: name from artifact JSON, pin -> quick access -> overlay
+    assert.equal(await p.locator('.elname').first().textContent(), 'Spar-Rechner', 'element shows model-supplied name');
+    const pinBtn = p.locator('.elhead button[aria-label="Element anpinnen"]').first();
+    await pinBtn.scrollIntoViewIfNeeded();
+    await pinBtn.click();
+    const chip = p.locator('#quickbar .qchip');
+    await chip.waitFor({ state: 'visible', timeout: 3000 });
+    assert.match(await chip.first().textContent(), /Spar-Rechner/);
+    await chip.first().click();
+    await p.locator('#overlay[open]').waitFor({ timeout: 3000 });
+    await p.locator('#overlay iframe.render').waitFor({ timeout: 8000 });
+    assert.equal(await p.locator('#overlay .ovfoot button', { hasText: 'Mit KI bearbeiten' }).count(), 1, 'overlay offers KI refinement action');
+    await p.locator('#overlay button[aria-label="Element schliessen"]').click();
+    await p.locator('#overlay[open]').waitFor({ state: 'detached', timeout: 3000 });
+    assert.equal(await p.locator('#overlay iframe.render').count(), 0, 'overlay iframe cleaned up on close');
+    ok('element named, pin -> quick-access bar -> overlay opens/closes');
+
+    // 6c. in-place refinement: marked element is REPLACED, no new assistant message
+    await p.waitForFunction(() => !document.querySelector('.live'), undefined, { timeout: 15000 });
+    const assistBefore = await p.locator('.message.assistant').count();
+    const iframesBefore = await p.locator('iframe.render').count();
+    let f0 = p.frameLocator('iframe.render').first();
+    const colorBefore = await f0.locator('h2').evaluate(el => getComputedStyle(el).color);
+    await p.locator('.elname').first().click();
+    await p.locator('#refchip').waitFor({ state: 'visible', timeout: 3000 });
+    assert.match(await p.locator('#refchip').innerText(), /Bearbeite: Spar-Rechner/);
+    await p.locator('#prompt').fill('mache den Akzent blau');
+    await p.locator('#prompt').press('Enter');
+    await p.locator('#refchip').waitFor({ state: 'hidden', timeout: 30000 });
+    await p.waitForFunction(() => !document.querySelector('.live'), undefined, { timeout: 30000 });
+    assert.equal(await p.locator('.message.assistant').count(), assistBefore, 'assistant message count unchanged');
+    assert.equal(await p.locator('iframe.render').count(), iframesBefore, 'no duplicate element');
+    f0 = p.frameLocator('iframe.render').first();
+    await f0.locator('h2').waitFor({ timeout: 8000 });
+    const colorAfter = await f0.locator('h2').evaluate(el => getComputedStyle(el).color);
+    assert.notEqual(colorAfter, colorBefore, 'element content replaced in place');
+    assert.equal(colorAfter, 'rgb(127, 212, 239)');
+    await p.waitForFunction(() => {
+      try {
+        const db = JSON.parse(localStorage.getItem('form.v3'));
+        const lists = Object.values(db.elements.versions);
+        return db.version === 4 && lists.length === 1 && lists[0].length === 1;
+      } catch { return false; }
+    }, undefined, { timeout: 8000 });
+    ok('in-place refinement replaces element (no duplicate), old version archived, schema v4');
+
+    // 6d. overlay version history + revert
+    await p.locator('.elhead button[aria-label="Element öffnen"]').first().click();
+    await p.locator('#overlay[open]').waitFor({ timeout: 3000 });
+    await p.locator('#overlay button', { hasText: 'Versionen' }).click();
+    await p.locator('#overlay .verow').waitFor({ timeout: 3000 });
+    assert.equal(await p.locator('#overlay .verow').count(), 1, 'one archived version listed');
+    await p.locator('#overlay .verow button', { hasText: 'Wiederherstellen' }).click();
+    await p.locator('#overlay iframe.render').waitFor({ timeout: 8000 });
+    const of = p.frameLocator('#overlay iframe.render');
+    await of.locator('h2').waitFor({ timeout: 8000 });
+    assert.equal(await of.locator('h2').evaluate(el => getComputedStyle(el).color), colorBefore, 'revert restores previous version');
+    await p.locator('#overlay button[aria-label="Element schliessen"]').click();
+    await p.locator('#overlay[open]').waitFor({ state: 'detached', timeout: 3000 });
+    ok('version history keeps last versions, revert restores');
+
+    // 6e. manual code editor: valid edit applies through the same pipeline, injection sanitized
+    await p.locator('.elhead button[aria-label="Element öffnen"]').first().click();
+    await p.locator('#overlay[open]').waitFor({ timeout: 3000 });
+    await p.locator('#overlay button', { hasText: 'Code bearbeiten' }).click();
+    await p.locator('#overlay .codeed textarea').first().waitFor({ timeout: 3000 });
+    await p.locator('#overlay .codeed textarea').nth(0).fill('<h2 id="ce">Code-Edit OK</h2><p id="ce2"></p>');
+    await p.locator('#overlay .codeed textarea').nth(2).fill('ui.text("ce2","manuell gesetzt");');
+    await p.locator('#overlay .codeed textarea').nth(3).fill('{}');
+    await p.locator('#overlay .codeed button[type=submit]').click();
+    let cef = p.frameLocator('#overlay iframe.render');
+    await cef.locator('#ce2').filter({ hasText: 'manuell gesetzt' }).waitFor({ timeout: 8000 });
+    await p.locator('#overlay button', { hasText: 'Code bearbeiten' }).click();
+    await p.locator('#overlay .codeed textarea').nth(0).fill('<script>fetch("https://example.com")</script><img src="https://example.com/x.png"><p id="bad">bleibt</p><input id="q" onpointerdown="fetch(\'https://example.com\')">');
+    await p.locator('#overlay .codeed button[type=submit]').click();
+    await p.locator('#overlay .toast, .toast').last().waitFor({ timeout: 5000 }).catch(() => {});
+    cef = p.frameLocator('#overlay iframe.render');
+    await cef.locator('#bad').waitFor({ timeout: 8000 });
+    assert.equal(await cef.locator('script:not([nonce]), img').count(), 0, 'manual injection sanitized identically');
+    assert.equal(await cef.locator('#q').getAttribute('onpointerdown'), null, 'inline handlers stripped');
+    await p.locator('#overlay button[aria-label="Element schliessen"]').click();
+    await p.locator('#overlay[open]').waitFor({ state: 'detached', timeout: 3000 });
+    ok('manual code editor: valid edit applies, script/img/handler injection rejected identically');
+
+    // 6f. ui.ping lab shell through mocked /api/ping (ok, blocked 403, rate limit 429)
+    const pingCalls = {};
+    await p.route('**/api/ping', async route => {
+      const body = route.request().postDataJSON();
+      const host = String(body.host || '');
+      pingCalls[body.sessionId] = (pingCalls[body.sessionId] || 0) + 1;
+      if (pingCalls[body.sessionId] > 10) return route.fulfill({ status: 429, contentType: 'application/json', body: JSON.stringify({ ok: false, error: 'Ping-Limit erreicht (10/Minute).' }) });
+      if (host === 'private.example') return route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ ok: false, error: 'Private oder reservierte Adresse blockiert.' }) });
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, ip: '93.184.216.34', ms: 23 }) });
+    });
+    await p.locator('#prompt').fill('baue mir ein Netz-Labor mit ping');
+    await p.locator('#prompt').press('Enter');
+    await p.locator('iframe.render').nth(2).waitFor({ timeout: 30000 });
+    let pf = p.frameLocator('iframe.render').nth(2);
+    await pf.locator('#go').click();
+    await pf.locator('#pout').filter({ hasText: 'online · 23 ms · 93.184.216.34' }).waitFor({ timeout: 8000 });
+    await pf.locator('#phost').fill('private.example');
+    await pf.locator('#go').click();
+    await pf.locator('#pout').filter({ hasText: 'offline · Private oder reservierte Adresse blockiert.' }).waitFor({ timeout: 8000 });
+    await pf.locator('#phost').fill('example.com');
+    for (let i = 0; i < 11; i++) await pf.locator('#go').click();
+    await pf.locator('#pout').filter({ hasText: 'offline · Ping-Limit erreicht' }).waitFor({ timeout: 8000 });
+    await p.unroute('**/api/ping');
+    ok('ui.ping: public ok, private 403 surfaced, rate limit 429 — all rendered inside the element');
+
     // 7. stop aborts upstream (wait for previous chat to finish first: server allows one at a time)
     await p.waitForFunction(() => !document.querySelector('.live'), undefined, { timeout: 15000 });
     await p.locator('#prompt').fill('slow story please');
@@ -174,10 +284,10 @@ const mockStats = async () => (await (await fetch(MOCK + '/admin/stats')).json()
     const d = await dl;
     const data = fs.readFileSync(await d.path(), 'utf8');
     assert.ok(!data.includes(KEY), 'export must not contain API key');
-    assert.equal(JSON.parse(data).version, 3);
+    assert.equal(JSON.parse(data).version, 4);
     const ls = await p.evaluate(() => JSON.stringify(localStorage));
     assert.ok(!ls.includes(KEY), 'key never in localStorage');
-    ok('export + localStorage contain sessions, never keys');
+    ok('export + localStorage contain sessions (schema v4), never keys');
 
     // 9. boundary / sanitizing / egress / sandbox regression (ported from v2)
     await p.evaluate(render => {
@@ -188,6 +298,8 @@ const mockStats = async () => (await (await fetch(MOCK + '/admin/stats')).json()
       }));
     }, boundaryRender);
     await p.reload();
+    await p.locator('.elname').first().waitFor({ timeout: 10000 });
+    assert.match(await p.locator('.elname').first().textContent(), /Boundary check/, 'lazy v3 migration auto-names old renders');
     let bf = p.frameLocator('iframe.render').first();
     await bf.locator('#result').filter({ hasText: 'undefined/undefined/undefined' }).waitFor({ timeout: 10000 });
     await bf.locator('#amount').fill('7');
@@ -207,6 +319,11 @@ const mockStats = async () => (await (await fetch(MOCK + '/admin/stats')).json()
     await p.evaluate(() => window.postMessage({ channel: 'fake', type: 'resize', height: 999999 }, '*'));
     assert.equal(await p.locator('iframe.render').first().evaluate(e => e.style.height), height);
     ok('forged resize ignored, opaque sandbox, no parent DOM / network');
+    // pin the migrated element so the mobile screenshot shows the quick-access bar
+    const pinBtn2 = p.locator('.elhead button[aria-label="Element anpinnen"]').first();
+    await pinBtn2.scrollIntoViewIfNeeded();
+    await pinBtn2.click();
+    await p.locator('#quickbar .qchip').first().waitFor({ state: 'visible', timeout: 3000 });
     const statuses = await p.evaluate(async () => [
       await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).then(r => r.status),
       await fetch('/form.models.json').then(r => r.status),

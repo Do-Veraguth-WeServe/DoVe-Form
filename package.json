@@ -1,9 +1,9 @@
 {
   "name": "form3",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "private": true,
   "type": "module",
-  "description": "Form v3 — local interactive AI chat. Two-phase answers (prose + one sandboxed artifact), any OpenAI-compatible provider, runs entirely on your machine.",
+  "description": "Form v3.1 — local interactive AI chat. Two-phase answers with named, pinnable Elements (sandboxed artifacts), in-place refinement and one bounded ui.ping primitive; any OpenAI-compatible provider, runs entirely on your machine.",
   "engines": {
     "node": ">=20"
   },

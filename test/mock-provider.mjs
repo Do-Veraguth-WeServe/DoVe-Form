@@ -12,10 +12,31 @@ const stats = { calls: {}, disconnects: 0, lastAuthOk: false, lastRoles: [], las
 
 const sliderArtifact = {
   version: 1,
+  name: 'Spar-Rechner',
   html: '<div><h2>Spar-Rechner</h2><label for="amt">Wert <strong id="lbl"></strong></label><input id="amt" type="range" min="1" max="10" step="1"><p id="out"></p></div>',
   css: 'h2{color:#d4ef8b}input[type=range]{accent-color:#d4ef8b}p{color:#9ca49f}',
   js: 'ui.value("amt",String(state.value||3));function draw(){ui.text("lbl",String(state.value||3));ui.text("out","Wert: "+(state.value||3))}ui.on("amt","input",e=>{state.value=Number(e.value);draw();ui.persist()});draw();',
   state: { value: 3 }
+};
+
+// Same element, accent flipped to blue — proves in-place refinement.
+const refinedArtifact = {
+  version: 1,
+  name: 'Spar-Rechner',
+  html: sliderArtifact.html,
+  css: 'h2{color:#7fd4ef}input[type=range]{accent-color:#7fd4ef}p{color:#9ca49f}',
+  js: sliderArtifact.js,
+  state: { value: 3 }
+};
+
+// Lab-shell element exercising ui.ping through the parent bridge.
+const pingArtifact = {
+  version: 1,
+  name: 'Netz-Labor',
+  html: '<div><h2>Netz-Labor</h2><label for="phost">Ziel</label><input id="phost" type="text" value="example.com"><button id="go">Ping</button><p id="pout">–</p></div>',
+  css: 'h2{color:#d4ef8b}button{margin:6px 0}p{color:#9ca49f}',
+  js: 'ui.value("phost",state.host||"example.com");ui.on("go","click",()=>{ui.text("pout","ping "+state.host+" …");ui.ping(state.host,r=>{ui.text("pout",r.ok?("online · "+r.ms+" ms · "+r.ip):("offline · "+(r.error||"?")))})});ui.on("phost","input",e=>{state.host=e.value;ui.persist()});',
+  state: { host: 'example.com' }
 };
 
 const boundaryArtifact = {
@@ -53,6 +74,14 @@ async function run(scenario, res) {
     P('Korrigierte Fassung: ', 40),
     P('```json\n' + JSON.stringify(sliderArtifact) + '\n```', 10)
   ]);
+  if (scenario === 'refine') return stream(res, [
+    P('Akzent jetzt blau. ', 40),
+    P('```json\n' + JSON.stringify(refinedArtifact) + '\n```', 10)
+  ]);
+  if (scenario === 'pingshell') return stream(res, [
+    P('Hier ist dein Netz-Labor mit echtem Ping. ', 40),
+    P('```json\n' + JSON.stringify(pingArtifact) + '\n```', 10)
+  ]);
   if (scenario === 'slow') return stream(res, [
     P('Erster Gedanke …', 6000),
     P(' Zweiter Teil nach der Pause.', 30)
@@ -86,8 +115,11 @@ const server = http.createServer(async (req, res) => {
   stats.lastRoles = messages.map(m => m.role);
   stats.lastUserContent = String(lastUser?.content || '').slice(0, 300);
   const corrective = messages.some(m => m.role === 'user' && String(m.content).startsWith('Your previous answer'));
+  const refine = messages.some(m => m.role === 'user' && String(m.content).includes('[marked-element'));
   let scenario = 'prose';
   if (corrective) scenario = 'corrected';
+  else if (refine) scenario = 'refine';
+  else if (text.includes('netz-labor')) scenario = 'pingshell';
   else if (text.includes('slider')) scenario = 'slider';
   else if (text.includes('invalid')) scenario = 'invalid';
   else if (text.includes('slow')) scenario = 'slow';

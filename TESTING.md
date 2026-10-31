@@ -44,6 +44,11 @@ Letzter Lauf: 2026-10-31, alle Suiten grün (node v24, Chromium 153 headless).
 - Artefakt interaktiv: Slider ändert Wert, State überlebt Reload
 - Ungültiges Artefakt: genau eine Korrektur-Notiz, korrigiertes Artefakt rendert
 - Prose-only-Antwort ohne Artefakt
+- v3.1: Element-Name aus Artefakt-JSON; Pin → Quick-Access → Overlay öffnet/schliesst (iframe wird aufgeräumt)
+- v3.1: In-Place-Verfeinerung — Assistant-Message-Anzahl UNVERÄNDERT, Element in place ersetzt (Farbe), alte Version archiviert (Schema v4)
+- v3.1: Overlay-Versionen + Wiederherstellen; Code-Editor: gültige Änderung wirkt, Script/Img/Inline-Handler-Injection identisch bereinigt
+- v3.1: `ui.ping` via gemocktem `/api/ping`: public ok (ms+ip im Element gerendert), private 403, Rate-Limit 429
+- v3.1: lazy v3→v4-Migration (geseedete v3-Session lädt, Auto-Name «Boundary check.»)
 - Sketch-Animation: Element in beiden Modi, `draw`-Animation läuft normal, still bei reduced-motion
 - Stop-Button: UI zurück, Provider-Disconnect nachweisbar
 - Export + localStorage enthalten **keine** Keys
@@ -59,3 +64,4 @@ Benötigen ein Chrome/Chromium (Headless). Erkannt wird CHROME_PATH, dann bekann
 
 - Ein Chat gleichzeitig (bewusst); Test-Suite hält die Reihenfolge ein.
 - Mock ersetzt echte Provider-Semantik nicht vollständig (z. B. keine echten Reasoning-Deltas) — Adapter-Kontrakt ist in `ADAPTER.md` dokumentiert.
+- `/api/ping`-API-Tests laufen gegen deterministische Injection (`FORM3_PING_FIXTURE=1`, siehe `ping.mjs`); echter `/bin/ping` wird im Real-Smoke auf dem Deployment geprüft (optionaler Unit-Probe via `FORM3_REAL_PING=1`).

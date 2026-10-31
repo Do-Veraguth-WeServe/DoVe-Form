@@ -31,7 +31,7 @@ step('unit tests (contract, stream parser, models, QuickJS sandbox)', run('node'
 const modelsFile = path.join(os.tmpdir(), `form3-test-models-${Date.now()}.json`);
 try { fs.rmSync(modelsFile, { force: true }); } catch {}
 const mock = spawn('node', ['test/mock-provider.mjs'], { cwd: root, env: { ...process.env, MOCK_PORT }, stdio: ['ignore', 'pipe', 'inherit'] });
-const server = spawn('node', ['server.mjs'], { cwd: root, env: { ...process.env, PORT, FORM3_MODELS: modelsFile }, stdio: ['ignore', 'pipe', 'inherit'] });
+const server = spawn('node', ['server.mjs'], { cwd: root, env: { ...process.env, PORT, FORM3_MODELS: modelsFile, FORM3_PING_FIXTURE: '1' }, stdio: ['ignore', 'pipe', 'inherit'] });
 let apiOk = false, browserOk = false;
 try {
   await waitReady(mock, 'mock provider');
