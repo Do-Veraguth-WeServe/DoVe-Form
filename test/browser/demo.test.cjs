@@ -128,25 +128,21 @@ const fs = require('node:fs');
     assert.equal(data.version, 1);
     await page.locator('#new').click();
     assert.equal(await page.locator('.sessions button').count(), 2);
-    await page
-      .locator('#file')
-      .setInputFiles({
-        name: 'archive.json',
-        mimeType: 'application/json',
-        buffer: Buffer.from(JSON.stringify(data)),
-      });
+    await page.locator('#file').setInputFiles({
+      name: 'archive.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(data)),
+    });
     await page.locator('.toast').filter({ hasText: 'Archiv sicher importiert' }).waitFor();
     assert.equal(await page.locator('.sessions button').count(), 3);
     ok('Multiple sessions and export/import merge');
-    await page
-      .locator('#file')
-      .setInputFiles({
-        name: 'bad.json',
-        mimeType: 'application/json',
-        buffer: Buffer.from(
-          '{"version":1,"sessions":[{"id":"x","title":"x","messages":[{"role":"assistant","id":"x","kind":"evil"}]}]}',
-        ),
-      });
+    await page.locator('#file').setInputFiles({
+      name: 'bad.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(
+        '{"version":1,"sessions":[{"id":"x","title":"x","messages":[{"role":"assistant","id":"x","kind":"evil"}]}]}',
+      ),
+    });
     await page.locator('.toast').filter({ hasText: 'Import fehlgeschlagen:' }).waitFor();
     assert.equal(await page.locator('.sessions button').count(), 3);
     ok('Invalid imported renderer rejected atomically');

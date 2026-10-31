@@ -9,7 +9,7 @@ Generated JS runs ONLY in QuickJS WASM worker, 16MB heap, 256KB stack, 150ms syn
 Local archive v2 stores validated renders and state. Imports get fresh conversation IDs and bounded text context; arbitrary imported JS remains in the same interpreter boundary. Browser localStorage/exports are unencrypted. Gateway retains its own isolated conversation history. Only last 12 messages are rendered to bound worker count; full archive preserved for export. No forks, cloud archive sync, external assets, timers, async JS or direct DOM access.
 
 ## Operations
-Build: npm ci --ignore-scripts && npm run build. Runtime /opt/form/server.mjs + contract.js + dist (repo: server/server.mjs, src/shared/contract.js, dist/); PM2 user form, boot via pm2-form.service, pinned pm2-logrotate 3.0.0 (10MB ×3). Do not start root PM2. Restart only Form: su - form -c 'pm2 restart form'.
+Build: npm ci --ignore-scripts && npm run build. Runtime mirrors the repo layout under /opt/form: /opt/form/server/server.mjs + /opt/form/src/shared/contract.js + /opt/form/dist (server.mjs resolves both relative to its own path — a flat /opt/form/server.mjs will NOT boot); PM2 user form entry server/server.mjs, boot via pm2-form.service, pinned pm2-logrotate 3.0.0 (10MB ×3). Do not start root PM2. Restart only Form: su - form -c 'pm2 restart form'.
 
 ## Rollback
 Restore original demo at main URL (no gateway change):
