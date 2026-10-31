@@ -1,0 +1,50 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="dark"><title>Form — lokal denken</title><style>
+:root{color-scheme:dark;--bg:#141718;--ink:#e9e9de;--muted:#9ca49f;--line:#343b38;--lime:#d4ef8b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,sans-serif}
+button,textarea,select,input{font:inherit;color:inherit}button,select{cursor:pointer;background:transparent;border:1px solid var(--line);border-radius:8px;padding:10px 13px}
+button:hover{border-color:var(--lime);background:#222923}button:focus-visible,textarea:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--lime);outline-offset:3px}button:disabled{opacity:.4;cursor:default}
+#model{font-size:12px;padding:7px 10px;background:#1c211e;max-width:230px}
+.app{max-width:1480px;margin:auto;display:grid;grid-template-columns:250px minmax(0,1fr);height:100dvh}
+aside{border-right:1px solid var(--line);padding:30px 22px;display:flex;flex-direction:column;gap:24px}
+.brand{font-size:26px;letter-spacing:-1.5px;font-weight:600}.brand span{color:var(--lime);margin-right:12px}
+.eyebrow{font:11px ui-monospace,monospace;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.sessions{display:grid;gap:8px;overflow:auto}.sessions button{text-align:left;border-color:transparent;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sessions button[aria-current=true]{background:#242b24;color:var(--lime)}
+.sidebottom{margin-top:auto;color:var(--muted);font-size:12px}.sidebottom code{color:var(--ink)}
+.tools{display:flex;gap:6px;margin:12px 0;flex-wrap:wrap}.tools button{font-size:12px}
+main{min-width:0;display:flex;flex-direction:column;height:100dvh}
+header{height:80px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 42px;border-bottom:1px solid var(--line)}
+.status{font:11px ui-monospace,monospace;color:var(--muted)}.status b{color:var(--lime)}
+#mobile{display:none}#settingsbtn{padding:8px 13px}
+.feed{flex:1;overflow:auto;scrollbar-color:#4b554a transparent;padding:35px max(28px,calc((100% - 860px)/2));scroll-behavior:smooth}
+.intro{padding:18px 0 32px}.intro h1{font-size:clamp(32px,5vw,55px);line-height:1.12;letter-spacing:-2px;font-weight:450;max-width:650px;margin:18px 0}.intro h1 em{font-family:Georgia,serif;font-weight:400;color:var(--lime)}.intro p{color:var(--muted);max-width:530px}
+.starters{display:flex;flex-wrap:wrap;gap:8px;margin-top:25px}.starters button{font-size:12px}
+.empty{border:1px dashed #4a554a;border-radius:12px;padding:26px;margin:22px 0;max-width:660px}.empty h2{font-weight:500;margin:10px 0}.empty p{color:var(--muted)}.empty code{color:var(--ink)}
+.message{margin:14px 0 30px}.user{display:flex;justify-content:flex-end}
+.bubble{background:#2b322b;border:1px solid #3c453b;padding:13px 19px;border-radius:17px 17px 3px 17px;max-width:85%;white-space:pre-wrap;overflow-wrap:anywhere}
+.byline{display:flex;align-items:center;gap:10px;font:11px ui-monospace,monospace;color:var(--muted);margin:18px 0}.byline span{color:var(--lime);font-size:20px}
+.prose{white-space:pre-wrap;overflow-wrap:anywhere;max-width:760px;margin:4px 0 12px}
+.render{width:100%;border:0;display:block;background:transparent;min-height:200px}
+.notice{border-left:2px solid var(--lime);padding:12px 16px;color:var(--muted);margin:15px 0}.error{border-color:#edaa9d}
+.small{font-size:12px;color:var(--muted)}
+.sketch{display:flex;justify-content:center;padding:22px 0}.sketch svg{width:130px;height:72px;color:#899b6b}
+.sketch path,.sketch circle,.sketch line,.sketch polygon{fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-dasharray:240;stroke-dashoffset:240;animation:draw 1.7s ease-in-out infinite alternate}
+@keyframes draw{to{stroke-dashoffset:0}}
+.composer-wrap{padding:12px max(28px,calc((100% - 860px)/2)) 20px;background:var(--bg)}
+.composer{display:flex;align-items:flex-end;gap:10px;padding:12px;border:1px solid #505a4a;border-radius:14px;background:#1c211e}
+.composer textarea{resize:none;flex:1;min-width:0;background:none;border:0;outline:0;padding:8px;max-height:130px}
+.send{background:var(--lime);color:#1e2816;border:0;min-width:44px}.send:disabled{background:#3a423a;color:#8a928a}
+.hint{font-size:10px;color:var(--muted);text-align:center;margin-top:9px}
+.toast{position:fixed;bottom:130px;left:50%;transform:translateX(-50%);max-width:90vw;background:#d4ef8b;color:#172010;padding:12px 20px;border-radius:8px;z-index:30}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}.hidden{display:none!important}
+dialog{border:1px solid var(--line);background:#1c211e;color:var(--ink);border-radius:14px;padding:0;max-width:580px;width:calc(100vw - 40px);margin:auto}
+dialog::backdrop{background:rgba(10,12,11,.7)}
+.dlg{padding:26px}.dlghead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.dlghead strong{font-size:18px}
+#modellist{display:grid;gap:8px;margin:16px 0}
+.mrow{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.mrow strong{display:block;font-size:14px}.mrow button{font-size:11px;padding:6px 10px}
+#addmodel{border-top:1px solid var(--line);padding-top:18px;display:grid;gap:10px}
+#addmodel label{display:grid;gap:4px;font-size:12px;color:var(--muted)}
+#addmodel input{background:#141718;border:1px solid var(--line);border-radius:8px;padding:9px 11px;color:var(--ink)}
+@media(max-width:760px){.app{display:block}aside{display:none;position:fixed;inset:65px 0 0 0;background:#141718;z-index:10;padding:25px}aside.open{display:flex}header{height:65px;padding:0 20px;gap:8px}#mobile{display:block}#model{max-width:120px}.feed{padding:22px 20px}.composer-wrap{padding:10px 16px max(12px,env(safe-area-inset-bottom))}.intro{padding-top:10px}.intro h1{letter-spacing:-1px}.hint{font-size:9px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}.sketch path,.sketch circle,.sketch line,.sketch polygon{stroke-dashoffset:0}}
+</style></head><body><div class="app"><aside id="sidebar"><div class="brand"><span>⌑</span>form</div><button id="new">＋ Neuer Gedankengang</button><div class="eyebrow">Dein Notizraum</div><nav class="sessions" id="sessions" aria-label="Gespeicherte Chats"></nav><div class="sidebottom"><div class="tools"><button id="export">Exportieren</button><button id="import">Importieren</button><button id="settingsbtn2">Modelle</button></div><input id="file" type="file" accept="application/json" hidden><p>Läuft lokal auf deinem Rechner.<br>Modelle + Keys liegen nur in <code>form.models.json</code>.</p><div class="eyebrow">FORM / V3 · LOCAL</div></div></aside><main><header><div style="display:flex;align-items:center;gap:15px"><button id="mobile" aria-label="Sitzungen öffnen" aria-expanded="false">☰</button><span>Freiraum für deine Ideen</span></div><div style="display:flex;align-items:center;gap:12px"><select id="model" class="hidden" aria-label="Modell wählen"></select><button id="settingsbtn" aria-label="Modelle verwalten">⚙</button><span class="status"><b>●</b> <span id="statuslabel">STARTET</span></span></div></header><div id="feed" class="feed" tabindex="0" aria-label="Gespräch"></div><div class="composer-wrap"><form id="composer" class="composer"><textarea id="prompt" rows="1" maxlength="2000" aria-label="Nachricht" placeholder="Was möchtest du durchdenken?"></textarea><button class="send" id="send" aria-label="Nachricht senden">↑</button><button type="button" id="stop" class="hidden">Stoppen</button></form><div class="hint">Enter senden · Shift + Enter neue Zeile · Antworten erscheinen als Text und optional als interaktives Artefakt</div><div id="live" class="sr-only" aria-live="polite"></div></div></main></div><dialog id="settings" aria-label="Modelle verwalten"><div class="dlg"><div class="dlghead"><strong>Modelle</strong><button id="closesettings" aria-label="Einstellungen schliessen">✕</button></div><p class="small">OpenAI-kompatible Endpunkte. Keys werden nur lokal in <code>form.models.json</code> gespeichert — nie exportiert, nie im Chat angezeigt, nur maskiert (letzte 4 Zeichen) aufgelistet.</p><div id="modellist"></div><form id="addmodel"><div class="eyebrow">Modell hinzufügen</div><label>Bezeichnung <input name="label" required maxlength="60" placeholder="z. B. z.ai"></label><label>Base-URL <input name="baseUrl" required maxlength="200" placeholder="https://api.z.ai/v1"></label><label>Modell-ID <input name="model" required maxlength="100" placeholder="glm-4.6"></label><label>API-Key <input name="apiKey" type="password" required minlength="6" maxlength="400" autocomplete="off"></label><button>Hinzufügen</button></form></div></dialog></body></html>
