@@ -178,26 +178,9 @@ async function enter(){
   if(!ok)return;
   connectJobs();
   if(!db.sessions.length){
-    if(legacyDb&&legacyDb.sessions.length)showImportOffer();
-    else await newSession();
+    await newSession();
   } else render();
 }
-function showImportOffer(){
-  render();
-  const bar=$('#importbar');bar.classList.remove('hidden');
-  $('#importgo').onclick=async()=>{
-    try{
-      const r=await fetch('/api/import',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify({sessions:legacyDb.sessions,elements:legacyDb.elements})});
-      const t=await r.json().catch(()=>({}));
-      if(!r.ok)throw Error(t.error||'Import fehlgeschlagen');
-      legacyDb=null;bar.classList.add('hidden');
-      await loadFromServer();if(!current())await newSession();else render();
-      toast('Lokale Gespräche importiert — serverseitig gespeichert.');
-    }catch(e){toast('Import fehlgeschlagen: '+e.message)}
-  };
-  $('#importskip').onclick=async()=>{legacyDb=null;bar.classList.add('hidden');await newSession();};
-}
-
 // --- element helpers ---
 const elementName=m=>m.render.name||deriveName(m.render,m.prose);
 const isPinned=m=>db.elements.pins.includes(m.id);
@@ -241,7 +224,7 @@ function toggleMark(id){
 function clearMark(){if(marked){marked=null;render()}}
 
 // --- background element jobs: construction site + event stream ---
-const CRANE='<line class="ground" x1="4" y1="90" x2="216" y2="90"/><g class="scaffold"><line x1="150" y1="90" x2="150" y2="34"/><line x1="176" y1="90" x2="176" y2="34"/><line x1="150" y1="46" x2="176" y2="46"/><line x1="150" y1="58" x2="176" y2="58"/><line x1="150" y1="70" x2="176" y2="70"/><line x1="150" y1="82" x2="176" y2="82"/><line x1="150" y1="34" x2="176" y2="46"/><line x1="176" y1="34" x2="150" y2="46"/></g><rect class="block b1" x="152" y="78" width="22" height="10"/><rect class="block b2" x="152" y="66" width="22" height="10"/><rect class="block b3" x="152" y="54" width="22" height="10"/><g class="craneg"><line x1="46" y1="90" x2="46" y2="14"/><line x1="38" y1="22" x2="54" y2="28"/><line x1="38" y1="34" x2="54" y2="40"/><line x1="38" y1="46" x2="54" y2="52"/><rect x="26" y="8" width="40" height="6"/><line x1="12" y1="14" x2="200" y2="14"/><rect x="12" y="14" width="10" height="8"/><g class="trolley"><line class="cable" x1="118" y1="22" x2="118" y2="50"/><rect class="load" x="110" y="50" width="16" height="10"/></g></g>';
+const CRANE='<rect x="6" y="88" width="208" height="5" rx="2" fill="#495153"/><g class="scaffold"><rect x="141" y="46" width="4" height="42" fill="#687374"/><rect x="195" y="46" width="4" height="42" fill="#687374"/><rect x="138" y="60" width="64" height="4" fill="#687374"/></g><rect class="block b1" x="148" y="74" width="43" height="13" rx="2"/><rect class="block b2" x="148" y="59" width="43" height="13" rx="2"/><rect class="block b3" x="148" y="44" width="43" height="13" rx="2"/><g class="craneg"><rect x="36" y="19" width="12" height="69" rx="2" fill="#d4ad54"/><rect x="24" y="83" width="36" height="6" rx="2" fill="#b58a36"/><rect x="17" y="13" width="176" height="9" rx="2" fill="#e4be63"/><rect x="12" y="21" width="22" height="16" rx="2" fill="#778385"/><rect x="48" y="23" width="18" height="16" rx="3" fill="#d4ad54"/><rect x="51" y="26" width="12" height="8" rx="1" fill="#344b57"/><g class="trolley"><rect x="113" y="22" width="10" height="6" rx="2" fill="#8c6c2e"/><path class="cable" d="M118 28V50" stroke="#bbc4c3" stroke-width="2"/><rect class="load" x="103" y="50" width="30" height="13" rx="2"/></g></g>';
 const SITE_PHASE={queued:'in Warteschlange …',building:'baut …',validating:'prüft das Ergebnis …'};
 function siteEl(job){
   const d=document.createElement('div');d.className='site'+(job&&job.state==='failed'?' failed':job&&job.state==='cancelled'?' cancelled':'');
@@ -251,7 +234,7 @@ function siteEl(job){
   svg.setAttribute('viewBox','0 0 220 96');svg.setAttribute('class','crane');svg.setAttribute('aria-hidden','true');
   svg.innerHTML=CRANE;
   const meta=document.createElement('div');meta.className='sitemeta';
-  const l1=document.createElement('span');l1.className='sitelabel';l1.textContent=job&&job.kind==='refine'?'⌑ Element wird aktualisiert':'⌑ Element entsteht';
+  const l1=document.createElement('span');l1.className='sitelabel';l1.textContent=job&&job.kind==='refine'?'Wird aktualisiert':'Wird gebaut';
   const l2=document.createElement('span');l2.className='sitephase';
   meta.append(l1,l2);
   if(job&&['queued','building','validating'].includes(job.state)){
@@ -331,7 +314,7 @@ function attachReadyJob(s,job){
   }
   try{
     const render=validateRender(job.render);
-    if(job.kind==='refine'){pushVersion(target,target.render);target.render=render;if(job.prose)target.prose=String(job.prose).slice(0,8000);marked=null;toast('Element aktualisiert — frühere Version im Verlauf des Elements.')}
+    if(job.kind==='refine'){pushVersion(target,target.render);target.render=render;if(job.prose)target.prose=String(job.prose).slice(0,8000);marked=null;toast('Element aktualisiert.')}
     else{target.render=render;if(job.prose)target.prose=String(job.prose).slice(0,8000);if(target.error)delete target.error}
     return true;
   }catch{return false}
@@ -405,7 +388,7 @@ function updateComposer(){
   $('#send').disabled=!has;
   const who=me?String(me.username).slice(0,12):'';
   $('#statuslabel').textContent=!me?'NICHT ANGEMELDET':(has?('ANGEMELDET · '+who.toUpperCase()):'KEIN MODELL');
-  $('#prompt').placeholder=has?'Was möchtest du durchdenken?':'Zuerst ein Modell hinzufügen (⚙ oben rechts)';
+  $('#prompt').placeholder=has?'Nachricht …':'Zuerst ein Modell hinzufügen (⚙ oben rechts)';
   $('#whoami').textContent=me?(me.username+(me.role==='owner'?' · Owner':'')):'';
 }
 
@@ -442,18 +425,18 @@ function render(){  views.forEach(v=>v.destroy());views=[];
   $('#sessions').replaceChildren();
   for(const s of db.sessions){const b=document.createElement('button');b.textContent=s.title;b.setAttribute('aria-current',s.id===db.current);b.onclick=async()=>{await stop();closeOverlay();db.current=s.id;marked=null;save();render();$('#sidebar').classList.remove('open')};$('#sessions').append(b)}
   const feed=$('#feed');
-  feed.innerHTML='<section class="intro"><div class="eyebrow">Ein Gespräch. Unendlich viele Formen.</div><h1>Antworten, die<br><em>denken und zeigen.</em></h1><p>Form antwortet zuerst in klarem Text — und baut daraus, wenn es wirklich hilft, ein kleines interaktives Werkzeug. Deine Gespräche liegen serverseitig — getrennt pro Benutzer.</p><div class="starters"><button data-p="Zeig mir einen Spar-Rechner mit Slider">↗ Sparziel erkunden</button><button data-p="Vergleiche drei Ideen als interaktive Grafik">◇ Ideen vergleichen</button><button data-p="Erkläre mir kurz, was ein VPN macht — prose only">◇ Nur Text gefragt</button></div></section>';
-  if(!models.length)feed.insertAdjacentHTML('beforeend','<section class="empty" id="emptystate"><div class="eyebrow">Schritt 1 · Noch kein Modell</div><h2>Verbinde dein erstes Modell.</h2><p>Form läuft komplett lokal. Füge ein OpenAI-kompatibles Modell hinzu (z. B. z.ai, OpenRouter oder Ollama) — Base-URL, Modell-ID und API-Key. Der Key bleibt in <code>form.models.json</code> auf deinem Rechner und wird nie angezeigt oder exportiert.</p><button id="emptyadd">⚙ Modell hinzufügen</button></section>');
+  feed.innerHTML=current()?.messages.length?'':'<section class="intro"><h1>Was möchtest du machen?</h1></section>';
+  if(!models.length)feed.insertAdjacentHTML('beforeend','<section class="empty" id="emptystate"><h2>Modell verbinden</h2><button id="emptyadd">Modell hinzufügen</button></section>');
   const s=current();
   if(s){
     if(!visibleStarts.has(s.id))visibleStarts.set(s.id,Math.max(0,s.messages.length-12));
     const visibleStart=Math.min(visibleStarts.get(s.id),s.messages.length);
-    if(visibleStart>0){const h=document.createElement('p');h.className='notice';h.textContent='Ältere Nachrichten bleiben serverseitig und im Export erhalten. Neue Nachrichten werden unten ergänzt.';feed.append(h)}
+    if(visibleStart>0){const h=document.createElement('p');h.className='notice';h.textContent='Ältere Nachrichten ausgeblendet.';feed.append(h)}
     for(const m of s.messages.slice(visibleStart)){
       const article=document.createElement('article');article.className='message '+(m.role==='user'?'user':'assistant');article.dataset.mid=m.id;
       if(m.role==='user'){const b=document.createElement('div');b.className='bubble';b.textContent=m.text;article.append(b)}
       else{
-        article.innerHTML='<div class="byline"><span>⌑</span> FORM <small>/ KI · ISOLIERT</small></div>';
+        article.innerHTML='<div class="byline">Form</div>';
         if(m.error){const n=document.createElement('div');n.className='notice error';n.textContent=m.error;article.append(n)}
         else{
           if(m.prose){const p=document.createElement('p');p.className='prose';p.textContent=m.prose;article.append(p)}
@@ -498,7 +481,7 @@ function render(){  views.forEach(v=>v.destroy());views=[];
             views.push(view);
             wrap.append(head,view.element);
             article.append(wrap,note);
-            const b=document.createElement('button');b.textContent='Mit diesen Werten weiterdenken ↗';b.onclick=()=>{$('#prompt').value='Denke mit meinen aktuellen Einstellungen weiter.';$('#prompt').focus();toast('Werte werden erst mit deiner Nachricht gesendet.')};article.append(b);
+            const b=document.createElement('button');b.textContent='Werte übernehmen';b.onclick=()=>{$('#prompt').value='Denke mit meinen aktuellen Einstellungen weiter.';$('#prompt').focus();toast('Werte werden erst mit deiner Nachricht gesendet.')};article.append(b);
           }
           // background build: construction site stands in for the future element
           // (create, artifact phase) or marks an in-flight in-place refinement
@@ -520,27 +503,10 @@ function render(){  views.forEach(v=>v.destroy());views=[];
 function liveMessage(mode,modelLabel){
   const feed=$('#feed');
   const a=document.createElement('article');a.className='message assistant live';
-  a.innerHTML='<div class="byline"><span>⌑</span> FORM <small>/ '+(mode==='refine'?'AKTUALISIERT':'STREAMT')+'</small></div>';
-  // Phase 1 „Denken": the ⌑ node grows a wireframe — time becomes structure,
-  // no fake loop. After 10 s the label names the actual model.
+  a.innerHTML='<div class="byline">Form</div>';
   const think=document.createElement('div');think.className='think';
-  const tsvg=document.createElementNS('http://www.w3.org/2000/svg','svg');
-  tsvg.setAttribute('viewBox','0 0 120 66');tsvg.setAttribute('aria-hidden','true');
-  const wire=document.createElementNS('http://www.w3.org/2000/svg','g');wire.setAttribute('class','wire');
-  tsvg.append(wire);
-  const tl=document.createElement('small');tl.className='thinklabel';tl.textContent='denkt …';
-  think.append(tsvg,tl);
-  let edges=0;
-  const NODES=[[14,52],[38,14],[64,48],[92,10],[112,40],[50,60],[84,30],[26,32],[104,58],[70,8],[40,54],[96,22]];
-  const grow=setInterval(()=>{
-    if(!think.isConnected){clearInterval(grow);clearTimeout(slowLbl);return}
-    if(edges>=NODES.length-2)return;
-    const [x1,y1]=NODES[edges],[x2,y2]=NODES[edges+1];
-    const ln=document.createElementNS('http://www.w3.org/2000/svg','line');
-    ln.setAttribute('x1',x1);ln.setAttribute('y1',y1);ln.setAttribute('x2',x2);ln.setAttribute('y2',y2);
-    ln.setAttribute('class','edge');wire.append(ln);edges++;
-  },700);
-  const slowLbl=setTimeout(()=>{tl.textContent=(modelLabel||'Das Modell')+' denkt nach'},10000);
+  const tl=document.createElement('small');tl.className='thinklabel';tl.textContent='Denkt nach …';
+  think.append(tl);
   // Phase 2 „Schreiben": the streamed text IS the movement; caret pulses.
   const p=document.createElement('p');p.className='prose';p.setAttribute('aria-live','polite');
   const slot=document.createElement('div');slot.className='artslot';
@@ -548,10 +514,10 @@ function liveMessage(mode,modelLabel){
   a.append(think,p,slot,note);feed.append(a);
   return {el:a,
     prose:t=>{
-      if(!p.textContent&&t){think.remove();clearInterval(grow);clearTimeout(slowLbl);p.classList.add('writing')}
+      if(!p.textContent&&t){think.remove();p.classList.add('writing')}
       p.textContent=t; // no viewport movement while streaming
     },
-    site:job=>{think.remove();clearInterval(grow);clearTimeout(slowLbl);slot.replaceChildren(siteEl(job))},
+    site:job=>{think.remove();slot.replaceChildren(siteEl(job))},
     note:t=>{note.textContent=t;note.className='notice'},
     error:t=>{note.textContent=t;note.className='notice error'}
   };
@@ -643,7 +609,7 @@ async function send(text){
       marked=null;
       reconcileReadyJobs();save();render();
       document.querySelector('[data-mid="'+target.id+'"]')?.classList.add('updated');
-      toast('Element aktualisiert — frühere Version im Verlauf des Elements.');
+      toast('Element aktualisiert.');
     }else{
       reconcileReadyJobs();save();render();
       toast(errorMsg?('Nicht aktualisiert: '+errorMsg):'Kein aktualisiertes Element erhalten.');
@@ -783,7 +749,7 @@ function fillOverlay(){
   else{
     const list=db.elements.versions[m.id]||[];
     const wrap=document.createElement('div');wrap.className='vlist';
-    if(!list.length){const p=document.createElement('p');p.className='small';p.textContent='Noch keine früheren Versionen. Verfeinerungen und Code-Bearbeitung legen hier automatisch Versionen ab.';wrap.append(p)}
+    if(!list.length){const p=document.createElement('p');p.className='small';p.textContent='Noch keine früheren Versionen.';wrap.append(p)}
     list.slice().reverse().forEach((v,i)=>{
       const row=document.createElement('div');row.className='verow';
       const info=document.createElement('span');
@@ -795,7 +761,7 @@ function fillOverlay(){
         try{m.render=validateRender(JSON.parse(JSON.stringify(v.render)))}catch{toast('Version ungültig.');return}
         save();syncRender(m);render();
         overlayMode='view';fillOverlay();
-        toast('Alte Version wiederhergestellt — die aktuelle liegt jetzt ebenfalls im Verlauf.');
+        toast('Version wiederhergestellt.');
       };
       row.append(info,rv);wrap.append(row);
     });
@@ -832,7 +798,7 @@ function renderModelList(){
     const info=document.createElement('div');
     const strong=document.createElement('strong');strong.textContent=m.label+' · '+m.model;
     const span=document.createElement('span');span.className='small';
-    span.textContent=m.keyMasked?('Key '+m.keyMasked+' · nur Owner verwaltet'):'Modell vom Owner eingerichtet';
+    span.textContent=m.keyMasked?('Key '+m.keyMasked+''):'Modell vom Owner eingerichtet';
     info.append(strong,span);
     if(me&&me.role==='owner'){
       const del=document.createElement('button');del.textContent='Löschen';del.setAttribute('aria-label','Modell '+m.label+' löschen');
@@ -861,21 +827,4 @@ $('#prompt').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.pr
 $('#stop').onclick=stop;$('#new').onclick=()=>newSession();
 $('#mobile').onclick=()=>{$('#sidebar').classList.toggle('open');$('#mobile').setAttribute('aria-expanded',$('#sidebar').classList.contains('open'))};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('#sidebar').classList.remove('open');$('#mobile').setAttribute('aria-expanded','false')}});
-$('#export').onclick=()=>{const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));a.href=url;a.download='form3-gespraeche.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Archiv exportiert — ohne Modelle und Keys.')};
-$('#import').onclick=()=>$('#file').click();
-$('#file').onchange=async e=>{
-  try{
-    const f=e.target.files[0];if(!f)return;
-    if(f.size>1500000)throw Error('Maximal 1,5 MB');
-    const data=normalize(JSON.parse(await f.text()));
-    if(data.sessions.length+db.sessions.length>40)throw Error('Maximal 40 Sitzungen');
-    const r=await fetch('/api/import',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify({sessions:data.sessions,elements:data.elements})});
-    const t=await r.json().catch(()=>({}));
-    if(!r.ok)throw Error(t.error||('HTTP '+r.status));
-    await loadFromServer();
-    if(!current())await newSession();else render();
-    toast('Archiv sicher importiert.');
-  }catch(err){toast('Import fehlgeschlagen: '+err.message)}
-  e.target.value='';
-};
 boot();

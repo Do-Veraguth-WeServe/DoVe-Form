@@ -334,11 +334,8 @@ async function registerUI(p, username, password) {
     await p2.locator('#prompt').fill('holda nachdenken bitte');
     await p2.locator('#prompt').press('Enter');
     await p2.locator('.live .think').waitFor({ timeout: 8000 });
-    const edgeCount = await p2.evaluate(() => new Promise(res => {
-      const n0 = document.querySelectorAll('.live .think .wire line').length;
-      setTimeout(() => res({ n0, n1: document.querySelectorAll('.live .think .wire line').length }), 1600);
-    }));
-    assert.ok(edgeCount.n1 > edgeCount.n0, 'wireframe accumulates edges while the provider thinks (no fake loop)');
+    assert.equal(await p2.locator('.live .think svg,.live .think .wire').count(),0,'no abstract line animation');
+
     await release('holda');
     await p2.locator('.live .prose').filter({ hasText: 'Hintergrund' }).waitFor({ timeout: 20000 });
     await p2.waitForFunction(() => !document.querySelector('.live') && document.querySelector('#stop').classList.contains('hidden'), undefined, { timeout: 20000 });
@@ -368,7 +365,7 @@ async function registerUI(p, username, password) {
     stHold = await mockStats();
     assert.ok(stHold.disconnects > disc7b, 'cancel aborted the held upstream');
     await ctx2.close();
-    ok('thinking wireframe accumulates, construction site animates (screenshot), cancel works');
+    ok('plain thinking status, recognizable construction site, cancel works');
 
     // 7c. genuine server-owned background job: chat answers BEFORE the element
     // completes; reload keeps the same job; tab close does not stop the build
@@ -582,15 +579,10 @@ async function registerUI(p, username, password) {
     ok('scroll anchor preserved (Enter/button/bottom/390px), mobile construction-site screenshot saved');
 
     // 8. export never contains keys; localStorage cache holds schema v4
-    const dl = p.waitForEvent('download');
-    await p.locator('#export').click();
-    const d = await dl;
-    const data = fs.readFileSync(await d.path(), 'utf8');
-    assert.ok(!data.includes(KEY), 'export must not contain API key');
-    assert.equal(JSON.parse(data).version, 4);
+    assert.equal(await p.locator('#export,#import,#file').count(),0);
     const ls = await p.evaluate(() => JSON.stringify(localStorage));
     assert.ok(!ls.includes(KEY), 'key never in localStorage');
-    ok('export + localStorage cache contain sessions (schema v4), never keys');
+    ok('archive controls absent; cache contains no keys');
 
     // 9. boundary / sanitizing / egress / sandbox regression — seeded SERVER-side via import
     const impStatus = await p.evaluate(async render => {
@@ -667,12 +659,11 @@ async function registerUI(p, username, password) {
     await pB.reload();
     await pB.locator('#login[open]').waitFor({ timeout: 10000 });
     await registerUI(pB, 'bobmobile', 'password456');
-    await pB.locator('#importbar').waitFor({ state: 'visible', timeout: 8000 });
-    await pB.locator('#importgo').click();
-    await pB.locator('#sessions button').filter({ hasText: 'Alt lokal' }).waitFor({ timeout: 8000 });
+    await pB.locator('#sessions button').first().waitFor();
+    assert.equal(await pB.locator('#importbar').count(),0);
     const bobsTitles = await pB.locator('#sessions button').allInnerTexts();
     assert.ok(bobsTitles.every(t => !t.includes('Spar') && !t.includes('Boundary')), 'user B sees only his own data: ' + bobsTitles.join('|'));
-    ok('user B isolated; first-login import offer migrates local conversations server-side');
+    ok('user B isolated; no archive UI');
     await ctxB.close();
 
     // 12. logout + login again: data intact
