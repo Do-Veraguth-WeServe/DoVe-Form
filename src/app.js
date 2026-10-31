@@ -598,7 +598,7 @@ async function send(text){
   const request={id:uid(),controller:new AbortController(),jobId:null};
   pending.add(request);busy(true);
   liveTurns.set(request,live.el);
-  let prose='',artifact=null,errorMsg=null,doneUser=null,doneAssist=null,jobStarted=null;
+  let prose='',artifact=null,errorMsg=null,doneUser=null,doneAssist=null,jobStarted=null,transportLost=false;
   try{
     if(!csrf)throw Error('Sitzung abgelaufen — bitte neu anmelden.');
     const body={version:1,sessionId:s.id,requestId:request.id,text,model:modelId||undefined};
@@ -615,12 +615,23 @@ async function send(text){
       else if(event==='error'){errorMsg=String(data.message||'Antwort fehlgeschlagen.');}
       else if(event==='done'){doneUser=data.userMessageId||null;doneAssist=data.assistantMessageId||null}
     });
-  }catch(e){if(pending.has(request)&&e.name!=='AbortError')errorMsg=e.message}
+  }catch(e){if(pending.has(request)&&e.name!=='AbortError'){errorMsg=e.message;transportLost=true}}
   if(!pending.has(request)){liveTurns.delete(request);return} // stopped: stop() cancels the server job and syncs
   pending.delete(request);liveTurns.delete(request);busy(pending.size>0);
   sendFinishing=true; // exactly ONE closing render (a concurrent ready-event render would double-render)
   try{
   const st2=scrollState();
+  if(transportLost&&jobStarted){
+    // A broken viewer stream is NOT a failed server-owned generation.
+    // Restore canonical placeholder IDs so later job events attach correctly.
+    if(await loadFromServer()){
+      render();restoreScroll(st2);
+      toast('Verbindung zur Live-Anzeige unterbrochen — Auftrag wird serverseitig weitergeführt.');
+      return;
+    }
+    errorMsg='Live-Verbindung unterbrochen. Der Auftrag wurde angenommen; beim Wiederverbinden wird sein Status geladen.';
+    doneAssist=jobStarted.messageId||null;
+  }
   if(target){
     // In-place refinement: the marked element is replaced only when the
     // background job completes (atomic swap server-side); original stays until then.
