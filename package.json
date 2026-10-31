@@ -1,18 +1,25 @@
 {
-  "name": "form-private",
+  "name": "dove-form",
   "version": "2.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "test": "node --test security.test.mjs"
+    "test": "node --test security.test.mjs",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "fmt:check": "prettier --check ."
   },
   "dependencies": {
-    "quickjs-emscripten": "0.32.0",
+    "css-tree": "3.2.1",
     "dompurify": "3.4.17",
-    "css-tree": "3.2.1"
+    "quickjs-emscripten": "0.32.0"
   },
   "devDependencies": {
-    "esbuild": "0.25.12"
+    "@eslint/js": "^10.0.1",
+    "esbuild": "0.25.12",
+    "eslint": "^10.14.0",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10"
   }
 }

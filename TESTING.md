@@ -1,6 +1,6 @@
 # Verification — 2026-10-31, Form v2
 
-Verified on actual Tailnet HTTPS, real Chromium 153, actual zai/glm-5.3-flash through dedicated OpenClaw agent form (not simulated). Model generated custom calculator HTML/CSS/QuickJS code, changed input 250→700, rendered 8400, persisted through reload. Followup remembered test word Waldstern and consumed changed amount 700; generated second response showing 700 and 8400. Raw non-sensitive test conversation: live-proof.json. Screenshots live-desktop.png/live-mobile.png inspected for original dark/lime app shell.
+Verified on actual Tailnet HTTPS, real Chromium 153, actual zai/glm-5.3-flash through dedicated OpenClaw agent form (not simulated). Model generated custom calculator HTML/CSS/QuickJS code, changed input 250→700, rendered 8400, persisted through reload. Followup remembered test word Waldstern and consumed changed amount 700; generated second response showing 700 and 8400. Raw non-sensitive test conversation: docs/evidence/live-proof.json. Screenshots live-desktop.png/live-mobile.png inspected for original dark/lime app shell.
 
 Passed npm test: response bounds, no browser/Node globals or Function host escape, infinite-loop interruption. npm audit --omit=dev: zero known vulnerabilities at test time.
 
