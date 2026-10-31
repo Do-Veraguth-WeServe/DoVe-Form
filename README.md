@@ -1,10 +1,16 @@
-# Form v3.1 — lokal denken
+# Form v3.2 — lokal denken, serverseitig gespeichert
 
-Ein privater, interaktiver KI-Chat, der **komplett auf deinem Rechner** läuft. Kein Gateway, kein Server-Deployment, keine Cloud. Du verbindest dein eigenes OpenAI-kompatibles Modell (z. B. z.ai, OpenAI, OpenRouter, Ollama) — der API-Key bleibt in einer lokalen Datei.
+Ein privater, interaktiver KI-Chat auf deinem eigenen Server. Du verbindest dein eigenes OpenAI-kompatibles Modell (z. B. z.ai, OpenAI, OpenRouter, Ollama) — der API-Key bleibt in einer lokalen Datei auf dem Server.
 
 Antworten kommen in **zwei Phasen**: erst kurzer, klarer Text (live gestreamt), dann — nur wenn es wirklich hilft — **ein** interaktives Artefakt (HTML/CSS/JS), das in einem gehärteten Sandbox-Renderer läuft (QuickJS-WASM-Interpreter + DOMPurify + opakes iframe, portiert aus dem bewährten Form v2).
 
-**v3.1 «Elements»**: Artefakte sind jetzt benannte **Elemente** — ⌑ Name antippen zum Markieren, ★ anpinnen, ↗ öffnen (Vollbild-Overlay mit «Mit KI bearbeiten», «Code bearbeiten» und Versionen). Markierte Elemente werden mit der nächsten Nachricht **an Ort und Stelle verfeinert** (keine Duplikate, alte Version bleibt im Element-Verlauf). Lab-Shell-Elemente bekommen mit `ui.ping(host, cb)` genau eine begrenzte Netzwerk-Primitive: einen echten ICMP-Ping über den Server (nur öffentliche Hosts, 10/Minute, geloggt).
+**v3.1 «Elements»**: Artefakte sind benannte **Elemente** — ⌑ Name antippen zum Markieren, ★ anpinnen, ↗ öffnen (Vollbild-Overlay mit «Mit KI bearbeiten», «Code bearbeiten» und Versionen). Markierte Elemente werden mit der nächsten Nachricht **an Ort und Stelle verfeinert** (keine Duplikate, alte Version bleibt im Element-Verlauf). Lab-Shell-Elemente bekommen mit `ui.ping(host, cb)` genau eine begrenzte Netzwerk-Primitive: einen echten ICMP-Ping über den Server (nur öffentliche Hosts, 10/Minute, geloggt).
+
+**v3.2 «Accounts & Daten»**:
+- **Login** mit Benutzername + Passwort (scrypt+Salt, Node-Bordmittel). Session-Cookie HttpOnly + SameSite=Strict (+Secure hinter HTTPS-Ingress). Der **erste registrierte Benutzer wird Owner**; danach ist Registrierung standardmässig **zu** (Config-Flag `form.config.json`). Passwort-Reset nur serverseitig per CLI (siehe unten).
+- **Gespräche liegen serverseitig** in SQLite (`data/form.db`) — strikt pro Benutzer getrennt (users → conversations → elements). Der Browser hält nur einen Cache; nach dem ersten Login gibt es ein Import-Angebot für bisher lokale Gespräche — nichts geht verloren, auch beim Gerätewechsel nicht.
+- **`ui.db`**: Elemente bekommen **persistente eigene Tabellen** auf dem Server (`data/elements.sqlite`, physisch pro Element namespace-isoliert). Strukturierte Aufrufe only — niemals freies SQL aus Gast-Code. Quotas serverseitig erzwungen: 10 Tabellen/Element, 5000 Zeilen/Tabelle, ~2 MB/Element, 16 KB/Zeile. Damit bauen Todo-Listen, Tracker und Mini-DBs, die Reloads überleben.
+- **Modell-Verwaltung bleibt Owner-only**: alle Benutzer sehen die Modellnamen und können chatten; Keys sieht nie jemand (nur Owner: maskiert).
 
 ## Quickstart
 
@@ -16,6 +22,10 @@ npm run dev     # baut + startet den Dev-Server
 Dann im Browser öffnen: **http://127.0.0.1:5177**
 
 (Der Port ist fix: `5177`. Überschreibbar mit `PORT=... npm run dev`.)
+
+### Erster Start: Benutzer anlegen
+
+Solange kein Benutzer existiert, darf sich jeder registrieren — der **erste Benutzer wird Owner** (verwaltet Modelle + API-Keys). Danach ist Registrierung zu; weitere Benutzer legt der Server-Admin an (CLI, siehe unten).
 
 ### Erstes Modell einrichten
 
@@ -41,15 +51,30 @@ Danach im Chat: «Zeig mir einen Spar-Rechner mit Slider» — der Text streamt 
 
 - Gespeichert in `form.models.json` **neben der App** (git-ignored, chmod 600).
 - Keys erscheinen **nie** in der UI (nur maskiert, letzte 4 Zeichen), nie in Exporten, nie in Logs, nie im Chat-Stream.
-- Löschen eines Modells:⚙ → «Löschen».
+- Hinzufügen/Löschen kann **nur der Owner**; alle Benutzer sehen Modellnamen und können chatten.
 - Bis ein Modell existiert, ist der Composer blockiert (freundlicher Empty-State).
+
+## Benutzer-Verwaltung (Server-CLI)
+
+Registrierung ist nach dem ersten Benutzer standardmässig **geschlossen** (`form.config.json`: `{"registration": true}` schaltet sie frei; ENV `FORM3_REGISTRATION=1` in Tests). Passwort-Resets und neue Benutzer macht der Admin **als form-User** auf dem Server — es gibt bewusst keinen Web-Reset:
+
+```bash
+su - form -c "node /opt/form/useradmin.mjs list"
+su - form -c "node /opt/form/useradmin.mjs add <username>"        # Passwort wird abgefragt
+su - form -c "node /opt/form/useradmin.mjs reset <username>"      # Passwort-Reset, killt alle Sessions
+su - form -c "node /opt/form/useradmin.mjs owner <username>"      # Rolle owner (Modell-Verwaltung)
+```
+
+## Daten & Backup
+
+Alles Persistente liegt in **einem** Verzeichnis: `data/` — `form.db` (Benutzer, Sessions, Gespräche, Element-Versionen) und `elements.sqlite` (Element-Tabellen). Sicherung = Verzeichnis kopieren (Server kurz stoppen oder SQLite-WAL mitnehmen). localStorage im Browser ist nur Cache; Export/Import als JSON funktioniert weiter — ohne Modelle und Keys.
 
 ## Bedienung
 
 - **Enter** senden, **Shift+Enter** neue Zeile, **Esc** schliesst Sidebar/Dialog.
 - **Stoppen** bricht die Modell-Antwort sofort ab (auch upstream).
-- Sessions liegen im `localStorage` (max. 40), Export/Import als JSON — ohne Modelle und Keys.
-- Pro Anfrage gehen die letzten ~12 Nachrichten + die 3 letzten Artefakt-Zustände upstream.
+- Gespräche liegen **serverseitig** (max. 40 pro Benutzer); localStorage ist Cache. Export/Import als JSON — ohne Modelle und Keys. Beim ersten Login gibt es ein Import-Angebot für alte lokale Gespräche.
+- Pro Anfrage gehen die letzten ~12 Nachrichten + die 3 letzten Artefakt-Zustände upstream (beides lädt der Server aus seinem Store, nicht aus dem Client).
 - Mobil ab 390px nutzbar; `prefers-reduced-motion` schaltet die Zeichen-Animation still.
 
 ## Sicherheit (auch im Local Dev)
@@ -59,7 +84,9 @@ Artefakte sind **nicht vertrauenswürdige Modell-Ausgabe** und laufen deshalb in
 - QuickJS-WASM-Interpreter (kein DOM, kein Netz, Zeit-/Speicher-Limits) für generiertes JS
 - DOMPurify mit Positivlisten + CSS-Parser ohne URLs/@rules
 - opakes `sandbox="allow-scripts"` iframe, CSP per Nonce, privater MessageChannel
-- Server validiert jede Anfrage (CSRF, Origin, Grössen, Schema) und das Artefakt (Version, Limits)
+- Server validiert jede Anfrage (**Session + session-gebundenes CSRF**, Origin, Grössen, Schema) und das Artefakt (Version, Limits)
+- Login-Versuche rate-limited (10 Fehlversuche / 5 Min pro Benutzer+Client), keine User-Enumeration, Timing-Flat-Vergleich
+- `ui.db`: nur strukturierte Operationen, physisch pro Element namespace-isoliert, harte Quotas, Ownership serverseitig geprüft
 - Ausführliche Abdeckung: `TESTING.md`
 
 ## Entwicklung

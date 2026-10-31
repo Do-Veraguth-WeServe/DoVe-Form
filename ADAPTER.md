@@ -41,3 +41,7 @@ Ungültiges JSON/Schema → genau ein automatischer Korrektur-Lauf (Server formu
 ## Fehlerweitergabe
 
 Upstream-Fehler (401/429/5xx) erscheinen als `error`-Event mit Status + gekürzter Provider-Message (max. 180 Zeichen) — der API-Key taucht in keiner Fehlermeldung auf. Abbruch des Browsers (Stop) killt die Upstream-Verbindung sofort.
+
+## v3.2: Sessions (für direkte API-Nutzung)
+
+Alle `/api/*`-Routes (ausser `/api/health`, `/api/auth/status`, Login/Register) verlangen jetzt eine **Login-Session**: Cookie `form3sess` (HttpOnly, SameSite=Strict) + session-gebundenes `X-Form-CSRF` (aus `/api/bootstrap`). Direkte Skripte melden sich per `POST /api/auth/login {username,password}` an und führen beides mit. Modell-Verwaltung (`POST/DELETE /api/models`) reagiert nur für den Owner; `/api/chat` persistiert Gespräch + Elemente serverseitig in der Conversation `sessionId`.

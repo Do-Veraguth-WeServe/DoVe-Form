@@ -1,24 +1,36 @@
 # Architektur
 
 ```
-Browser (127.0.0.1:5177)
-└── index.html + dist/app.js          UI: Sessions, Streaming, Settings-Dialog
-    ├── dist/worker.js                QuickJS-WASM-Interpreter (ui.* API)
+Browser (127.0.0.1:5177; Production via tailscale serve :9444, HTTPS)
+└── index.html + dist/app.js          UI: Login, Sessions, Streaming, Settings-Dialog
+    ├── dist/worker.js                QuickJS-WASM-Interpreter (ui.* API inkl. ui.db)
     └── iframe (srcdoc, sandbox)      opaker Renderer für Artefakt-HTML/CSS
             └── privater MessageChannel zwischen iframe-Bootstrap und Worker-Host
 
 server.mjs (node, nur 127.0.0.1)
 ├── Statisch: /, /app.js, /worker.js, /quickjs.wasm   (aus dist/, explizite Datei-Map)
-├── /api/bootstrap   Version, CSRF-Token, maskierte Modellliste
-├── /api/models      POST add / DELETE / GET — Datei: form.models.json (chmod 600)
-└── /api/chat (SSE)  Proxy zum konfigurierten Provider, two-phase Parsing, Retry
+├── /api/auth/*      register (nur solange kein User ODER Config-Flag) / login /
+│                    logout / status — scrypt, Session-Cookie, session-gebundenes CSRF
+├── /api/bootstrap   Version, User, Session-CSRF, Modellliste (Owner maskiert, sonst Namen)
+├── /api/models      POST add / DELETE (Owner-only) / GET — Datei: form.models.json (chmod 600)
+├── /api/conversations  GET list / POST create / DELETE — alles user-scoped
+├── /api/state       Element-State (ui.persist) ODER voller Render (Code-Editor/Restore)
+├── /api/pin         Element anpinnen/lösen (max 40/User)
+├── /api/import      Archiv-Import — Server validiert + regeneriert alle IDs
+├── /api/db          ui.db: strukturierte Tabellen-Ops, Ownership+Rate serverseitig
+├── /api/ping        ICMP über /bin/ping (10/Minute/User)
+└── /api/chat (SSE)  Proxy zum Provider, two-phase Parsing, Retry, Server-Persistenz
         └── POST {baseUrl}/chat/completions  (stream:true, Bearer apiKey)
+
+data/ (ein Backup-Verzeichnis)
+├── form.db          SQLite: users → sessions → conversations → messages → versions
+└── elements.sqlite  ui.db-Tabellen, physisch namespaced per Element (db.mjs)
 ```
 
 ## Datenfluss einer Antwort
 
-1. Client sendet `POST /api/chat` mit Text, Fenster-Verlauf (letzte 12) und letzten 3 Zuständen.
-2. Server baut `[system, ...history, user]` (Consecutive-Rollens werden gemerged) und ruft den Provider **streaming** auf.
+1. Client sendet `POST /api/chat` mit Text + sessionId (Conversation-ID). Session/CSRF/Ownership werden vorab geprüft; **History (letzte 12) und Zustände (letzte 3) lädt der Server aus seinem eigenen Store** — nicht mehr aus dem Client.
+2. Der Server persistiert die User-Message, baut `[system, ...history, user]` (Consecutive-Rollens werden gemerged) und ruft den Provider **streaming** auf.
 3. `stream.mjs` (inkrementeller Parser) erkennt live: Prosa vs. genau einen ```` ```json ````-Fence. Robust gegen Marker, die über Chunk-Grenzen splittern.
 4. Der Server relayt per SSE: `prose-chunk` → `artifact-start` → `render` → `retry` → `error` → `done`.
 5. Ungültiges Artefakt (kein validierbares JSON/Render) → **genau ein** Korrektur-Lauf (Assistent+Korrektur-Anweisung als zweite Upstream-Runde), dessen Prosa/Artefakt erneut gestreamt wird. Bleibt es ungültig: `error`, Prosa bleibt erhalten.
@@ -33,14 +45,28 @@ server.mjs (node, nur 127.0.0.1)
 | `render` | `{render}` | validiertes Artefakt `{version:1,html,css,js,state}` |
 | `retry` | `{reason}` | Artefakt ungültig, ein Korrekturversuch läuft |
 | `error` | `{message}` | Abbruch/Timeout/Upstream-Fehler |
-| `done` | `{requestId}` | Abschluss |
+| `done` | `{requestId, userMessageId, assistantMessageId}` | Abschluss mit Server-IDs (`assistantMessageId: null` bei In-Place-Verfeinerung) |
 
-Stop = Client bricht den fetch ab → Server sieht `res.close` → `AbortController` killt die Upstream-Verbindung.
+Stop = Client bricht den fetch ab → Server sieht `res.close` → `AbortController` killt die Upstream-Verbindung. Der Server persistiert den Abbruch als Fehler-Turn; der Client sync't danach vom Server (`syncFromServer`). Erfolgreiche Runden: refine ersetzt das Element serverseitig (`replaceRender`, alte Version → versions-Tabelle, max 5), normale Runden hängen die Assistant-Message an — der Client übernimmt die IDs aus `done`.
+
+## Accounts & Persistenz (v3.2)
+
+- **store.mjs** (`data/form.db`, WAL, FK-Kaskaden): `users(id, username, pw_hash, role)`, `sessions(token_hash, csrf, expires)` — Token 256-bit, nur als SHA-256-Hash gespeichert, 30 Tage gleitend; `conversations`/`messages(seq, role, text/prose/error/render, pinned)`; `versions(message_id, seq, render)`. Erster User = `owner`. scrypt (N=16384,r=8,p=1, 16-Byte-Salt) + `timingSafeEqual`; unbekannte User bekommen einen Dummy-Vergleich (Timing flat).
+- **Login**: 10 Fehlversuche / 5 Min pro username+Client → 429; nie User-Enumeration. Cookie `form3sess` HttpOnly+SameSite=Strict, `Secure` hinter HTTPS-Ingress (`X-Forwarded-Proto: https` — tailscale serve setzt das). CSRF ist **session-gebunden** (Rotation bei jedem Login); Mutationen ohne passenden Header → 403.
+- **Registrierung**: erlaubt solange kein User existiert (Bootstrap) oder `form.config.json {"registration":true}` / ENV `FORM3_REGISTRATION=1`. API-Key-Verwaltung (Modelle) nur Owner.
+- **Client**: localStorage (`form.v3`, Schema v4) ist Cache; Server ist Source of Truth. Erster Login mit lokalen Alt-Gesprächen → Import-Bar (`/api/import`, Server regeneriert IDs, remapped Pins/Versionen). Logout löscht Cache + Session.
+- **Quotas/Rates pro User**: 40 Gespräche à 100 Nachrichten, 40 Pins, 1 gleichzeitiger Chat + 30/Min, 10 Pings/Min, 120 DB-Ops/Min (`FORM3_DB_RATE` überschreibt für Tests).
+
+## ui.db (persistente Element-Tabellen)
+
+- Sandbox-API (Async-Callback-Stil wie `ui.ping`): `ui.db.create(table, columns?, cb)`, `insert(table,row,cb)→{ok,id}`, `select(table,{where,limit},cb)→{ok,rows}`, `update(table,id,patch,cb)→{ok}`, `delete(table,id,cb)→{ok}`, `drop(table,cb)`. Werte JSON-safe (Objekte/Arrays erlaubt), Zeilen ≤16 KB.
+- Bridge: Worker emit't `{op:"db",dbop,table,args,ref}` → Renderer validiert (Op-/Tabellen-Whitelist) → App hängt **serverseitig die Element-Identität an** (`m.id` + aktuelle Conversation — Gast-Code wählt sie nie selbst) → `POST /api/db` → Ergebnis als synthetisches Event an den Worker-Callback. Queue-Max 8 parallel.
+- Server (`db.mjs`): EINE `elements.sqlite`; physische Tabellen heissen `e_<sha256(convId:elementId)[0:24]>_<table>` — Scoping ist strukturell (Element B kommt an A's physische Tabelle nie heran), zusätzlich prüft der Handler User-Ownership der Element-Message. Meta-Tabelle führt Zeilen-/Byte-Zähler für Quota-Checks in Transaktionen. Statuscodes: 400 validierung, 404 Tabelle/Zeile fehlt, 409 doppelt, 413 Quota (alle landen im Callback als `{ok:false,error}`). Conversation-Löschen purgt die Tabellen des Elements.
 
 ## Elements v3.1 (Benennung, Pinning, Overlay, In-Place-Verfeinerung)
 
 - Artefakt-JSON: optionales `name` (Text ≤ 80, bereinigt); Fallback über `deriveName` (erste Überschrift, sonst Prosa-Schnipsel). Alte v3-Renders werden lazy beim Anzeigen benannt.
-- localStorage-Schema v4 (`form.v3`-Key bleibt): `elements:{pins:[msgId], versions:{msgId:[{at,render}]}}` (max 5/Element, global ~3 MB getrimmt). Normalize akzeptiert v3 und v4; Message-IDs bleiben über Reloads stabil (Pins/Versionen hängen daran).
+- Schema v4 (`form.v3`-Key bleibt, jetzt Cache): `elements:{pins:[msgId], versions:{msgId:[{at,render}]}}` (max 5/Element). Serverseitig spiegeln `messages.pinned` und die `versions`-Tabelle dasselbe. Normalize akzeptiert v3 und v4; Message-IDs bleiben stabil (Pins/Versionen hängen daran).
 - Pro Element: Kopfzeile mit Name (Markieren), Pin (★/☆, Quick-Access-Leiste über dem Composer) und ↗ (Overlay). Overlay: Vollbild-Render (gleiche renderUI-Pipeline), «Mit KI bearbeiten» (markiert + Fokus), «Code bearbeiten» (HTML/CSS/JS/State-Textfelder; Apply läuft durch validateRender + safeHTML/safeCSS — identisch bereinigt/abgelehnt wie Modell-Ausgaben), «Versionen» (letzte 5, Wiederherstellen).
 - In-Place-Verfeinerung: Chat-Request bekommt optionales `refineTarget {id,name,html,css,js,state}` (Caps 32k/12k/32k/4k, Body-Limit 120 KB); Server hängt den Element-Code als `[marked-element]` (untrusted data) an die User-Message und ergänzt den Systemprompt um eine full-update-Anweisung. Der Client ersetzt das markierte Element (alte Version → Verlauf), fügt keine neue Assistant-Message an; Abort/Fehler lassen das Original unberührt.
 
@@ -51,7 +77,7 @@ Stop = Client bricht den fetch ab → Server sieht `res.close` → `AbortControl
 
 ## Renderer-Pipeline (portiert aus v2, unveränderte Security-Eigenschaften)
 
-- **QuickJS-Worker** (`src/worker.js`): 16 MB Heap, 256 KB Stack, Interrupt-Deadline pro Evaluation, Op-Budget 250, Grössenlimits pro Op. Generiertes JS bekommt *nur* `state` + `ui.*` (text/value/html/attr/on/persist/suggest/ping) — keine Browser-Objekte; `ping` läuft als op über die App, nicht im Sandbox-Netz.
+- **QuickJS-Worker** (`src/worker.js`): 16 MB Heap, 256 KB Stack, Interrupt-Deadline pro Evaluation, Op-Budget 250, Grössenlimits pro Op. Generiertes JS bekommt *nur* `state` + `ui.*` (text/value/html/attr/on/persist/suggest/ping/db) — keine Browser-Objekte; `ping`/`db` laufen als op über die App (authentifizierter Server-Call), nicht im Sandbox-Netz.
 - **Sanitizer** (`src/sanitize.js`): DOMPurify-Positivliste; CSS über css-tree ohne URLs/@rules/Positions-Eigenschaften; `safeFragment` macht SVG-Fragmente namespace-bewusst (zweiter Pass in `<svg>`-Kontext, Flatten, Wahl html vs. svg anhand `namespaceURI`).
 - **Opaker iframe** (`src/renderer.js`): `sandbox="allow-scripts"`, eigener CSP-Nonce, kein Netz, kein Parent-DOM; Kommunikation nur über verifizierten MessageChannel; Resize begrenzt; Missbrauch von `ui.value` auf Containern wird sichtbar bemängelt statt still ignoriert.
 - **Seiten-CSP** erlaubt inline im srcdoc nur den exakten Bootstrap-Code (sha256 aus `dist/bridge-hash.txt`, beim Build berechnet).
@@ -68,7 +94,7 @@ Stop = Client bricht den fetch ab → Server sieht `res.close` → `AbortControl
 
 ## Grenzen
 
-- Ein Chat gleichzeitig (429 mit klarem Text), 30 Chats/Minute, 180 s Timeout, Upstream auf 300 KB begrenzt.
+- Ein Chat gleichzeitig pro User (429 mit klarem Text), 30 Chats/Minute/User, 180 s Timeout, Upstream auf 300 KB begrenzt.
 - Verlaufsfenster 12 Nachrichten / Zustände 3 — bewusst (Kontext-Kosten, Disclosed in UI).
 - Der Interpreter isoliert Logik, ist aber keine GPU/Layout-Isolation; CSP verhindert Netz/Navigation im Renderer.
-- Kein HTTPS nötig (nur localhost); trotzdem CSRF + Origin-Checks gegen Cross-Site-Requests anderer Tabs.
+- Lokal ohne HTTPS: Cookie ohne `Secure` (nur loopback); hinter tailscale serve wird HTTPS erkannt und `Secure` gesetzt. CSRF + Origin-Checks gelten immer.
