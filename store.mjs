@@ -65,14 +65,19 @@ export class Store {
         target_message_id TEXT,
         kind TEXT NOT NULL,
         state TEXT NOT NULL,
+        phase TEXT NOT NULL DEFAULT 'prose',
         rev INTEGER NOT NULL,
         error TEXT,
-        delay_ms INTEGER NOT NULL DEFAULT 0,
-        render TEXT NOT NULL,
+        model_id TEXT NOT NULL,
+        request TEXT NOT NULL,
         prose TEXT,
+        request_id TEXT,
+        user_message_id TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL);
+      CREATE UNIQUE INDEX IF NOT EXISTS jobs_request ON jobs(user_id, request_id) WHERE request_id IS NOT NULL;
       CREATE INDEX IF NOT EXISTS jobs_user ON jobs(user_id, state);
+      CREATE INDEX IF NOT EXISTS jobs_target ON jobs(target_message_id);
     `);
     // honest restart handling: a build interrupted by a process restart is
     // marked failed (never silently resumed — no automatic duplicate work)
@@ -261,28 +266,61 @@ export class Store {
   // --- background element jobs (server-owned construction sites) ---
   nextJobRev() { return Number(this.db.prepare('SELECT COALESCE(MAX(rev),0)+1 AS r FROM jobs').get().r); }
 
-  createJob({ userId, conversationId, messageId = null, targetMessageId = null, kind, render, prose = null, delayMs = 0 }) {
+  // The job owns the ENTIRE generation: `request` is an immutable, bounded
+  // snapshot (system+history+user messages incl. refine target as untrusted
+  // data) — the runner later invokes the provider from it, fully detached from
+  // any HTTP connection. model credentials are NEVER stored here (model_id only).
+  createJob({ userId, conversationId, messageId = null, targetMessageId = null, kind, modelId, request, requestId = null, userMessageId = null }) {
+    if (!request || !Array.isArray(request.messages) || request.messages.length > 40)
+      throw Error('Ungültiger Job-Kontext');
+    const encoded = JSON.stringify(request);
+    if (encoded.length > 300000) throw Error('Job-Kontext zu gross');
     const id = crypto.randomUUID(), now = new Date().toISOString();
     const rev = this.nextJobRev();
     this.db.prepare(
-      'INSERT INTO jobs(id, user_id, conversation_id, message_id, target_message_id, kind, state, rev, error, delay_ms, render, prose, created_at, updated_at) VALUES (?,?,?,?,?,?,?, ?,NULL,?,?,?,?,?)'
-    ).run(id, userId, conversationId, messageId, targetMessageId, kind, 'queued', rev,
-      Math.max(0, Math.min(Number(delayMs) || 0, 30000)),
-      JSON.stringify(render), prose != null ? String(prose).slice(0, 8000) : null, now, now);
+      'INSERT INTO jobs(id, user_id, conversation_id, message_id, target_message_id, kind, state, phase, rev, error, model_id, request, prose, request_id, user_message_id, created_at, updated_at) VALUES (?,?,?,?,?,?,?, ?,?,NULL,?,?,NULL,?,?,?,?)'
+    ).run(id, userId, conversationId, messageId, targetMessageId, kind, 'queued', 'prose', rev, String(modelId || ''), encoded,
+      requestId != null ? String(requestId).slice(0, 64) : null,
+      userMessageId != null ? String(userMessageId) : null,
+      now, now);
     return this.getJob(id);
+  }
+
+  // idempotent replay: (userId, requestId) uniquely identifies a job
+  findJobByRequest(userId, requestId) {
+    const r = this.db.prepare("SELECT id FROM jobs WHERE user_id = ? AND request_id = ? ORDER BY created_at DESC LIMIT 1")
+      .get(String(userId || ''), String(requestId || ''));
+    return r ? this.getJob(r.id) : null;
+  }
+
+  // serialize concurrent refinements on the SAME element
+  activeJobForTarget(userId, targetMessageId) {
+    const r = this.db.prepare("SELECT id FROM jobs WHERE user_id = ? AND target_message_id = ? AND state IN ('queued','building','validating') LIMIT 1")
+      .get(String(userId || ''), String(targetMessageId || ''));
+    return r ? this.getJob(r.id) : null;
   }
 
   getJob(id) {
     const r = this.db.prepare('SELECT * FROM jobs WHERE id = ?').get(String(id || ''));
     if (!r) return null;
-    let render = null;
-    try { render = JSON.parse(r.render); } catch {}
-    return { id: r.id, userId: r.user_id, conversationId: r.conversation_id, messageId: r.message_id, targetMessageId: r.target_message_id, kind: r.kind, state: r.state, rev: r.rev, error: r.error, delayMs: r.delay_ms, render, prose: r.prose, createdAt: r.created_at, updatedAt: r.updated_at };
+    let request = null;
+    try { request = JSON.parse(r.request); } catch {}
+    return { id: r.id, userId: r.user_id, conversationId: r.conversation_id, messageId: r.message_id, targetMessageId: r.target_message_id, kind: r.kind, state: r.state, phase: r.phase, rev: r.rev, error: r.error, modelId: r.model_id, request, prose: r.prose, requestId: r.request_id, userMessageId: r.user_message_id, createdAt: r.created_at, updatedAt: r.updated_at };
+  }
+
+  // live phase marker (prose -> artifact) so reloads/restores show an honest state
+  setJobPhase(id, phase) {
+    const rev = this.nextJobRev();
+    this.db.prepare('UPDATE jobs SET phase = ?, rev = ?, updated_at = ? WHERE id = ?').run(String(phase), rev, new Date().toISOString(), String(id || ''));
+    return this.getJob(id);
+  }
+
+  setJobProse(id, prose) {
+    this.db.prepare('UPDATE jobs SET prose = ? WHERE id = ?').run(String(prose || '').slice(0, 8000), String(id || ''));
   }
 
   // atomic compare-and-set transition; returns the updated job or null
   transitionJob(id, fromStates, state, error = null) {
-    if (state === 'cancelled') console.log('CANCEL-TRACE', String(id).slice(0, 8), new Error('trace').stack.split('\n').slice(1, 5).join(' | '));
     const rev = this.nextJobRev();
     const r = this.db.prepare(
       `UPDATE jobs SET state = ?, error = ?, rev = ?, updated_at = ? WHERE id = ? AND state IN (${fromStates.map(() => '?').join(',')})`
@@ -301,27 +339,38 @@ export class Store {
     try {
       const r = this.db.prepare("UPDATE jobs SET state='ready', error=NULL, rev=?, updated_at=? WHERE id=? AND state IN ('building','validating')").run(rev, now, String(id));
       if (!r.changes) { this.db.exec('ROLLBACK'); return null; }
-      apply(job);
+      apply(job); // attach render and/or finish the placeholder message
       this.db.exec('COMMIT');
     } catch (e) { try { this.db.exec('ROLLBACK'); } catch {} throw e; }
     return this.getJob(id);
   }
 
+  // terminal write on the placeholder assistant message (create jobs): prose
+  // and/or an honest error; used for success, cancel and failure alike.
+  finishMessage(convId, msgId, { prose = null, error = null } = {}) {
+    const r = this.db.prepare('SELECT id, prose, error FROM messages WHERE id = ? AND conversation_id = ?').get(String(msgId || ''), String(convId || ''));
+    if (!r) return false; // message/conversation gone: nothing to resurrect
+    this.db.prepare('UPDATE messages SET prose = COALESCE(?, prose), error = ? WHERE id = ?')
+      .run(prose != null ? String(prose).slice(0, 8000) : null, error != null ? String(error).slice(0, 300) : null, String(msgId));
+    this.db.prepare('UPDATE conversations SET updated_at = ? WHERE id = ?').run(new Date().toISOString(), convId);
+    return true;
+  }
+
   attachRender(convId, msgId, render) {
     const r = this.db.prepare('UPDATE messages SET render = ? WHERE id = ? AND conversation_id = ? AND render IS NULL')
       .run(JSON.stringify(render), String(msgId || ''), String(convId || ''));
-    if (!r.changes) throw Error('Element nicht mehr vorhanden');
+    if (!r.changes) throw Error('Element nicht mehr vorhanden'); // deleted or already built: no resurrection
   }
 
   markInterruptedJobs() {
     return this.db.prepare(
-      "UPDATE jobs SET state='failed', error='Durch einen Server-Neustart unterbrochen — hier erneut versuchen.', updated_at=? WHERE state IN ('queued','building','validating')"
+      "UPDATE jobs SET state='failed', error='Durch einen Server-Neustart unterbrochen — erneut versuchen startet die Generierung neu.', updated_at=? WHERE state IN ('queued','building','validating')"
     ).run(new Date().toISOString()).changes;
   }
 
   listJobs(userId) {
     return this.db.prepare("SELECT * FROM jobs WHERE user_id = ? AND state != 'ready' ORDER BY created_at LIMIT 100").all(String(userId || ''))
-      .map(r => { let render = null; try { render = JSON.parse(r.render); } catch {} return { id: r.id, conversationId: r.conversation_id, messageId: r.message_id, targetMessageId: r.target_message_id, kind: r.kind, state: r.state, rev: r.rev, error: r.error, delayMs: r.delay_ms, render, prose: r.prose, createdAt: r.created_at, updatedAt: r.updated_at, userId: r.user_id }; });
+      .map(r => ({ id: r.id, conversationId: r.conversation_id, messageId: r.message_id, targetMessageId: r.target_message_id, kind: r.kind, state: r.state, phase: r.phase, rev: r.rev, error: r.error, modelId: r.model_id, prose: r.prose, createdAt: r.created_at, updatedAt: r.updated_at, userId: r.user_id }));
   }
 
   setPinned(userId, msgId, pinned) {
@@ -360,7 +409,7 @@ export class Store {
       const rows = this.db.prepare('SELECT at, render FROM versions WHERE message_id = ? ORDER BY seq LIMIT 5').all(m.id);
       if (rows.length) versions[m.id] = rows.map(r => { try { return { at: r.at, render: JSON.parse(r.render) }; } catch { return null; } }).filter(Boolean);
     }
-    return { conversations: out, versions, jobs: this.listJobs(userId).map(({ userId: _u, render: _r, prose: _p, delayMs: _d, ...j }) => j) };
+    return { conversations: out, versions, jobs: this.listJobs(userId).map(({ userId: _u, prose: _p, ...j }) => j) };
   }
 
   // Import validated archive sessions (ids regenerated, pins/versions remapped).

@@ -15,7 +15,7 @@ main{min-width:0;display:flex;flex-direction:column;height:100dvh}
 header{height:80px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 42px;border-bottom:1px solid var(--line)}
 .status{font:11px ui-monospace,monospace;color:var(--muted);max-width:34vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.status b{color:var(--lime)}
 #mobile{display:none}#settingsbtn{padding:8px 13px}
-.feed{flex:1;overflow:auto;scrollbar-color:#4b554a transparent;padding:35px max(28px,calc((100% - 860px)/2));scroll-behavior:smooth}
+.feed{flex:1;overflow:auto;scrollbar-color:#4b554a transparent;padding:35px max(28px,calc((100% - 860px)/2));scroll-behavior:auto;overflow-anchor:none}
 .intro{padding:18px 0 32px}.intro h1{font-size:clamp(32px,5vw,55px);line-height:1.12;letter-spacing:-2px;font-weight:450;max-width:650px;margin:18px 0}.intro h1 em{font-family:Georgia,serif;font-weight:400;color:var(--lime)}.intro p{color:var(--muted);max-width:530px}
 .starters{display:flex;flex-wrap:wrap;gap:8px;margin-top:25px}.starters button{font-size:12px}
 .empty{border:1px dashed #4a554a;border-radius:12px;padding:26px;margin:22px 0;max-width:660px}.empty h2{font-weight:500;margin:10px 0}.empty p{color:var(--muted)}.empty code{color:var(--ink)}
@@ -34,6 +34,7 @@ header{height:80px;flex-shrink:0;display:flex;align-items:center;justify-content
 .think svg{width:120px;height:66px;color:#899b6b;overflow:visible}
 .think .wire line{fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;transform-box:fill-box;transform-origin:center;animation:edgegrow .7s cubic-bezier(.34,1.56,.64,1) both}
 .think .thinklabel{font:11px ui-monospace,monospace;color:var(--muted);letter-spacing:1px}
+.think.compact{flex-direction:row;align-items:center;padding:2px 0}
 @keyframes edgegrow{from{opacity:0;transform:scale(.55)}to{opacity:1;transform:scale(1)}}
 /* Phase 2 „Schreiben”: der streamende Text ist die Bewegung; Cursor-Puls */
 .prose.writing::after{content:'▍';color:var(--lime);animation:caret 1s steps(2) infinite;margin-left:1px}

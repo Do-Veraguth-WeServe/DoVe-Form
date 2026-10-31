@@ -313,7 +313,7 @@ test('explicit provider error frame: distinct error, NO retry, single upstream c
   assert.equal(events.filter(e => e.event === 'retry').length, 0);
   const err = events.find(e => e.event === 'error');
   assert.ok(err, 'error event present');
-  assert.equal(err.data.code, 'provider');
+  assert.equal(err.data.code, 'job', 'provider failure surfaces through the detached job');
   assert.ok(err.data.message.includes('upstream exploded'), 'provider detail surfaced');
   assert.equal(events[events.length - 1].event, 'done');
   const after = await mockStats();
@@ -355,7 +355,7 @@ test('prose-only answer needs no artifact and is valid', async () => {
   assert.equal(events[events.length - 1].event, 'done');
 });
 
-test('stop: client abort disconnects upstream, error turn persisted server-side', async () => {
+test('client disconnect detaches the viewer only: the provider job finishes server-side', async () => {
   const controller = new AbortController();
   const r = await fetch(BASE + '/api/chat', {
     method: 'POST',
@@ -366,15 +366,53 @@ test('stop: client abort disconnects upstream, error turn persisted server-side'
   const reader = r.body.getReader();
   await reader.read();
   const before = (await mockStats()).disconnects;
-  controller.abort();
+  controller.abort(); // reload / tab close
   await sleep(1500);
   const after = (await mockStats()).disconnects;
-  assert.ok(after > before, `upstream saw disconnect (${before} -> ${after})`);
-  await sleep(300);
+  assert.equal(after, before, 'upstream NOT aborted by the client disconnect');
+  // the detached job completes and persists the answer
+  await waitJobsSettled(owner, 12000);
   const list = await (await api(owner, '/api/conversations')).json();
   const lastMsg = list.conversations[0].messages.at(-1);
   assert.equal(lastMsg.role, 'assistant');
-  assert.ok(lastMsg.error, 'abort persisted as error turn');
+  assert.ok(lastMsg.prose && lastMsg.prose.includes('Zweiter Teil'), 'generation completed despite the closed connection');
+  assert.ok(!lastMsg.error);
+});
+
+test('EXPLICIT cancel aborts the upstream provider call', async () => {
+  const held = await fetch(BASE + '/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Cookie: owner.cookie, 'X-Form-CSRF': owner.csrf, Origin: BASE },
+    body: JSON.stringify({ version: 1, sessionId: convId, requestId: uid(), text: 'holdprose zum abbrechen', history: [], states: [] })
+  });
+  const reader = held.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '', jobId = null, events = [];
+  while (jobId === null) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    let i;
+    while ((i = buf.indexOf('\n\n')) !== -1) {
+      const block = buf.slice(0, i); buf = buf.slice(i + 2);
+      let ev = 'message', data = '';
+      for (const line of block.split('\n')) {
+        if (line.startsWith('event:')) ev = line.slice(6).trim();
+        else if (line.startsWith('data:')) data += line.slice(5).trim();
+      }
+      if (data) { const p = JSON.parse(data); events.push([ev, p]); if (ev === 'element-job') jobId = p.job.id; }
+    }
+  }
+  assert.ok(jobId, 'job started');
+  const before = (await mockStats()).disconnects;
+  const c = await api(owner, '/api/jobs/cancel', { method: 'POST', body: { jobId } });
+  assert.equal(c.status, 200);
+  try { await reader.cancel(); } catch {}
+  await sleep(1000);
+  const after = (await mockStats()).disconnects;
+  assert.ok(after > before, `cancel aborted the upstream (${before} -> ${after})`);
+  const snap = await (await api(owner, '/api/jobs')).json();
+  assert.equal(snap.jobs.find(j => j.id === jobId).state, 'cancelled');
 });
 
 test('request validation: unknown fields, bad history, bad states rejected', async () => {
@@ -525,10 +563,30 @@ test('jobs: snapshot/stream require auth; scoping, cancel ownership, retry guard
   // own conversation so later history/persistence assertions stay pristine
   const cr = await api(owner, '/api/conversations', { method: 'POST', body: {} });
   const jc = (await cr.json()).conversation.id;
-  // deterministic slow build via test hook (FORM3_JOB_TEST_DELAYS=1 in run-all)
-  const r = await chat(owner, 'baue etwas slowbuild mit build:6000', { __conv: jc });
-  const events = parseSSE(await r.text());
-  const job = events.find(e => e.event === 'element-job').data.job;
+  // provider-HELD stream: the generation is genuinely still running upstream;
+  // read the SSE incrementally until the job event, then detach (viewer only)
+  const r = await chat(owner, 'baue etwas holdprose zum testen', { __conv: jc });
+  assert.equal(r.status, 200);
+  const reader = r.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '', job = null;
+  while (job === null) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    let i;
+    while ((i = buf.indexOf('\n\n')) !== -1) {
+      const block = buf.slice(0, i); buf = buf.slice(i + 2);
+      let ev = 'message', data = '';
+      for (const line of block.split('\n')) {
+        if (line.startsWith('event:')) ev = line.slice(6).trim();
+        else if (line.startsWith('data:')) data += line.slice(5).trim();
+      }
+      if (ev === 'element-job' && data) { try { job = JSON.parse(data).job; } catch {} }
+    }
+  }
+  assert.ok(job, 'element-job event present');
+  try { await reader.cancel(); } catch {} // detach the viewer; the job keeps building
   const snap = await (await api(owner, '/api/jobs')).json();
   assert.ok(snap.jobs.some(j => j.id === job.id), 'job visible in own snapshot');
   const bobSnap = await (await api(userB, '/api/jobs')).json();
@@ -550,6 +608,8 @@ test('jobs: snapshot/stream require auth; scoping, cancel ownership, retry guard
   // cancel of a finished/cancelled job is a no-op 409
   assert.equal((await api(owner, '/api/jobs/cancel', { method: 'POST', body: { jobId: job.id } })).status, 409);
   assert.equal((await api(owner, '/api/jobs/retry', { method: 'POST', body: { jobId: 'nope' } })).status, 400);
+  // release the provider group so no held stream leaks into later tests
+  await fetch(MOCK + '/admin/release', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ group: 'holdprose' }) });
 });
 
 test('delete model, then chat is blocked with friendly error', async () => {

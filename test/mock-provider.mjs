@@ -6,9 +6,11 @@ import http from 'node:http';
 
 const PORT = Number(process.env.MOCK_PORT || 4599);
 const KEY = 'test-key-1234567890';
-const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-const stats = { calls: {}, disconnects: 0, lastAuthOk: false, lastRoles: [], lastUserContent: '', lastMessages: [] };
+const stats = { calls: {}, active: {}, disconnects: 0, lastAuthOk: false, lastRoles: [], lastUserContent: '', lastMessages: [] };
+// held streams: scenario -> Set of {proceed} resolvers; released via POST /admin/release {group}
+const held = new Map();
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 const sliderArtifact = {
   version: 1,
@@ -67,7 +69,7 @@ const boundaryArtifact = {
   state: {}
 };
 
-const slowArtifact = {
+const holdArtifactA = { // released by group 'holda' / 'sitehold'
   version: 1,
   name: 'Baustellen-Element',
   html: '<div><h2>Baustellen-Element</h2><input id="amt" type="range" min="1" max="10"><p id="out"></p></div>',
@@ -75,7 +77,7 @@ const slowArtifact = {
   js: 'function draw(){ui.text("out","Wert: "+(state.value||3))}ui.value("amt",String(state.value||3));ui.on("amt","input",e=>{state.value=Number(e.value);draw();ui.persist()});draw();',
   state: { value: 3 }
 };
-const slowArtifact2 = {
+const holdArtifactB = {
   version: 1,
   name: 'Zweites Element',
   html: '<div><h2>Zweites Element</h2><p id="out">ok</p></div>',
@@ -84,7 +86,28 @@ const slowArtifact2 = {
   state: {}
 };
 
-function sseWrite(res, obj) { res.write('data: ' + JSON.stringify(obj) + '\n\n'); }
+function sseWrite(res, obj) { if (!res.writableEnded && !res.destroyed) res.write('data: ' + JSON.stringify(obj) + '\n\n'); }
+const pendingRelease = new Set(); // release() arriving before hold() registers latches here
+function hold(group, res) {
+  return new Promise(resolve => {
+    if (pendingRelease.has(group)) { pendingRelease.delete(group); return resolve(); }
+    // never register an entry on an already-dead socket — it could never be
+    // cleaned up and would swallow a later release for the whole group
+    if (res.writableEnded || res.destroyed) return resolve();
+    if (!held.has(group)) held.set(group, new Set());
+    const entry = { proceed: resolve };
+    held.get(group).add(entry);
+    res.on('close', () => { held.get(group)?.delete(entry); resolve(); });
+  });
+}
+function release(group) {
+  const set = held.get(group);
+  if (!set || !set.size) { pendingRelease.add(group); return 0; }
+  const n = set.size;
+  for (const e of set) e.proceed();
+  set.clear();
+  return n;
+}
 
 async function stream(res, chunks) {
   for (const c of chunks) {
@@ -97,15 +120,34 @@ async function stream(res, chunks) {
 
 async function run(scenario, res) {
   const P = (t, pause, fr) => ({ t, pause, fr });
-  if (scenario === 'slowbuild' || scenario === 'slowbuild2') await sleep(900); // Phase-1-Sichtbarkeit
-  if (scenario === 'slowbuild') return stream(res, [
-    P('Ich baue das im Hintergrund. ', 1500),
-    P('```json\n' + JSON.stringify(slowArtifact) + '\n```', 10)
-  ]);
-  if (scenario === 'slowbuild2') return stream(res, [
-    P('Zweites Element unterwegs. ', 600),
-    P('```json\n' + JSON.stringify(slowArtifact2) + '\n```', 10)
-  ]);
+  // HELD streams: the provider connection stays OPEN (nothing or only the
+  // prose/fence prefix sent) until POST /admin/release {group} — acceptance
+  // tests prove the server keeps the upstream alive without any browser.
+  if (scenario === 'holda' || scenario === 'holdb' || scenario === 'holdprose') {
+    await hold(scenario, res); // nothing sent yet: long honest thinking phase
+    if (scenario === 'holdprose') return stream(res, [
+      P('VPN steht für "Virtual Private Network" und verlängert dein privates Netz um einen verschlüsselten Tunnel. ', 30),
+      P('Mehr dazu sage ich dir gleich.', 20)
+    ]);
+    return stream(res, [
+      P('Ich baue das im Hintergrund. ', 900),
+      P('```json\n' + JSON.stringify(scenario === 'holda' ? holdArtifactA : holdArtifactB) + '\n```', 10)
+    ]);
+  }
+  if (scenario === 'sitehold' || scenario === 'siteholda' || scenario === 'siteholdb') {
+    // prose + OPENED artifact fence, then held IN the artifact phase:
+    // artifact-start has fired, the construction site is live, nothing done.
+    // (written chunk-wise WITHOUT stream(): stream() would END the response)
+    const art = scenario === 'siteholdb' ? holdArtifactB : holdArtifactA;
+    const put = obj => { if (!res.writableEnded && !res.destroyed) sseWrite(res, obj); };
+    put({ choices: [{ delta: { content: 'Ich baue das im Hintergrund. ' } }] });
+    await sleep(300);
+    put({ choices: [{ delta: { content: '```json\n' + JSON.stringify(art).slice(0, 40) } }] });
+    await hold(scenario, res); // held per group: sitehold / siteholda / siteholdb
+    put({ choices: [{ delta: { content: JSON.stringify(art).slice(40) + '\n```' } }] });
+    if (!res.writableEnded && !res.destroyed) { res.write('data: [DONE]\n\n'); res.end(); }
+    return;
+  }
   if (scenario === 'slider') return stream(res, [
     P('Hier ist dein Spar-Rechner mit Regler. ', 60),
     P('Damit siehst du sofort, ', 60),
@@ -178,6 +220,15 @@ async function run(scenario, res) {
 }
 
 const server = http.createServer(async (req, res) => {
+  if (req.method === 'POST' && req.url === '/admin/release') {
+    let b = '';
+    for await (const c of req) b += c;
+    let g = '';
+    try { g = JSON.parse(b).group || ''; } catch {}
+    const n = release(String(g));
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ released: n }));
+  }
   if (req.method === 'GET' && req.url === '/admin/stats') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify(stats));
@@ -198,8 +249,13 @@ const server = http.createServer(async (req, res) => {
   let scenario = 'prose';
   if (corrective) scenario = 'corrected';
   else if (refine) scenario = 'refine';
-  else if (text.includes('slowbuild2')) scenario = 'slowbuild2';
-  else if (text.includes('slowbuild')) scenario = 'slowbuild';
+  // order matters: 'siteholda' CONTAINS 'holda' — longest/most specific first
+  else if (text.includes('siteholda')) scenario = 'siteholda';
+  else if (text.includes('siteholdb')) scenario = 'siteholdb';
+  else if (text.includes('sitehold')) scenario = 'sitehold';
+  else if (text.includes('holdb')) scenario = 'holdb';
+  else if (text.includes('holda')) scenario = 'holda';
+  else if (text.includes('holdprose')) scenario = 'holdprose';
   else if (text.includes('netz-labor')) scenario = 'pingshell';
   else if (text.includes('aufgaben-db')) scenario = 'dbschema';
   else if (text.includes('scoping-test')) scenario = 'dbscope';
@@ -213,6 +269,9 @@ const server = http.createServer(async (req, res) => {
   else if (text.includes('utf8split')) scenario = 'utf8split';
   else if (text.includes('unauthorized')) scenario = 'unauthorized';
   stats.calls[scenario] = (stats.calls[scenario] || 0) + 1;
+  stats.active[scenario] = (stats.active[scenario] || 0) + 1;
+  // a fresh request for a hold group consumes any stale latch
+  if (scenario.startsWith('hold') || scenario.startsWith('sitehold')) pendingRelease.delete(scenario);
   req.on('close', () => { if (!res.writableEnded) stats.disconnects++; });
   res.on('close', () => { if (!res.writableEnded) stats.disconnects++; });
   if (scenario === 'unauthorized') {
@@ -220,7 +279,9 @@ const server = http.createServer(async (req, res) => {
     return res.end(JSON.stringify({ error: { message: 'Invalid API key' } }));
   }
   res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store' });
-  await run(scenario, res);
+  const finishActive = () => { stats.active[scenario] = Math.max(0, (stats.active[scenario] || 0) - 1); };
+  res.on('close', finishActive);
+  try { await run(scenario, res); } finally { finishActive(); }
 });
 
 server.listen(PORT, '127.0.0.1', () => console.log(`mock provider ready on http://127.0.0.1:${PORT}`));

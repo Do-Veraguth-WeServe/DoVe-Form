@@ -2,43 +2,46 @@ import {renderUI} from './renderer.js';
 import {safeHTML,safeCSS} from './sanitize.js';
 import {validateRender,deriveName,sanitizeName} from '../contract.mjs';
 const $=s=>document.querySelector(s),uid=()=>crypto.randomUUID(),KEY='form.v3';
-let db={version:4,sessions:[],elements:{pins:[],versions:{}},current:null},csrf='',me=null,registrationOpen=false,models=[],modelId=localStorage.getItem('form3.model')||'',pending=null,views=[],marked=null;
+let db={version:4,sessions:[],elements:{pins:[],versions:{}},current:null},csrf='',me=null,registrationOpen=false,models=[],modelId=localStorage.getItem('form3.model')||'',pending=new Set(),views=[],marked=null;
 let legacyDb=null;          // pre-login local archive — offered for import on first login
 const stateSync=new Map();  // messageId -> debounce timer for /api/state
 let jobs=new Map();         // jobId -> job (server-owned element builds; transient client mirror)
 let jobStream=null;        // EventSource for /api/jobs/stream
 let sendFinishing=false;   // send() completing its turn — suppress duplicate renders
+const liveTurns=new Map(); // request -> live <article>: detached turns may stream for a long
+// time (server-owned generation); other renders (a second message, background
+// job events) must not destroy a still-streaming live view
 const current=()=>db.sessions.find(s=>s.id===db.current);
 
 // --- scroll preservation: submitting or a background element must never
 // jump the viewport to the top (or force it to the end). We anchor on the
 // topmost visible message and restore its position after re-renders.
 function scrollState(){
+  // exact anchor: the topmost visible message and its pixel offset — submits,
+  // stream growth and element completion must not move the viewport AT ALL
+  // (including at the bottom: content grows below, the view stays put).
   const f=$('#feed');if(!f)return null;
   const fr=f.getBoundingClientRect();
-  if(f.scrollHeight-f.scrollTop-f.clientHeight<120)return {nearBottom:true};
   const frac=f.scrollHeight>f.clientHeight?f.scrollTop/(f.scrollHeight-f.clientHeight):0;
   for(const el of f.querySelectorAll('.message[data-mid]')){
     const r=el.getBoundingClientRect();
     if(r.bottom>fr.top+2)
-      return {nearBottom:false,anchor:el.dataset.mid,offset:r.top-fr.top,frac};
+      return {anchor:el.dataset.mid,offset:r.top-fr.top,frac,top:f.scrollTop};
   }
-  return {nearBottom:false,anchor:null,frac};
+  return {anchor:null,frac,top:f.scrollTop};
 }
 function restoreScroll(st){
   const f=$('#feed');if(!f||!st)return;
   const go=top=>{try{f.scrollTo({top,behavior:'instant'})}catch{f.scrollTop=top}};
-  if(st.nearBottom){go(f.scrollHeight);return}
   if(st.anchor){
     const el=f.querySelector('.message[data-mid="'+st.anchor+'"]');
     if(el){const fr=f.getBoundingClientRect();go(el.getBoundingClientRect().top-fr.top+f.scrollTop-st.offset);return}
   }
   // anchor fell out of the rendered window (last-12): restore by fraction
   if(st.frac!=null&&f.scrollHeight>f.clientHeight){go(st.frac*(f.scrollHeight-f.clientHeight));return}
-  go(f.scrollTop);
+  go(st.top!=null?st.top:f.scrollTop);
 }
 function renderPreservingScroll(){const st=scrollState();render();restoreScroll(st)}
-const nearBottom=()=>{const f=$('#feed');return !f||f.scrollHeight-f.scrollTop-f.clientHeight<120};
 function toast(t){$('#live').textContent=t;const n=document.createElement('div');n.className='toast';n.textContent=t;document.body.append(n);setTimeout(()=>n.remove(),4000)}
 function trimVersions(){
   try{
@@ -284,16 +287,31 @@ function applyJob(job,opts){
   jobs.set(job.id,job);
   if(job.state!=='ready'){
     if(!prev){
-      // first sighting: bind the live construction site in place (no re-render
-      // mid-stream — re-rendering would tear down every sandbox worker)
+      // first sighting mid-turn: bind the live view in place — no re-render
+      // (re-rendering would tear down every sandbox worker)
       const liveSite=document.querySelector('.message.live .site:not([data-jobid])');
       if(liveSite){liveSite.replaceWith(siteEl(job));return}
-    }else if(wasActive&&ACTIVE_JOB.includes(job.state)){
-      // cosmetic phase change (queued→building→validating): patch text only
+      if(document.querySelector('.message.live'))return; // prose phase: nothing to show yet
+    }else if(wasActive&&ACTIVE_JOB.includes(job.state)&&(prev.phase||'prose')===(job.phase||'prose')){
+      // cosmetic state change (queued→building→validating): patch text only
       const ph=document.querySelector('.site[data-jobid="'+job.id+'"] .sitephase');
       if(ph)ph.textContent=SITE_PHASE[job.state]||'…';
-      if(rerender===false)return;
       return;
+    }else if(wasActive&&ACTIVE_JOB.includes(job.state)&&(prev.phase||'prose')!==(job.phase||'prose')){
+      // phase flip prose→artifact during a live turn: bind the site in place.
+      // The job event may race ahead of the SSE artifact-start — NEVER
+      // re-render here (it would destroy the live message mid-stream).
+      const liveSite=document.querySelector('.message.live .site:not([data-jobid])');
+      if(liveSite){liveSite.replaceWith(siteEl(job));return}
+      if(document.querySelector('.message.live'))return;
+    }
+    if(job.state==='cancelled'){
+      const c=current();
+      if(c&&c.id===job.conversationId){
+        const m=c.messages.find(x=>x.id===job.messageId);
+        if(m){m.error='Abgebrochen.';if(job.prose)m.prose=String(job.prose).slice(0,8000)}
+      }
+      jobs.delete(job.id);save();
     }
   }
   if(job.state==='ready'){
@@ -304,13 +322,17 @@ function applyJob(job,opts){
   if(rerender&&!sendFinishing)renderPreservingScroll(); // send()'s single closing render covers it
 }
 function attachReadyJob(s,job){
-  if(!job.render)return false;
   const target=s.messages.find(m=>m.id===(job.kind==='refine'?job.targetMessageId:job.messageId));
   if(!target)return false;
+  if(!job.render){ // prose-only turn: finish the placeholder message
+    target.prose=String(job.prose||'');
+    if(job.error)target.error=job.error;
+    return true;
+  }
   try{
     const render=validateRender(job.render);
     if(job.kind==='refine'){pushVersion(target,target.render);target.render=render;if(job.prose)target.prose=String(job.prose).slice(0,8000);marked=null;toast('Element aktualisiert — frühere Version im Verlauf des Elements.')}
-    else target.render=render;
+    else{target.render=render;if(job.prose)target.prose=String(job.prose).slice(0,8000);if(target.error)delete target.error}
     return true;
   }catch{return false}
 }
@@ -324,7 +346,7 @@ function reconcileReadyJobs(){
   if(changed)save();
 }
 async function jobAction(kind,id){
-  try{console.log('JOBACTION',kind,id);
+  try{
     const r=await fetch('/api/jobs/'+kind,{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify({jobId:id})});
     const t=await r.json().catch(()=>({}));
     if(!r.ok)throw Error(t.error||('HTTP '+r.status));
@@ -351,11 +373,22 @@ function connectJobs(){
 }
 function disconnectJobs(){try{jobStream&&jobStream.close()}catch{}jobStream=null;jobs=new Map()}
 // (sketchEl removed: live phases are the growing ⌑ wireframe + construction site)
-function busy(on){$('#stop').classList.toggle('hidden',!on);$('#send').classList.toggle('hidden',on)}
-async function stop(){if(!pending)return;pending.controller.abort();pending=null;busy(false);toast('Antwort gestoppt.');await syncFromServer()}
+function busy(on){$('#stop').classList.toggle('hidden',!on)}
+// NOTE: the send button stays visible while turns run — detached generation
+// allows further messages before an earlier answer finishes.
+async function stopAll(){await stop()}
+async function stop(){
+  if(!pending.size)return;
+  const jobs=[...pending].map(r=>r.jobId).filter(Boolean);
+  for(const r of pending)r.controller.abort(); // detach viewers only
+  pending=new Set();busy(false);
+  if(jobs.length){for(const id of jobs)await jobAction('cancel',id)} // the real stop: cancels the server jobs + provider calls
+  else toast('Antwort gestoppt.');
+  await syncFromServer();
+}
 async function syncFromServer(){if(await loadFromServer())renderPreservingScroll()}
 async function newSession(){
-  if(pending)await stop();
+  if(pending.size)await stopAll();
   closeOverlay();
   if(db.sessions.length>=40)return toast('Maximal 40 Gedankengänge');
   try{
@@ -402,6 +435,9 @@ function renderChip(){
   chip.append(l,x);
 }
 
+// Keep the visible history start stable while a conversation is open.
+// Rotating a last-12 window on submit removes content above the viewport.
+const visibleStarts=new Map();
 function render(){  views.forEach(v=>v.destroy());views=[];
   $('#sessions').replaceChildren();
   for(const s of db.sessions){const b=document.createElement('button');b.textContent=s.title;b.setAttribute('aria-current',s.id===db.current);b.onclick=async()=>{await stop();closeOverlay();db.current=s.id;marked=null;save();render();$('#sidebar').classList.remove('open')};$('#sessions').append(b)}
@@ -410,8 +446,10 @@ function render(){  views.forEach(v=>v.destroy());views=[];
   if(!models.length)feed.insertAdjacentHTML('beforeend','<section class="empty" id="emptystate"><div class="eyebrow">Schritt 1 · Noch kein Modell</div><h2>Verbinde dein erstes Modell.</h2><p>Form läuft komplett lokal. Füge ein OpenAI-kompatibles Modell hinzu (z. B. z.ai, OpenRouter oder Ollama) — Base-URL, Modell-ID und API-Key. Der Key bleibt in <code>form.models.json</code> auf deinem Rechner und wird nie angezeigt oder exportiert.</p><button id="emptyadd">⚙ Modell hinzufügen</button></section>');
   const s=current();
   if(s){
-    if(s.messages.length>12){const h=document.createElement('p');h.className='notice';h.textContent='Die letzten 12 Nachrichten sind geöffnet. Das vollständige Gespräch bleibt serverseitig und im Export erhalten.';feed.append(h)}
-    for(const m of s.messages.slice(-12)){
+    if(!visibleStarts.has(s.id))visibleStarts.set(s.id,Math.max(0,s.messages.length-12));
+    const visibleStart=Math.min(visibleStarts.get(s.id),s.messages.length);
+    if(visibleStart>0){const h=document.createElement('p');h.className='notice';h.textContent='Ältere Nachrichten bleiben serverseitig und im Export erhalten. Neue Nachrichten werden unten ergänzt.';feed.append(h)}
+    for(const m of s.messages.slice(visibleStart)){
       const article=document.createElement('article');article.className='message '+(m.role==='user'?'user':'assistant');article.dataset.mid=m.id;
       if(m.role==='user'){const b=document.createElement('div');b.className='bubble';b.textContent=m.text;article.append(b)}
       else{
@@ -420,6 +458,17 @@ function render(){  views.forEach(v=>v.destroy());views=[];
         else{
           if(m.prose){const p=document.createElement('p');p.className='prose';p.textContent=m.prose;article.append(p)}
           const job=pendingJobFor(m.id);
+          if(job&&job.kind==='create'&&!m.render&&!m.error){
+            // generation running on the server: partial prose (persisted by the
+            // runner) survives reloads; without any prose yet: quiet row
+            const partial=m.prose||job.prose;
+            if(partial){const pP=document.createElement('p');pP.className='prose writing';pP.textContent=partial;article.append(pP)}
+            else if((job.phase||'prose')!=='artifact'){
+              const wait=document.createElement('div');wait.className='think compact';
+              wait.innerHTML='<small class="thinklabel">antwortet …</small>';
+              article.append(wait);
+            }
+          }
           if(m.render){
             const wrap=document.createElement('div');
             wrap.className='elwrap'+((marked&&marked.msgId===m.id&&marked.sessionId===db.current)?' marked':'');
@@ -452,14 +501,15 @@ function render(){  views.forEach(v=>v.destroy());views=[];
             const b=document.createElement('button');b.textContent='Mit diesen Werten weiterdenken ↗';b.onclick=()=>{$('#prompt').value='Denke mit meinen aktuellen Einstellungen weiter.';$('#prompt').focus();toast('Werte werden erst mit deiner Nachricht gesendet.')};article.append(b);
           }
           // background build: construction site stands in for the future element
-          // (create) or marks an in-flight in-place refinement below the original
-          else if(job&&job.kind==='create'){article.append(siteEl(job))}
+          // (create, artifact phase) or marks an in-flight in-place refinement
+          else if(job&&job.kind==='create'&&(job.phase||'prose')==='artifact'){article.append(siteEl(job))}
           if(job&&job.kind==='refine'&&m.render){article.append(siteEl(job))}
         }
       }
       feed.append(article);
     }
   }
+  for(const article of liveTurns.values())if(!article.isConnected)feed.append(article);
   feed.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>send(b.dataset.p));
   const add=$('#emptyadd');if(add)add.onclick=openSettings;
   renderQuickbar();
@@ -496,11 +546,10 @@ function liveMessage(mode,modelLabel){
   const slot=document.createElement('div');slot.className='artslot';
   const note=document.createElement('div');note.className='small';
   a.append(think,p,slot,note);feed.append(a);
-  return {
+  return {el:a,
     prose:t=>{
       if(!p.textContent&&t){think.remove();clearInterval(grow);clearTimeout(slowLbl);p.classList.add('writing')}
-      p.textContent=t;
-      if(nearBottom())feed.scrollTop=feed.scrollHeight;
+      p.textContent=t; // no viewport movement while streaming
     },
     site:job=>{think.remove();clearInterval(grow);clearTimeout(slowLbl);slot.replaceChildren(siteEl(job))},
     note:t=>{note.textContent=t;note.className='notice'},
@@ -529,7 +578,7 @@ async function readSSE(response,onEvent){
 
 async function send(text){
   text=text.trim().slice(0,2000);
-  if(!text||pending)return;
+  if(!text||pending.size>=3)return toast('Bitte kurz warten — drei Antworten laufen schon.');
   if(!me)return showLogin('Bitte zuerst anmelden.');
   if(!models.length){openSettings();return toast('Bitte zuerst ein Modell hinzufügen.')}
   const s=current();
@@ -546,8 +595,9 @@ async function send(text){
   render();
   const live=liveMessage(target?'refine':'new',models.find(m=>m.id===modelId)?.label);
   restoreScroll(st);
-  const request={id:uid(),controller:new AbortController()};
-  pending=request;busy(true);
+  const request={id:uid(),controller:new AbortController(),jobId:null};
+  pending.add(request);busy(true);
+  liveTurns.set(request,live.el);
   let prose='',artifact=null,errorMsg=null,doneUser=null,doneAssist=null,jobStarted=null;
   try{
     if(!csrf)throw Error('Sitzung abgelaufen — bitte neu anmelden.');
@@ -556,18 +606,18 @@ async function send(text){
     const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},signal:request.controller.signal,body:JSON.stringify(body)});
     if(!r.ok){const t=await r.json().catch(()=>({}));throw Error(t.error||('Serverfehler '+r.status))}
     await readSSE(r,(event,data)=>{
-      if(pending!==request)return;
+      if(!pending.has(request))return;
       if(event==='prose-chunk'&&typeof data.text==='string'){prose+=data.text.slice(0,4000);live.prose(prose)}
-      else if(event==='artifact-start'){if(!jobStarted)live.site(null)} // Phase 3 beginnt mit dem Artefakt
+      else if(event==='artifact-start'){live.site(jobStarted)} // Phase 3 beginnt mit dem Artefakt
       else if(event==='retry')live.note('Ungültiges Artefakt — ein Korrekturversuch läuft …');
-      else if(event==='element-job'&&data.job&&data.job.id){jobStarted=data.job;applyJob(data.job)}
+      else if(event==='element-job'&&data.job&&data.job.id){jobStarted=data.job;request.jobId=data.job.id;applyJob(data.job)}
       else if(event==='render'){try{artifact=validateRender(data.render)}catch{errorMsg='Ungültige Antwort der Gegenseite.'}}
       else if(event==='error'){errorMsg=String(data.message||'Antwort fehlgeschlagen.');}
       else if(event==='done'){doneUser=data.userMessageId||null;doneAssist=data.assistantMessageId||null}
     });
-  }catch(e){if(pending===request&&e.name!=='AbortError')errorMsg=e.message}
-  if(pending!==request)return; // aborted: syncFromServer() rebuilds truth
-  pending=null;busy(false);
+  }catch(e){if(pending.has(request)&&e.name!=='AbortError')errorMsg=e.message}
+  if(!pending.has(request)){liveTurns.delete(request);return} // stopped: stop() cancels the server job and syncs
+  pending.delete(request);liveTurns.delete(request);busy(pending.size>0);
   sendFinishing=true; // exactly ONE closing render (a concurrent ready-event render would double-render)
   try{
   const st2=scrollState();
@@ -591,8 +641,9 @@ async function send(text){
     return;
   }
   if(jobStarted&&doneAssist){
-    // assistant prose is here; the element arrives when its server job finishes
-    s.messages.push({role:'assistant',id:doneAssist,prose});
+    // durable placeholder for the detached generation; reconcile() attaches
+    // render/prose/error from the (usually already finished) job
+    s.messages.push({role:'assistant',id:doneAssist,prose:prose||undefined,error:errorMsg||undefined});
   }
   else if(artifact)s.messages.push({role:'assistant',id:doneAssist||uid(),prose,render:artifact});
   else if(errorMsg){if(prose)live.error(errorMsg);s.messages.push({role:'assistant',id:doneAssist||uid(),prose,error:errorMsg})}

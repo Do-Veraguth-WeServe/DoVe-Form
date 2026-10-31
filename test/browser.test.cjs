@@ -64,6 +64,7 @@ async function registerUI(p, username, password) {
   const errors = [];
   p.on('pageerror', e => errors.push(e.message));
   const ok = s => console.log('PASS', s);
+  const release = async group => (await (await fetch(MOCK + '/admin/release', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ group }) })).json());
   // wait until no chat turn is streaming/pending on a page
   const idle = pg => pg.waitForFunction(() =>
     !document.querySelector('.live') && document.querySelector('#stop').classList.contains('hidden'),
@@ -300,11 +301,12 @@ async function registerUI(p, username, password) {
     await df.locator('#msg').filter({ hasText: 'gedroppt' }).waitFor({ timeout: 8000 });
     ok('ui.db (real server): CRUD, reload persistence, element scoping, quota rejection');
 
-    // 7. stop aborts upstream (wait for previous chat to finish first)
-    await p.waitForFunction(() => !document.querySelector('.live'), undefined, { timeout: 15000 });
-    await p.locator('#prompt').fill('slow story please');
+    // 7. stop CANCELS the server job: the provider connection is genuinely held
+    // open by the mock; only the explicit stop may abort it.
+    await p.waitForFunction(() => !document.querySelector('.live') && document.querySelector('#stop').classList.contains('hidden'), undefined, { timeout: 15000 });
+    await p.locator('#prompt').fill('halten und stoppen holdprose bitte');
     await p.locator('#prompt').press('Enter');
-    await p.locator('.live .prose').filter({ hasText: 'Erster Gedanke' }).waitFor({ timeout: 30000 });
+    await p.locator('.live .think').waitFor({ timeout: 10000 }); // provider holds: honest thinking phase
     const thinkAnim = await p.evaluate(() => {
       const el = document.querySelector('.live .think .wire line') || document.querySelector('.live .think');
       return el ? getComputedStyle(el).animationName : 'none';
@@ -315,9 +317,10 @@ async function registerUI(p, username, password) {
     await p.locator('#stop').waitFor({ state: 'hidden', timeout: 5000 });
     await new Promise(r => setTimeout(r, 1500));
     const st2 = await mockStats();
-    assert.ok(st2.disconnects > discBefore, `stop disconnected upstream (${discBefore} -> ${st2.disconnects})`);
+    assert.ok(st2.disconnects > discBefore, `stop aborted the held upstream (${discBefore} -> ${st2.disconnects})`);
+    assert.equal((st2.active.holdprose || 0), 0, 'no held stream left after stop');
     assert.equal(await p.locator('#send').isVisible(), true);
-    ok('stop button aborts upstream, error turn synced from server (reduced-motion static)');
+    ok('stop cancels the server job and aborts the provider (reduced-motion static thinking)');
 
     // 7b. background build: phases, construction-site animation, honest states, cancel
     const ctx2 = await b.newContext({ viewport: { width: 1280, height: 900 } });
@@ -326,17 +329,25 @@ async function registerUI(p, username, password) {
     await p2.goto(BASE);
     await loginUI(p2, OWNER, PASS);
     await p2.locator('#model').waitFor({ state: 'visible', timeout: 5000 });
-    await p2.waitForTimeout(2000); // let the previous turn's server-side slot settle
-    await p2.locator('#prompt').fill('baue ein slowbuild element build:9000');
+    await p2.waitForTimeout(500);
+    // (a) provider holds with NOTHING sent: the thinking phase is honest and long
+    await p2.locator('#prompt').fill('holda nachdenken bitte');
     await p2.locator('#prompt').press('Enter');
     await p2.locator('.live .think').waitFor({ timeout: 8000 });
     const edgeCount = await p2.evaluate(() => new Promise(res => {
       const n0 = document.querySelectorAll('.live .think .wire line').length;
       setTimeout(() => res({ n0, n1: document.querySelectorAll('.live .think .wire line').length }), 1600);
     }));
-    assert.ok(edgeCount.n1 >= edgeCount.n0, 'wireframe accumulates edges over time (no fake loop)');
+    assert.ok(edgeCount.n1 > edgeCount.n0, 'wireframe accumulates edges while the provider thinks (no fake loop)');
+    await release('holda');
     await p2.locator('.live .prose').filter({ hasText: 'Hintergrund' }).waitFor({ timeout: 20000 });
-    await p2.locator('.site').first().waitFor({ timeout: 10000 });
+    await p2.waitForFunction(() => !document.querySelector('.live') && document.querySelector('#stop').classList.contains('hidden'), undefined, { timeout: 20000 });
+    // (b) provider holds INSIDE the artifact phase: the construction site is live
+    await p2.locator('#prompt').fill('baue eine baustelle sitehold');
+    await p2.locator('#prompt').press('Enter');
+    await p2.locator('.site[data-jobid]').first().waitFor({ timeout: 15000 });
+    let stHold = await mockStats();
+    assert.ok((stHold.active.sitehold || 0) >= 1, 'upstream provider still OPEN while the site is shown');
     const anim = await p2.evaluate(() => {
       const load = document.querySelector('.site .load');
       const cs = load ? getComputedStyle(load) : null;
@@ -349,29 +360,41 @@ async function registerUI(p, username, password) {
     assert.match(anim.phase, /baut|Warteschlange|prüft/, 'phase text without percentages: ' + anim.phase);
     assert.equal(await p2.locator('.site .sitemeta button', { hasText: 'Abbrechen' }).count(), 1, 'cancel offered per container');
     await p2.screenshot({ path: path.join(shots, 'site-desktop.png'), fullPage: true });
+    const disc7b = (await mockStats()).disconnects;
     await p2.locator('.site .sitemeta button', { hasText: 'Abbrechen' }).first().click();
-    await p2.locator('.site').filter({ hasText: 'Abgebrochen.' }).waitFor({ timeout: 5000 });
+    // cancelled: the message ends with an honest "Abgebrochen." notice (no site left)
+    await p2.locator('.notice').filter({ hasText: 'Abgebrochen.' }).first().waitFor({ timeout: 8000 });
+    await new Promise(r => setTimeout(r, 800));
+    stHold = await mockStats();
+    assert.ok(stHold.disconnects > disc7b, 'cancel aborted the held upstream');
     await ctx2.close();
     ok('thinking wireframe accumulates, construction site animates (screenshot), cancel works');
 
     // 7c. genuine server-owned background job: chat answers BEFORE the element
     // completes; reload keeps the same job; tab close does not stop the build
-    const slowBefore = (await mockStats()).calls.slowbuild || 0;
+    const slowBefore = (await mockStats()).calls.sitehold || 0;
+    const siteholdaBefore = (await mockStats()).calls.siteholda || 0;
     await idle(p);
-    await p.locator('#prompt').fill('baue noch ein slowbuild element build:12000');
+    await p.locator('#prompt').fill('baue noch ein element sitehold');
     await p.locator('#prompt').press('Enter');
     await p.locator('.site[data-jobid]').last().waitFor({ timeout: 15000 });
     const jobId1 = await p.locator('.site[data-jobid]').last().getAttribute('data-jobid');
     const jobSel = '.site[data-jobid="' + jobId1 + '"]';
-    // second chat message must be answered while the build runs
+    await p.evaluate(id => { window.__lastJobSel = id; }, jobId1);
+    // second chat message must be answered while the FIRST provider call is
+    // still held OPEN (detached generation, no per-user chat lock)
     await p.locator('#prompt').fill('Erkläre mir kurz, was ein VPN macht — prose only');
     await p.locator('#prompt').press('Enter');
     await p.locator('.message.assistant').last().locator('.prose').filter({ hasText: 'Virtual Private Network' }).waitFor({ timeout: 30000 });
+    let stHold2 = await mockStats();
+    assert.ok((stHold2.active.sitehold || 0) >= 1, 'first upstream STILL streaming while the second answer completed');
     assert.equal(await p.locator(jobSel).count(), 1, 'construction site still building while chat answered');
-    // reload mid-build (same context): same job id, current state, no duplicate build
+    // reload mid-stream (same context): same job id, current state, no duplicate build
     await p.reload();
     await p.locator(jobSel).first().waitFor({ timeout: 15000 });
     assert.equal(await p.locator(jobSel).first().getAttribute('data-jobid'), jobId1, 'reload shows the SAME job');
+    stHold2 = await mockStats();
+    assert.ok((stHold2.active.sitehold || 0) >= 1, 'reload did not abort the upstream');
     // dedicated context: close its ONLY tab — the server keeps building; reopen
     // shows exactly one finished element (job belongs to the server, not the tab)
     const ctx3 = await b.newContext({ viewport: { width: 1280, height: 900 } });
@@ -383,7 +406,7 @@ async function registerUI(p, username, password) {
     await pTab.waitForTimeout(400); // jobs snapshot applied
     await idle(pTab);
     const priorIds = await pTab.evaluate(() => [...document.querySelectorAll('.site[data-jobid]')].map(s => s.dataset.jobid));
-    await pTab.locator('#prompt').fill('baustelle im geschlossenen tab slowbuild build:8000');
+    await pTab.locator('#prompt').fill('baustelle im geschlossenen tab siteholda');
     await pTab.locator('#prompt').press('Enter');
     // wait for a NEW site (this conversation already shows older jobs)
     await pTab.waitForFunction(oldIds => {
@@ -399,19 +422,27 @@ async function registerUI(p, username, password) {
 
     const closedSel = '.site[data-jobid="' + closedJob + '"]';
     await pTab.close();
-    await new Promise(r => setTimeout(r, 3000)); // still building when the new tab opens
+    await new Promise(r => setTimeout(r, 1000));
+    let stTab = await mockStats();
+    assert.ok((stTab.active.siteholda || 0) >= 1, 'upstream STILL streaming after the tab closed');
+    const discTab = stTab.disconnects;
+    await release('siteholda'); // server completes with NO browser attached
     const p3 = await ctx3.newPage();
     await p3.goto(BASE);
-    await p3.locator(closedSel).first().waitFor({ timeout: 15000 });
-    assert.equal(await p3.locator(closedSel).first().getAttribute('data-jobid'), closedJob, 'second browser of the same user sees the same job');
-    await p3.locator(closedSel).waitFor({ state: 'detached', timeout: 15000 });
+    await p3.locator('.message[data-mid]').first().waitFor({ timeout: 15000 });
     assert.equal(await p3.locator(closedSel).count(), 0, 'no construction site left after completion');
     const closedName = await p3.evaluate(() => [...document.querySelectorAll('.elname')].map(e => e.textContent));
     assert.equal(closedName.filter(n => n === 'Baustellen-Element').length >= 1, true, 'finished element present after tab close');
     const iframesAfterReopen = await p3.locator('iframe.render').count();
-    const st3 = await mockStats();
-    assert.equal(st3.calls.slowbuild, slowBefore + 2, 'no second provider call for reload/tab-close/reopen');
+    stTab = await mockStats();
+    assert.equal(stTab.disconnects, discTab, 'provider saw no disconnect from the tab close');
+    assert.equal(stTab.calls.siteholda, siteholdaBefore + 1, 'exactly ONE provider call for reload+tab-close+reopen');
     ok('background job survives reload + tab close; reopen shows exactly one element, one provider call');
+    // release p's STILL-HELD first job so the per-user concurrency slot frees
+    // for 7d (two concurrent generations must both be able to run)
+    await release('sitehold');
+    await p.waitForFunction(() => !document.querySelector('.site[data-jobid="' + window.__lastJobSel + '"]'), undefined, { timeout: 8000 }).catch(() => {});
+    await new Promise(r => setTimeout(r, 300));
 
     // 7d. two jobs complete in REVERSE order and land on their own containers
     // (older cancelled sites stay visible forever — track only ACTIVE builds)
@@ -424,7 +455,7 @@ async function registerUI(p, username, password) {
     }, 200);
     await idle(p3);
     const preActive = await activeSites();
-    await p3.locator('#prompt').fill('erstes slowbuild element build:4500');
+    await p3.locator('#prompt').fill('erstes element siteholda los');
     await p3.locator('#prompt').press('Enter');
     await p3.waitForFunction(oldIds => {
       const sites = [...document.querySelectorAll('.site[data-jobid]')].filter(s => !s.className.includes('cancelled') && !s.className.includes('failed'));
@@ -434,9 +465,25 @@ async function registerUI(p, username, password) {
       const sites = [...document.querySelectorAll('.site[data-jobid]')].filter(s => !s.className.includes('cancelled') && !s.className.includes('failed'));
       return sites.find(s => !oldIds.includes(s.dataset.jobid)).dataset.jobid;
     }, preActive);
-    await idle(p3);
-    await p3.locator('#prompt').fill('zweites element slowbuild2 build:800');
+    // second submit WHILE the first provider is still held open (concurrent turns)
+    console.log('7D-PRE:', JSON.stringify({ active: (await mockStats()).active, promptBusy: await p3.locator('#prompt').inputValue().then(() => 'ok').catch(e => e.message) }));
+    p3.on('response', r => { if (r.status() >= 400) console.log('p3 http', r.status(), r.url().slice(0, 60)); });
+    await p3.locator('#prompt').fill('zweites element siteholdb los');
     await p3.locator('#prompt').press('Enter');
+    await p3.waitForFunction(oldIds => {
+      const sites = [...document.querySelectorAll('.site[data-jobid]')].filter(s => !s.className.includes('cancelled') && !s.className.includes('failed'));
+      return sites.filter(s => !oldIds.includes(s.dataset.jobid)).length === 1;
+    }, [...preActive, jA], { timeout: 15000 });
+    const jB = await p3.evaluate(oldIds => [...document.querySelectorAll('.site[data-jobid]')]
+      .find(s => !oldIds.includes(s.dataset.jobid) && !s.className.includes('cancelled') && !s.className.includes('failed')).dataset.jobid, [...preActive, jA]);
+    assert.notEqual(jA, jB, 'each request has its own job');
+    let stD = await mockStats();
+    assert.ok((stD.active.siteholda || 0) >= 1 && (stD.active.siteholdb || 0) >= 1, 'both upstreams held open concurrently');
+    await release('siteholdb'); // second finishes FIRST
+    await p3.waitForFunction(jid => !document.querySelector('.site[data-jobid="' + jid + '"]'), jB, { timeout: 15000 });
+    stD = await mockStats();
+    assert.ok((stD.active.siteholda || 0) >= 1, 'first upstream still open after the second completed');
+    await release('siteholda');
     await p3.waitForFunction(() => ![...document.querySelectorAll('.site[data-jobid]')]
       .some(s => !s.className.includes('cancelled') && !s.className.includes('failed')), undefined, { timeout: 20000 });
     clearInterval(watch);
@@ -504,11 +551,12 @@ async function registerUI(p, username, password) {
     // at the bottom: position stays pinned to the bottom (no jump to top)
     await p3.evaluate(() => { const f = document.querySelector('#feed'); f.scrollTop = f.scrollHeight; });
     await p3.waitForTimeout(200);
+    const topBeforeBottom = await p3.evaluate(() => Math.round(document.querySelector('#feed').scrollTop));
     await p3.locator('#prompt').fill('letzter test am grund');
     await p3.locator('#prompt').press('Enter');
     await idle(p3);
-    const atBottom = await p3.evaluate(() => { const f = document.querySelector('#feed'); return f.scrollHeight - f.scrollTop - f.clientHeight; });
-    assert.ok(atBottom < 150, 'stays at the bottom while at the bottom (gap ' + atBottom + ')');
+    const topAfterBottom = await p3.evaluate(() => Math.round(document.querySelector('#feed').scrollTop));
+    assert.ok(Math.abs(topAfterBottom - topBeforeBottom) < 40, `viewport does not move on submit, even at the bottom (${topBeforeBottom} -> ${topAfterBottom})`);
     // mobile 390px: mid-anchor preserved + construction site screenshot
     await p3.locator('#sessions button').filter({ hasText: 'Lang' }).first().click();
     await p3.locator('.message[data-mid]').nth(5).waitFor({ timeout: 10000 });
@@ -524,13 +572,13 @@ async function registerUI(p, username, password) {
     const mobAfter = await topVisible();
     assert.equal(mobAfter.mid, mobBefore.mid, '390px: anchor preserved');
     await idle(p3);
-    await p3.locator('#prompt').fill('mobile baustelle slowbuild build:8000');
+    await p3.locator('#prompt').fill('mobile baustelle sitehold');
     await p3.locator('#prompt').press('Enter');
     await p3.locator('.site[data-jobid]').first().waitFor({ timeout: 15000 });
     assert(await p3.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'no horizontal overflow at 390px with site');
     await p3.screenshot({ path: path.join(shots, 'site-mobile.png'), fullPage: true });
     await p3.locator('.site .sitemeta button', { hasText: 'Abbrechen' }).first().click();
-    await p3.locator('.site').filter({ hasText: 'Abgebrochen.' }).waitFor({ timeout: 5000 });
+    await p3.locator('.notice').filter({ hasText: 'Abgebrochen.' }).first().waitFor({ timeout: 8000 });
     ok('scroll anchor preserved (Enter/button/bottom/390px), mobile construction-site screenshot saved');
 
     // 8. export never contains keys; localStorage cache holds schema v4
