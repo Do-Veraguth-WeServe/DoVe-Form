@@ -632,7 +632,22 @@ async function registerUI(p, username, password) {
     await p.locator('#overlay button[aria-label="Element schliessen"]').click();
     await p.locator('#chats-tab').click();
     await p.locator('#sessions button').filter({hasText:'Boundary'}).first().click();
-    ok('Elements tab lists saved elements across chats and opens the correct item');
+    await p.locator('#elements-tab').click();
+    await p.locator('#elements-list button').first().click();
+    await p.locator('#overlay[open]').waitFor();
+    const surface=await p.evaluate(()=>({overlay:getComputedStyle(document.querySelector('#overlay')).backgroundColor,chat:getComputedStyle(document.body).backgroundColor,border:getComputedStyle(document.querySelector('#overlay')).borderTopWidth}));
+    assert.equal(surface.overlay,surface.chat,'element surface matches chat background');
+    assert.equal(surface.border,'0px');
+    await p.setViewportSize({width:390,height:844});
+    await p.screenshot({path:'docs/screenshots/element-mobile.png'});
+    await p.locator('#overlay button[aria-label="Element schliessen"]').click();
+    const menu=await p.locator('#mobile').boundingBox();
+    const settings=await p.locator('#settingsbtn').boundingBox();
+    assert.ok(menu.x>settings.x&&menu.x+menu.width<=390,'mobile menu sits at right edge');
+    await p.setViewportSize({width:1440,height:1000});
+    await p.locator('#chats-tab').click();
+    await p.locator('#sessions button').filter({hasText:'Boundary'}).first().click();
+    ok('Elements tab opens saved items; seamless surface; mobile menu right');
     const statuses = await p.evaluate(async () => [
       await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).then(r => r.status),
       await fetch('/form.models.json').then(r => r.status),
