@@ -623,6 +623,16 @@ async function registerUI(p, username, password) {
     await pinBtn2.scrollIntoViewIfNeeded();
     await pinBtn2.click();
     await p.locator('#quickbar .qchip').first().waitFor({ state: 'visible', timeout: 3000 });
+    await p.locator('#elements-tab').click();
+    assert.equal(await p.locator('#sessions').isVisible(),false);
+    assert.ok(await p.locator('#elements-list button').count()>=2,'collection includes pinned elements from multiple chats');
+    await p.locator('#elements-list button').filter({hasText:'Spar-Rechner'}).first().click();
+    await p.locator('#overlay[open]').waitFor();
+    assert.match(await p.locator('#overlay .ovhead strong').textContent(),/Spar-Rechner/);
+    await p.locator('#overlay button[aria-label="Element schliessen"]').click();
+    await p.locator('#chats-tab').click();
+    await p.locator('#sessions button').filter({hasText:'Boundary'}).first().click();
+    ok('Elements tab lists saved elements across chats and opens the correct item');
     const statuses = await p.evaluate(async () => [
       await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).then(r => r.status),
       await fetch('/form.models.json').then(r => r.status),

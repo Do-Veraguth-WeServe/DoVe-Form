@@ -392,6 +392,24 @@ function updateComposer(){
   $('#whoami').textContent=me?(me.username+(me.role==='owner'?' · Owner':'')):'';
 }
 
+let sidebarTab='chats';
+function renderElementList(){
+  const list=$('#elements-list');list.replaceChildren();
+  for(const s of db.sessions)for(const m of s.messages){
+    if(!m.render||!isPinned(m))continue;
+    const b=document.createElement('button');b.textContent=elementName(m);b.title=s.title;b.dataset.mid=m.id;
+    b.onclick=()=>{db.current=s.id;marked=null;save();renderPreservingScroll();$('#sidebar').classList.remove('open');openOverlay(m)};
+    list.append(b);
+  }
+  if(!list.children.length){const n=document.createElement('small');n.textContent='Mit ★ gespeicherte Elemente';list.append(n)}
+  list.classList.toggle('hidden',sidebarTab!=='elements');
+  $('#sessions').classList.toggle('hidden',sidebarTab!=='chats');
+  $('#elements-tab').setAttribute('aria-selected',String(sidebarTab==='elements'));
+  $('#chats-tab').setAttribute('aria-selected',String(sidebarTab==='chats'));
+}
+$('#elements-tab').onclick=()=>{sidebarTab='elements';renderElementList()};
+$('#chats-tab').onclick=()=>{sidebarTab='chats';renderElementList()};
+
 function renderQuickbar(){
   const bar=$('#quickbar');if(!bar)return;
   bar.replaceChildren();
@@ -495,6 +513,7 @@ function render(){  views.forEach(v=>v.destroy());views=[];
   for(const article of liveTurns.values())if(!article.isConnected)feed.append(article);
   feed.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>send(b.dataset.p));
   const add=$('#emptyadd');if(add)add.onclick=openSettings;
+  renderElementList();
   renderQuickbar();
   renderChip();
   updateComposer();
