@@ -65,11 +65,13 @@ const CANDIDATES = [
   ok('deployed app loads, configured model present: ' + (await p.locator('#model option').first().textContent()));
 
   // 1. data-driven element with ui.db (persistent server-side table)
+  const framesBeforeTodo = await p.locator('iframe.render').count();
   await p.locator('#new').click();
   await p.locator('#prompt').fill('Baue mir ein Element "Aufgaben": Eingabefeld + Button «Hinzufügen», darunter die Liste der offenen Aufgaben aus einer echten Datenbanktabelle (ui.db.create/insert/select). Beim Laden sollen gespeicherte Einträge erscheinen — die Liste muss Seiten-Reloads überleben. Kurze Antwort, dann das Element.');
   await p.locator('#prompt').press('Enter');
-  let tf = p.frameLocator('iframe.render').last();
-  await tf.locator('input,button').first().waitFor({ timeout: 180000 });
+  await p.locator('iframe.render').first().waitFor({ timeout: 305000 }); // fresh conversation -> element is iframe #0
+  let tf = p.frameLocator('iframe.render').first();
+  await tf.locator('input,button').first().waitFor({ timeout: 20000 });
   ok('real model produced a data-driven element (iframe rendered)');
   console.log('  element name:', await p.locator('.elname').last().textContent());
 
@@ -87,7 +89,7 @@ const CANDIDATES = [
 
   // reload: the todo must come back from the SERVER database
   await p.reload();
-  tf = p.frameLocator('iframe.render').last();
+  tf = p.frameLocator('iframe.render').first();
   await tf.locator('body').waitFor({ timeout: 20000 });
   let persisted = '';
   for (let i = 0; i < 40; i++) { await p.waitForTimeout(500); persisted = await tf.locator('body').innerText().catch(() => ''); if (persisted.includes(marker)) break; }
@@ -115,21 +117,29 @@ const CANDIDATES = [
   assert.equal(after2.frames, before2.frames, 'no duplicate element');
   ok('in-place refinement on live model: element replaced, history clean');
 
-  // 3. lab-shell element with real /bin/ping
-  await p.locator('#prompt').fill('Baue mir ein Element "Ping-Konsole": Eingabefeld für einen Ziel-Host (default example.com), ein Button, der ui.ping auf den Host ausführt, und die Ausgabe (ok, ms, ip) darunter. Labor-Look. Kurze Antwort, dann das Element.');
-  await p.locator('#prompt').press('Enter');
-  let pf = p.frameLocator('iframe.render').last();
-  await pf.locator('input').first().waitFor({ timeout: 180000 });
-  const btn = pf.locator('button').first();
-  await btn.click();
-  let out = '';
-  for (let i = 0; i < 40; i++) {
-    await p.waitForTimeout(500);
-    const t = await pf.locator('body').innerText().catch(() => '');
-    if (/(ms|online|ok)/i.test(t) && /\d/.test(t)) { out = t; break; }
+  // 3. lab-shell element with real /bin/ping (retry once — slow model turns can hit the 180s cap)
+  const framesBeforePing = await p.locator('iframe.render').count(); // within the CURRENT conversation view
+  let pingOk = false, out = '';
+  for (let attempt = 0; attempt < 2 && !pingOk; attempt++) {
+    if (attempt > 0) { await p.waitForTimeout(2000); }
+    await p.locator('#prompt').fill('Baue mir ein Element "Ping-Konsole": Eingabefeld für einen Ziel-Host (default example.com), ein Button, der ui.ping auf den Host ausführt, und die Ausgabe (ok, ms, ip) darunter. Labor-Look. Kurze Antwort, dann das Element.');
+    await p.locator('#prompt').press('Enter');
+    try {
+      await p.locator('iframe.render').nth(framesBeforePing).waitFor({ timeout: 305000 });
+    } catch { continue; }
+    const pf = p.frameLocator('iframe.render').nth(framesBeforePing);
+    await pf.locator('input').first().waitFor({ timeout: 20000 });
+    const btn = pf.locator('button').first();
+    await btn.click();
+    for (let i = 0; i < 40; i++) {
+      await p.waitForTimeout(500);
+      const t = await pf.locator('body').innerText().catch(() => '');
+      if (/(ms|online|ok)/i.test(t) && /\d/.test(t)) { out = t; break; }
+    }
+    if (out) pingOk = true;
   }
   console.log('  element output:', out.replace(/\n/g, ' | ').slice(0, 160));
-  assert.match(out, /(ms|online)/i, 'ping result rendered in element');
+  assert.ok(pingOk && /(ms|online)/i.test(out), 'ping result rendered in element');
   ok('ui.ping executed via real /bin/ping, result visible in element');
 
   // 4. pin -> quickbar, overlay, screenshots

@@ -383,7 +383,7 @@ const server = http.createServer(async (req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no', 'Connection': 'keep-alive' });
   res.write(':form3\n\n');
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 180000);
+  const timeout = setTimeout(() => controller.abort(), 300000); // 5 min cap; Stop aborts instantly
   res.on('close', () => { if (!res.writableEnded) controller.abort(); });
   activeChats.add(user.id);
   let assistantMessageId = null;

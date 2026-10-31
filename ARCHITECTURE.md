@@ -94,7 +94,7 @@ Stop = Client bricht den fetch ab → Server sieht `res.close` → `AbortControl
 
 ## Grenzen
 
-- Ein Chat gleichzeitig pro User (429 mit klarem Text), 30 Chats/Minute/User, 180 s Timeout, Upstream auf 300 KB begrenzt.
+- Ein Chat gleichzeitig pro User (429 mit klarem Text), 30 Chats/Minute/User, 300 s Timeout, Upstream auf 300 KB begrenzt.
 - Verlaufsfenster 12 Nachrichten / Zustände 3 — bewusst (Kontext-Kosten, Disclosed in UI).
 - Der Interpreter isoliert Logik, ist aber keine GPU/Layout-Isolation; CSP verhindert Netz/Navigation im Renderer.
 - Lokal ohne HTTPS: Cookie ohne `Secure` (nur loopback); hinter tailscale serve wird HTTPS erkannt und `Secure` gesetzt. CSRF + Origin-Checks gelten immer.

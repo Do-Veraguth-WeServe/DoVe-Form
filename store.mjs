@@ -31,8 +31,7 @@ export function verifyPassword(pw, stored) {
 export class Store {
   constructor(dataDir) {
     this.dir = dataDir;
-    this.elementsDir = path.join(dataDir, 'elements');
-    fs.mkdirSync(this.elementsDir, { recursive: true, mode: 0o700 });
+    fs.mkdirSync(dataDir, { recursive: true, mode: 0o700 });
     try { fs.chmodSync(dataDir, 0o700); } catch {}
     this.db = new DatabaseSync(path.join(dataDir, 'form.db'));
     try { fs.chmodSync(path.join(dataDir, 'form.db'), 0o600); } catch {}
