@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node build.mjs",
-    "test": "node --test security.test.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/unit/security.test.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
     "fmt:check": "prettier --check ."
