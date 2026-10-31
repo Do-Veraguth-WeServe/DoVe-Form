@@ -1,6 +1,6 @@
 # Form v2 adapter
 
-Browser POST /form/api/chat: {version:1, sessionId:UUIDv4, requestId:UUIDv4, text:string<=2000, states:up to 3 JSON snapshots, context:import summary<=4000}. JSON total <=16KB. Requires exact Origin and X-Form-CSRF from authenticated GET /form/api/bootstrap. Only configured Tailnet login accepted. Response {requestId,render:{version:1,html,css,js,state}} or bounded error. No arbitrary paths, models, headers or agent targets accepted. Backend server.mjs is the replaceable adapter; UI contract lives in contract.mjs.
+Browser POST /form/api/chat: {version:1, sessionId:UUIDv4, requestId:UUIDv4, text:string<=2000, states:up to 3 JSON snapshots, context:import summary<=4000}. JSON total <=16KB. Requires exact Origin and X-Form-CSRF from authenticated GET /form/api/bootstrap. Only configured Tailnet login accepted. Response {requestId,render:{version:1,html,css,js,state}} or bounded error. No arbitrary paths, models, headers or agent targets accepted. Backend server/server.mjs is the replaceable adapter; UI contract lives in src/shared/contract.js.
 
 Server private Unix socket /opt/form/run/http.sock (0600) in 0700 directory. Tailscale Serve authenticates login and overwrites identity headers; no TCP adapter endpoint exists for proxy-header spoofing. Root/tailscaled and form user are the explicit local trusted boundary. Gateway owner credential in /opt/form/.env (JSON, 0600 form:form), never static assets. Session routing: fixed agent form, agent:form:form:HMAC(login:UUID). Only the dedicated workspace is supplied; agent skills [] and tools deny ["*"], codeMode/swarm/elevated disabled. Existing HTTP completions endpoint was already enabled. Agent config hot-applied without gateway restart.
 
@@ -9,7 +9,7 @@ Generated JS runs ONLY in QuickJS WASM worker, 16MB heap, 256KB stack, 150ms syn
 Local archive v2 stores validated renders and state. Imports get fresh conversation IDs and bounded text context; arbitrary imported JS remains in the same interpreter boundary. Browser localStorage/exports are unencrypted. Gateway retains its own isolated conversation history. Only last 12 messages are rendered to bound worker count; full archive preserved for export. No forks, cloud archive sync, external assets, timers, async JS or direct DOM access.
 
 ## Operations
-Build: npm ci --ignore-scripts && npm run build. Runtime /opt/form/server.mjs + contract.mjs + dist; PM2 user form, boot via pm2-form.service, pinned pm2-logrotate 3.0.0 (10MB ×3). Do not start root PM2. Restart only Form: su - form -c 'pm2 restart form'.
+Build: npm ci --ignore-scripts && npm run build. Runtime /opt/form/server.mjs + contract.js + dist (repo: server/server.mjs, src/shared/contract.js, dist/); PM2 user form, boot via pm2-form.service, pinned pm2-logrotate 3.0.0 (10MB ×3). Do not start root PM2. Restart only Form: su - form -c 'pm2 restart form'.
 
 ## Rollback
 Restore original demo at main URL (no gateway change):

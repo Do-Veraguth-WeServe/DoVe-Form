@@ -10,20 +10,20 @@ gelesen und muss zum Bundle passen).
 
 ---
 
-## Phase 0 — Fundament (kein Verhalten, sofort machbar)
+## Phase 0 — Fundament (kein Verhalten, sofort machbar) — ✅ erledigt (fc9ff1b)
 
-- [ ] Artefakte aus dem Git entfernen und ignorieren:
+- [x] Artefakte aus dem Git entfernen und ignorieren:
       `git rm --cached desktop.png mobile.png live-desktop.png live-mobile.png test-results.json`
       → `.gitignore` ergänzen (`*.png`, `test-results.json`). `live-proof.json` nach
       `docs/evidence/` verschieben (TESTING.md verweist darauf).
-- [ ] `.editorconfig` (2 Spaces, LF, UTF-8, final newline).
-- [ ] ESLint + Prettier als devDependencies, npm scripts `lint` / `format` / `fmt:check`.
+- [x] `.editorconfig` (2 Spaces, LF, UTF-8, final newline).
+- [x] ESLint + Prettier als devDependencies, npm scripts `lint` / `format` / `fmt:check`.
       Prettier-Regel bewusst: printWidth 100 — verhindert, dass je wieder Einzeiler entstehen.
-- [ ] Naming klären: Repo `DoVe-Form` ↔ Package `form-private`. Vorschlag: package name
-      `dove-form`, version 2.0.x lassen.
-- [ ] `README.md` Dev-Quickstart aktualisieren (lokal: install/build/test in 3 Befehlen).
+- [x] Naming klären: Repo `DoVe-Form` ↔ Package `form-private`. Package heisst jetzt
+      `dove-form`, version 2.0.x bleibt.
+- [x] `README.md` Dev-Quickstart aktualisieren (lokal: install/build/test in 3 Befehlen).
 
-## Phase 1 — Verzeichnisstruktur
+## Phase 1 — Verzeichnisstruktur — ✅ erledigt (38f1bde)
 
 - [ ] Zielbild:
 
@@ -44,13 +44,14 @@ test/
 docs/         SECURITY.md, ADAPTER.md, TESTING.md, evidence/live-proof.json
 ```
 
-- [ ] Alle Imports anpassen, `npm run build && npm test` muss grün bleiben.
-- [ ] Docs-Pfade in README/TESTING/ADAPTER entsprechend mitziehen.
+- [x] Alle Imports anpassen, `npm run build && npm test` muss grün bleiben.
+- [x] Docs-Pfade in README/TESTING/ADAPTER entsprechend mitziehen.
 
 ## Phase 2 — Code lesbar machen (grösster Gewinn)
 
-- [ ] **Alle Einzeiler-Dateien formatieren** (`prettier --write` + händisch in sinnvolle
-      Funktionen zerlegen). Keine Logikänderung, keine String-Änderung.
+- [x] **Alle Einzeiler-Dateien formatieren** (mechanischer Teil erledigt via `prettier --write`,
+      e3499fe — 148 Mini-Zeilen → 849 echte Zeilen; händische Zerlegung in sinnvolle
+      Funktionen folgt im Rest von Phase 2).
 - [ ] `src/app.js` (7 Zeilen → ~300) in die Module aus Phase 1 zerlegen:
       storage/normalize, api-client, render-loop, composer, session-switch.
 - [ ] `src/renderer.js` (3 Zeilen → ~200): `bridge()` und `renderUI()` getrennt formatieren,
