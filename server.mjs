@@ -53,8 +53,8 @@ async function runRound(cfg, messages, controller, onProse, onArtifactStart) {
     const { done, value } = await reader.read();
     if (done) break;
     const text = dec.decode(value, { stream: true });
-    raw += text; total += text.length;
-    if (total > 4000000) { controller.abort(); throw Error('Antwort des Modells zu gross'); }
+    total += text.length; if (raw.length < 4096) raw += text.slice(0, 4096 - raw.length);
+    if (total > 64000000) { controller.abort(); throw Error('Antwort des Modells zu gross'); }
     sseBuf += text;
     let nl;
     while ((nl = sseBuf.indexOf('\n')) !== -1) {
