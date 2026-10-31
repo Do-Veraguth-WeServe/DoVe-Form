@@ -1,0 +1,49 @@
+{
+  "version": 2,
+  "current": "b8670123-78b0-4e02-91db-11122289c6b7",
+  "sessions": [
+    {
+      "id": "b8670123-78b0-4e02-91db-11122289c6b7",
+      "title": "Merke dir das Kennwort Waldstern. Baue einen ",
+      "context": "",
+      "messages": [
+        {
+          "role": "user",
+          "id": "5b24e470-201c-4719-9733-daead765a5fc",
+          "text": "Merke dir das Kennwort Waldstern. Baue einen kleinen interaktiven Rechner: Monatsbetrag 250 CHF, Eingabe mit id amount, Ergebnis id result zeigt 12 mal Betrag, state.amount. Nutze ui.on und ui.persist."
+        },
+        {
+          "role": "assistant",
+          "id": "ead565cc-13b8-4b4b-ba3e-bc7503d500d9",
+          "render": {
+            "version": 1,
+            "html": "<main><h1>Monats-Sparrechner</h1><p><strong>Hinweis:</strong> Ich habe mir „Waldstern“ für diese Unterhaltung gemerkt. Eine dauerhafte Speicherung über diese Sitzung hinaus habe ich hier nicht — sicherer wäre, es nicht in Chat-Verläufen zu lagern.</p><label for=\"amount\">Monatsbetrag (CHF)</label><input id=\"amount\" type=\"number\"></input><section><h2>Jahresergebnis</h2><p><span id=\"result\">0</span> CHF <small>(12 × Monatsbetrag)</small></p></section></main>",
+            "css": "body{background:#141718;color:#e9e9de;font-family:system-ui,sans-serif;margin:0;padding:2rem;display:flex;justify-content:center}main{max-width:100%;width:32rem}h1{color:#d4ef8b;font-size:1.4rem}label{display:block;margin:1.2rem 0 .4rem;font-size:.9rem}input{background:#1d2224;border:1px solid #333a3d;color:#e9e9de;padding:.6rem .8rem;border-radius:.5rem;font-size:1.1rem;width:8rem}section{margin-top:1.5rem;background:#1d2224;border-radius:.6rem;padding:1rem 1.2rem}h2{margin:0 0 .4rem;font-size:.85rem;color:#9aa39a;text-transform:uppercase;letter-spacing:.08em}#result{color:#d4ef8b;font-size:1.8rem;font-weight:700}small{color:#9aa39a}",
+            "js": "if (typeof state.amount !== 'number') state.amount = 250;\nfunction update(){\n  ui.value('amount', String(state.amount));\n  ui.text('result', String(state.amount * 12));\n}\nui.on('amount','input',function(e){\n  var v = Number(e.value);\n  state.amount = isNaN(v) ? 0 : v;\n  ui.text('result', String(state.amount * 12));\n  ui.persist();\n});\nupdate();",
+            "state": {
+              "amount": 700
+            }
+          }
+        },
+        {
+          "role": "user",
+          "id": "e14dbd47-e0c3-4459-ad15-7f9501698514",
+          "text": "Wie lautet mein Kennwort und wie hoch ist mein aktueller Monatsbetrag? Nenne beides und den Jahresbetrag in deiner Antwort."
+        },
+        {
+          "role": "assistant",
+          "id": "4e50eed1-1ae1-4bf8-bb51-eb617c08528c",
+          "render": {
+            "version": 1,
+            "html": "<main><h1>Deine Angaben</h1><ul><li><strong>Kennwort:</strong> <span id=\"pw\">Waldstern</span></li><li><strong>Monatsbetrag:</strong> <span id=\"month\">700</span> CHF</li><li><strong>Jahresbetrag (12 ×):</strong> <span id=\"year\">8400</span> CHF</li></ul><p><em>Kleiner Hinweis:</em> Kennwörter im Chat zu nennen ist riskant — ich behalte es nur für diese Unterhaltung, empfehle dir aber, es woanders nicht zu teilen.</p><label for=\"amount\">Monatsbetrag (CHF)</label><input id=\"amount\" type=\"number\"></input><section><h2>Jahresergebnis</h2><p><span id=\"result\">8400</span> CHF <small>(12 × Monatsbetrag)</small></p></section></main>",
+            "css": "body{background:#141718;color:#e9e9de;font-family:system-ui,sans-serif;margin:0;padding:2rem;display:flex;justify-content:center}main{max-width:100%;width:32rem}h1{color:#d4ef8b;font-size:1.4rem}ul{list-style:none;padding:0;line-height:1.9}li{border-bottom:1px solid #262c2f;padding:.3rem 0}label{display:block;margin:1.2rem 0 .4rem;font-size:.9rem}input{background:#1d2224;border:1px solid #333a3d;color:#e9e9de;padding:.6rem .8rem;border-radius:.5rem;font-size:1.1rem;width:8rem}section{margin-top:1.5rem;background:#1d2224;border-radius:.6rem;padding:1rem 1.2rem}h2{margin:0 0 .4rem;font-size:.85rem;color:#9aa39a;text-transform:uppercase;letter-spacing:.08em}#result{color:#d4ef8b;font-size:1.8rem;font-weight:700}small,em{color:#9aa39a}",
+            "js": "if (typeof state.amount !== 'number') state.amount = 700;\nfunction update(){\n  ui.value('amount', String(state.amount));\n  ui.text('month', String(state.amount));\n  ui.text('year', String(state.amount * 12));\n  ui.text('result', String(state.amount * 12));\n}\nui.on('amount','input',function(e){\n  var v = Number(e.value);\n  state.amount = isNaN(v) ? 0 : v;\n  update();\n  ui.persist();\n});\nupdate();",
+            "state": {
+              "amount": 700
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

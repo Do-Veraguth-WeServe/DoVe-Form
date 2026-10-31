@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-31T11:03:10.455Z",
+  "checks": [
+    "HTTPS app loads",
+    "Calculator live DOM and persisted state",
+    "Calculator survives refresh",
+    "Comparison and suggestion require explicit send",
+    "Plan and selection survive refresh",
+    "Opaque iframe denies parent DOM and network",
+    "Forged resize ignored",
+    "Arbitrary input deterministic fallback, HTML inert",
+    "Loading and cancellation",
+    "Error state recoverable",
+    "Multiple sessions and export/import merge",
+    "Invalid imported renderer rejected atomically",
+    "390px mobile interaction, no horizontal overflow, reduced motion",
+    "No uncaught JS errors"
+  ]
+}
