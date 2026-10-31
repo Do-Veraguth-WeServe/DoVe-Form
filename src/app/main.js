@@ -1,8 +1,284 @@
 import { renderUI } from '../render/renderer.js';
 import { validateRender } from '../shared/contract.js';
-const $=s=>document.querySelector(s),uid=()=>crypto.randomUUID(),key='form.live.v2';let db,pending,views=[],csrf;const current=()=>db.sessions.find(s=>s.id===db.current);function toast(t){$('#live').textContent=t;const n=document.createElement('div');n.className='toast';n.textContent=t;document.body.append(n);setTimeout(()=>n.remove(),4000)}function save(){try{localStorage.setItem(key,JSON.stringify(db))}catch{toast('Speicher voll — bitte exportieren.')}}
-function normalize(x){if(x?.version!==2||!Array.isArray(x.sessions)||x.sessions.length>40)throw Error('Ungültiges Archiv');return {version:2,current:x.current,sessions:x.sessions.map(s=>{if(typeof s.id!=='string'||!/^[0-9a-f-]{36}$/.test(s.id)||typeof s.title!=='string'||!Array.isArray(s.messages)||s.messages.length>100)throw Error('Ungültige Sitzung');return {id:s.id,title:s.title.slice(0,80),context:typeof s.context==='string'?s.context.slice(0,4000):'',messages:s.messages.map(m=>{if(m.role==='user'&&typeof m.text==='string')return {role:'user',id:uid(),text:m.text.slice(0,2000)};if(m.role==='assistant'&&m.render)return {role:'assistant',id:uid(),render:validateRender(m.render)};if(m.role==='assistant'&&typeof m.error==='string')return {role:'assistant',id:uid(),error:m.error.slice(0,300)};throw Error('Ungültige Nachricht')})}})}}
-try{db=normalize(JSON.parse(localStorage.getItem(key)))}catch{db={version:2,sessions:[]}}function busy(on){$('#stop').classList.toggle('hidden',!on);$('#send').classList.toggle('hidden',on)}function stop(){if(!pending)return;pending.controller.abort();pending=null;busy(false);toast('Antwort gestoppt.');render();}function newSession(){stop();if(db.sessions.length>=40)return toast('Maximal 40 Sitzungen');const s={id:uid(),title:'Neuer Gedankengang',messages:[],context:''};db.sessions.unshift(s);db.current=s.id;save();render();$('#sidebar').classList.remove('open')}
-function render(){views.forEach(v=>v.destroy());views=[];$('#sessions').replaceChildren();for(const s of db.sessions){const b=document.createElement('button');b.textContent=s.title;b.setAttribute('aria-current',s.id===db.current);b.onclick=()=>{stop();db.current=s.id;save();render();$('#sidebar').classList.remove('open')};$('#sessions').append(b)}const feed=$('#feed');feed.innerHTML='<section class="intro"><div class="eyebrow">Ein Gespräch. Unendlich viele Formen.</div><h1>Gedanken brauchen<br><em>keine Schubladen.</em></h1><p>Frag, erkunde, verändere. Form gestaltet jede Antwort neu — mit einem eigenen, privaten KI-Gedankengang.</p><div class="starters"><button data-p="Gestalte einen interaktiven Sparziel-Rechner in CHF">↗ Sparziel erkunden</button><button data-p="Hilf mir interaktiv drei Ideen für einen kreativen freien Tag zu vergleichen">◇ Ideen vergleichen</button><button data-p="Entwirf eine interaktive Wochenplanung mit veränderbaren Prioritäten">⌁ Woche gestalten</button></div></section>';if(current().messages.length>12){const history=document.createElement('p');history.className='notice';history.textContent='Die letzten 12 Nachrichten sind geöffnet. Das vollständige Gespräch bleibt im Export erhalten.';feed.append(history)}for(const m of current().messages.slice(-12)){const article=document.createElement('article');article.className='message '+(m.role==='user'?'user':'assistant');if(m.role==='user'){const b=document.createElement('div');b.className='bubble';b.textContent=m.text;article.append(b)}else{article.innerHTML='<div class="byline"><span>⌑</span> FORM <small> / KI · ISOLIERT</small></div>';if(m.error){const n=document.createElement('div');n.className='notice error';n.textContent=m.error;article.append(n)}else{const note=document.createElement('div');note.className='small';const view=renderUI(m.render,{onState:state=>{m.render.state=state;save()},onSuggest:text=>{$('#prompt').value=text;toast('Vorschlag eingefügt — nur du sendest ihn.')},onError:text=>{note.textContent=text;note.className='notice error'}});views.push(view);article.append(view.element,note);const b=document.createElement('button');b.textContent='Mit diesen Werten weiterdenken ↗';b.onclick=()=>{$('#prompt').value='Denke mit meinen aktuellen Einstellungen weiter.';$('#prompt').focus();toast('Werte werden erst mit deiner Nachricht gesendet.')};article.append(b)}}feed.append(article)}feed.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>send(b.dataset.p));}
-async function send(text){text=text.trim().slice(0,2000);if(!text||pending)return;const s=current();if(s.messages.length>=98)return toast('Bitte einen neuen Gedankengang starten.');s.messages.push({role:'user',id:uid(),text});if(s.messages.length===1)s.title=text.slice(0,45);$('#prompt').value='';save();render();const n=document.createElement('div');n.className='notice';n.textContent='⌑ Form denkt in Möglichkeiten …';$('#feed').append(n);n.scrollIntoView();const request={id:uid(),controller:new AbortController()};pending=request;busy(true);try{if(!csrf){const r=await fetch('/form/api/bootstrap',{signal:request.controller.signal});if(!r.ok)throw Error('Tailnet-Anmeldung nicht freigegeben.');csrf=(await r.json()).csrf;}const r=await fetch('/form/api/chat',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},signal:request.controller.signal,body:JSON.stringify({version:1,sessionId:s.id,requestId:request.id,text,states:s.messages.filter(m=>m.render).slice(-3).map(m=>({id:m.id,state:m.render.state})),context:s.context||''})});const data=await r.json();if(!r.ok)throw Error(data.error||'Antwort fehlgeschlagen');if(pending!==request||data.requestId!==request.id)return;s.messages.push({role:'assistant',id:uid(),render:validateRender(data.render)});}catch(e){if(pending===request&&e.name!=='AbortError')s.messages.push({role:'assistant',id:uid(),error:e.message});}finally{if(pending===request){pending=null;busy(false);save();render();$('#feed').lastElementChild?.scrollIntoView({block:'start'})}}}
-$('#composer').onsubmit=e=>{e.preventDefault();send($('#prompt').value)};$('#prompt').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();send(e.target.value)}};$('#stop').onclick=stop;$('#new').onclick=newSession;$('#mobile').onclick=()=>{$('#sidebar').classList.toggle('open');$('#mobile').setAttribute('aria-expanded',$('#sidebar').classList.contains('open'))};document.addEventListener('keydown',e=>{if(e.key==='Escape'){stop();$('#sidebar').classList.remove('open')}});$('#export').onclick=()=>{const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));a.href=url;a.download='form-gespraeche.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};$('#import').onclick=()=>$('#file').click();$('#file').onchange=async e=>{try{const f=e.target.files[0];if(!f)return;if(f.size>1500000)throw Error('Maximal 1,5 MB');const data=normalize(JSON.parse(await f.text()));if(data.sessions.length+db.sessions.length>40)throw Error('Maximal 40 Sitzungen');stop();for(const s of data.sessions){s.id=uid();s.context=s.messages.map(m=>m.role==='user'?'User: '+m.text:'Form: '+(m.render?.html.replace(/<[^>]*>/g,' ')||m.error)).join('\n').slice(-4000);db.sessions.unshift(s)}db.current=db.sessions[0].id;save();render();toast('Archiv sicher importiert — neuer isolierter KI-Verlauf.')}catch(err){toast('Import fehlgeschlagen: '+err.message)}e.target.value=''};if(!db.sessions.length)newSession();else{if(!current())db.current=db.sessions[0].id;render();}
+const $ = (s) => document.querySelector(s),
+  uid = () => crypto.randomUUID(),
+  key = 'form.live.v2';
+let db,
+  pending,
+  views = [],
+  csrf;
+const current = () => db.sessions.find((s) => s.id === db.current);
+function toast(t) {
+  $('#live').textContent = t;
+  const n = document.createElement('div');
+  n.className = 'toast';
+  n.textContent = t;
+  document.body.append(n);
+  setTimeout(() => n.remove(), 4000);
+}
+function save() {
+  try {
+    localStorage.setItem(key, JSON.stringify(db));
+  } catch {
+    toast('Speicher voll — bitte exportieren.');
+  }
+}
+function normalize(x) {
+  if (x?.version !== 2 || !Array.isArray(x.sessions) || x.sessions.length > 40)
+    throw Error('Ungültiges Archiv');
+  return {
+    version: 2,
+    current: x.current,
+    sessions: x.sessions.map((s) => {
+      if (
+        typeof s.id !== 'string' ||
+        !/^[0-9a-f-]{36}$/.test(s.id) ||
+        typeof s.title !== 'string' ||
+        !Array.isArray(s.messages) ||
+        s.messages.length > 100
+      )
+        throw Error('Ungültige Sitzung');
+      return {
+        id: s.id,
+        title: s.title.slice(0, 80),
+        context: typeof s.context === 'string' ? s.context.slice(0, 4000) : '',
+        messages: s.messages.map((m) => {
+          if (m.role === 'user' && typeof m.text === 'string')
+            return { role: 'user', id: uid(), text: m.text.slice(0, 2000) };
+          if (m.role === 'assistant' && m.render)
+            return { role: 'assistant', id: uid(), render: validateRender(m.render) };
+          if (m.role === 'assistant' && typeof m.error === 'string')
+            return { role: 'assistant', id: uid(), error: m.error.slice(0, 300) };
+          throw Error('Ungültige Nachricht');
+        }),
+      };
+    }),
+  };
+}
+try {
+  db = normalize(JSON.parse(localStorage.getItem(key)));
+} catch {
+  db = { version: 2, sessions: [] };
+}
+function busy(on) {
+  $('#stop').classList.toggle('hidden', !on);
+  $('#send').classList.toggle('hidden', on);
+}
+function stop() {
+  if (!pending) return;
+  pending.controller.abort();
+  pending = null;
+  busy(false);
+  toast('Antwort gestoppt.');
+  render();
+}
+function newSession() {
+  stop();
+  if (db.sessions.length >= 40) return toast('Maximal 40 Sitzungen');
+  const s = { id: uid(), title: 'Neuer Gedankengang', messages: [], context: '' };
+  db.sessions.unshift(s);
+  db.current = s.id;
+  save();
+  render();
+  $('#sidebar').classList.remove('open');
+}
+function render() {
+  views.forEach((v) => v.destroy());
+  views = [];
+  $('#sessions').replaceChildren();
+  for (const s of db.sessions) {
+    const b = document.createElement('button');
+    b.textContent = s.title;
+    b.setAttribute('aria-current', s.id === db.current);
+    b.onclick = () => {
+      stop();
+      db.current = s.id;
+      save();
+      render();
+      $('#sidebar').classList.remove('open');
+    };
+    $('#sessions').append(b);
+  }
+  const feed = $('#feed');
+  feed.innerHTML =
+    '<section class="intro"><div class="eyebrow">Ein Gespräch. Unendlich viele Formen.</div><h1>Gedanken brauchen<br><em>keine Schubladen.</em></h1><p>Frag, erkunde, verändere. Form gestaltet jede Antwort neu — mit einem eigenen, privaten KI-Gedankengang.</p><div class="starters"><button data-p="Gestalte einen interaktiven Sparziel-Rechner in CHF">↗ Sparziel erkunden</button><button data-p="Hilf mir interaktiv drei Ideen für einen kreativen freien Tag zu vergleichen">◇ Ideen vergleichen</button><button data-p="Entwirf eine interaktive Wochenplanung mit veränderbaren Prioritäten">⌁ Woche gestalten</button></div></section>';
+  if (current().messages.length > 12) {
+    const history = document.createElement('p');
+    history.className = 'notice';
+    history.textContent =
+      'Die letzten 12 Nachrichten sind geöffnet. Das vollständige Gespräch bleibt im Export erhalten.';
+    feed.append(history);
+  }
+  for (const m of current().messages.slice(-12)) {
+    const article = document.createElement('article');
+    article.className = 'message ' + (m.role === 'user' ? 'user' : 'assistant');
+    if (m.role === 'user') {
+      const b = document.createElement('div');
+      b.className = 'bubble';
+      b.textContent = m.text;
+      article.append(b);
+    } else {
+      article.innerHTML =
+        '<div class="byline"><span>⌑</span> FORM <small> / KI · ISOLIERT</small></div>';
+      if (m.error) {
+        const n = document.createElement('div');
+        n.className = 'notice error';
+        n.textContent = m.error;
+        article.append(n);
+      } else {
+        const note = document.createElement('div');
+        note.className = 'small';
+        const view = renderUI(m.render, {
+          onState: (state) => {
+            m.render.state = state;
+            save();
+          },
+          onSuggest: (text) => {
+            $('#prompt').value = text;
+            toast('Vorschlag eingefügt — nur du sendest ihn.');
+          },
+          onError: (text) => {
+            note.textContent = text;
+            note.className = 'notice error';
+          },
+        });
+        views.push(view);
+        article.append(view.element, note);
+        const b = document.createElement('button');
+        b.textContent = 'Mit diesen Werten weiterdenken ↗';
+        b.onclick = () => {
+          $('#prompt').value = 'Denke mit meinen aktuellen Einstellungen weiter.';
+          $('#prompt').focus();
+          toast('Werte werden erst mit deiner Nachricht gesendet.');
+        };
+        article.append(b);
+      }
+    }
+    feed.append(article);
+  }
+  feed.querySelectorAll('[data-p]').forEach((b) => (b.onclick = () => send(b.dataset.p)));
+}
+async function send(text) {
+  text = text.trim().slice(0, 2000);
+  if (!text || pending) return;
+  const s = current();
+  if (s.messages.length >= 98) return toast('Bitte einen neuen Gedankengang starten.');
+  s.messages.push({ role: 'user', id: uid(), text });
+  if (s.messages.length === 1) s.title = text.slice(0, 45);
+  $('#prompt').value = '';
+  save();
+  render();
+  const n = document.createElement('div');
+  n.className = 'notice';
+  n.textContent = '⌑ Form denkt in Möglichkeiten …';
+  $('#feed').append(n);
+  n.scrollIntoView();
+  const request = { id: uid(), controller: new AbortController() };
+  pending = request;
+  busy(true);
+  try {
+    if (!csrf) {
+      const r = await fetch('/form/api/bootstrap', { signal: request.controller.signal });
+      if (!r.ok) throw Error('Tailnet-Anmeldung nicht freigegeben.');
+      csrf = (await r.json()).csrf;
+    }
+    const r = await fetch('/form/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Form-CSRF': csrf },
+      signal: request.controller.signal,
+      body: JSON.stringify({
+        version: 1,
+        sessionId: s.id,
+        requestId: request.id,
+        text,
+        states: s.messages
+          .filter((m) => m.render)
+          .slice(-3)
+          .map((m) => ({ id: m.id, state: m.render.state })),
+        context: s.context || '',
+      }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw Error(data.error || 'Antwort fehlgeschlagen');
+    if (pending !== request || data.requestId !== request.id) return;
+    s.messages.push({ role: 'assistant', id: uid(), render: validateRender(data.render) });
+  } catch (e) {
+    if (pending === request && e.name !== 'AbortError')
+      s.messages.push({ role: 'assistant', id: uid(), error: e.message });
+  } finally {
+    if (pending === request) {
+      pending = null;
+      busy(false);
+      save();
+      render();
+      $('#feed').lastElementChild?.scrollIntoView({ block: 'start' });
+    }
+  }
+}
+$('#composer').onsubmit = (e) => {
+  e.preventDefault();
+  send($('#prompt').value);
+};
+$('#prompt').onkeydown = (e) => {
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+    e.preventDefault();
+    send(e.target.value);
+  }
+};
+$('#stop').onclick = stop;
+$('#new').onclick = newSession;
+$('#mobile').onclick = () => {
+  $('#sidebar').classList.toggle('open');
+  $('#mobile').setAttribute('aria-expanded', $('#sidebar').classList.contains('open'));
+};
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    stop();
+    $('#sidebar').classList.remove('open');
+  }
+});
+$('#export').onclick = () => {
+  const a = document.createElement('a'),
+    url = URL.createObjectURL(
+      new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' }),
+    );
+  a.href = url;
+  a.download = 'form-gespraeche.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+$('#import').onclick = () => $('#file').click();
+$('#file').onchange = async (e) => {
+  try {
+    const f = e.target.files[0];
+    if (!f) return;
+    if (f.size > 1500000) throw Error('Maximal 1,5 MB');
+    const data = normalize(JSON.parse(await f.text()));
+    if (data.sessions.length + db.sessions.length > 40) throw Error('Maximal 40 Sitzungen');
+    stop();
+    for (const s of data.sessions) {
+      s.id = uid();
+      s.context = s.messages
+        .map((m) =>
+          m.role === 'user'
+            ? 'User: ' + m.text
+            : 'Form: ' + (m.render?.html.replace(/<[^>]*>/g, ' ') || m.error),
+        )
+        .join('\n')
+        .slice(-4000);
+      db.sessions.unshift(s);
+    }
+    db.current = db.sessions[0].id;
+    save();
+    render();
+    toast('Archiv sicher importiert — neuer isolierter KI-Verlauf.');
+  } catch (err) {
+    toast('Import fehlgeschlagen: ' + err.message);
+  }
+  e.target.value = '';
+};
+if (!db.sessions.length) newSession();
+else {
+  if (!current()) db.current = db.sessions[0].id;
+  render();
+}
