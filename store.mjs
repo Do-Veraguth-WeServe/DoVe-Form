@@ -1,6 +1,7 @@
 // Server-side persistence (SQLite via node:sqlite, no external deps).
 // data/form.db: users -> sessions -> conversations -> messages -> versions.
-// Element app databases live in data/elements/<messageId>.db (see dbstore.mjs).
+// Element app databases live in data/elements.sqlite (ONE namespaced file per
+// db.mjs; physical tables derived from conversation+element ids).
 // Everything is user-scoped: every query filters by user_id. Keys for models
 // stay in form.models.json (models.mjs) and are never stored here.
 import { DatabaseSync } from 'node:sqlite';
