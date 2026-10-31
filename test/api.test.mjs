@@ -265,6 +265,67 @@ test('invalid artifact triggers exactly ONE retry then success', async () => {
   assert.equal(after.calls.corrected, (before.calls.corrected || 0) + 1);
 });
 
+test('finish_reason=length truncation: ONE compact retry, corrected round renders, NO error; retry context is actual content, not SSE', async () => {
+  const before = await mockStats();
+  const r = await chat(owner, 'bitte truncate testen');
+  const events = parseSSE(await r.text());
+  const retries = events.filter(e => e.event === 'retry');
+  assert.equal(retries.length, 1);
+  assert.equal(retries[0].data.code, 'truncated');
+  assert.ok(events.some(e => e.event === 'render'), 'corrected round renders');
+  assert.equal(events.filter(e => e.event === 'error').length, 0, 'no spurious error after successful round2');
+  assert.equal(events[events.length - 1].event, 'done');
+  const after = await mockStats();
+  assert.equal(after.calls.truncate, (before.calls.truncate || 0) + 1);
+  assert.equal(after.calls.corrected, (before.calls.corrected || 0) + 1, 'exactly one corrective round');
+  // the assistant message replayed upstream must be real content, never raw SSE envelopes
+  const assistantInRetry = after.lastMessages.filter(m => m.role === 'assistant').pop();
+  assert.ok(assistantInRetry, 'retry request contains the previous assistant answer');
+  assert.ok(assistantInRetry.content.includes('```json'), 'actual artifact text replayed');
+  assert.ok(!assistantInRetry.content.includes('data:'), 'no SSE envelope leaked into retry context');
+});
+
+test('explicit provider error frame: distinct error, NO retry, single upstream call', async () => {
+  const before = await mockStats();
+  const r = await chat(owner, 'bitte errframe testen');
+  const events = parseSSE(await r.text());
+  assert.equal(events.filter(e => e.event === 'retry').length, 0);
+  const err = events.find(e => e.event === 'error');
+  assert.ok(err, 'error event present');
+  assert.equal(err.data.code, 'provider');
+  assert.ok(err.data.message.includes('upstream exploded'), 'provider detail surfaced');
+  assert.equal(events[events.length - 1].event, 'done');
+  const after = await mockStats();
+  assert.equal(after.calls.errframe, (before.calls.errframe || 0) + 1);
+  assert.equal(after.calls.corrected || 0, before.calls.corrected || 0, 'no corrective call');
+});
+
+test('permanent upstream auth error (401): surfaced, NOT retried', async () => {
+  const before = await mockStats();
+  const r = await chat(owner, 'bitte unauthorized testen');
+  const events = parseSSE(await r.text());
+  assert.equal(events.filter(e => e.event === 'retry').length, 0);
+  const err = events.find(e => e.event === 'error');
+  assert.ok(err && err.data.message.includes('401'), 'status surfaced');
+  const after = await mockStats();
+  assert.equal((after.calls.unauthorized || 0) - (before.calls.unauthorized || 0), 1, 'exactly one upstream call');
+});
+
+test('final unterminated SSE line is still parsed', async () => {
+  const r = await chat(owner, 'bitte trailingline testen');
+  const events = parseSSE(await r.text());
+  const prose = events.filter(e => e.event === 'prose-chunk').map(e => e.data.text).join('');
+  assert.ok(prose.includes('Erster Teil.'));
+  assert.ok(prose.includes('Letztes Fragment.'), 'trailing line content recovered');
+});
+
+test('UTF-8 multibyte split across TCP reads is reassembled', async () => {
+  const r = await chat(owner, 'bitte utf8split testen');
+  const events = parseSSE(await r.text());
+  const prose = events.filter(e => e.event === 'prose-chunk').map(e => e.data.text).join('');
+  assert.ok(prose.includes('Grüsse aus Zürich'), 'no replacement chars: ' + JSON.stringify(prose));
+});
+
 test('prose-only answer needs no artifact and is valid', async () => {
   const r = await chat(owner, 'Erkläre VPN, prose only');
   const events = parseSSE(await r.text());

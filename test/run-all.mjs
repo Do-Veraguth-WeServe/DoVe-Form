@@ -27,6 +27,7 @@ const waitReady = (proc, tag, pattern = /ready/) => new Promise((resolve, reject
 
 step('build (esbuild + bridge hash + wasm)', run('node', ['build.mjs']));
 step('unit tests (contract, stream parser, models, QuickJS sandbox)', run('node', ['--test', 'test/unit.test.mjs']));
+step('provider transport tests (truncation, error frames, caps, abort/timeout)', run('node', ['--test', 'test/provider.test.mjs']));
 
 const modelsFile = path.join(os.tmpdir(), `form3-test-models-${Date.now()}.json`);
 const dataDir = path.join(os.tmpdir(), `form3-test-data-${Date.now()}`);

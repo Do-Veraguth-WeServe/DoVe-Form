@@ -177,19 +177,29 @@ export class Store {
   }
 
   // Server-side history window (last 12, alternating semantics like the client used).
+  // Error-only assistant turns (no prose, no render) are skipped: repeated
+  // transport failures used to crowd the window without carrying any
+  // model-relevant context. Render turns mention the element name (bounded)
+  // so follow-ups keep a minimal link to earlier artifacts without shipping
+  // untrusted rendered content upstream.
   getHistory(convId, limit = 12) {
     const rows = this.db.prepare('SELECT role, text, prose, error, render FROM messages WHERE conversation_id = ? ORDER BY seq DESC LIMIT ?').all(convId, limit + 8).reverse();
     const out = [];
-    for (const r of rows.slice(-limit)) {
-      if (r.role === 'user') out.push({ role: 'user', content: String(r.text || '') });
-      else {
-        let content = String(r.prose || '').slice(0, 1500);
-        if (r.render) content += (content ? ' ' : '') + '[enthielt ein interaktives Artefakt]';
-        if (r.error) content += (content ? ' ' : '') + '[Fehler]';
-        out.push({ role: 'assistant', content: content || '[leer]' });
+    for (const r of rows) {
+      if (r.role === 'user') { out.push({ role: 'user', content: String(r.text || '') }); continue; }
+      const hasProse = !!(r.prose && String(r.prose).trim());
+      if (!hasProse && !r.render) continue;
+      let content = hasProse ? String(r.prose).slice(0, 1500) : '';
+      if (r.render) {
+        let name = '';
+        try { name = String((JSON.parse(r.render) || {}).name || ''); } catch {}
+        content += (content ? ' ' : '') + '[enthielt ein interaktives Artefakt' +
+          (name ? ' name="' + name.replace(/"/g, '').slice(0, 40) + '"' : '') + ']';
       }
+      if (r.error) content += (content ? ' ' : '') + '[Fehler]';
+      out.push({ role: 'assistant', content: content || '[leer]' });
     }
-    return out;
+    return out.slice(-limit);
   }
 
   // Last N element states (renders) of a conversation, for prompt context.

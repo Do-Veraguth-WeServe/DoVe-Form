@@ -3,8 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
-import {systemPrompt,parseArtifact,refineInstruction,sanitizeName,validateRender} from './contract.mjs';
-import {createStreamParser} from './stream.mjs';
+import {systemPrompt,refineInstruction,sanitizeName,validateRender} from './contract.mjs';
+import {runRound, ProviderError, SizeError} from './provider.mjs';
 import {loadModels,saveModels,validateModelInput,toPublic} from './models.mjs';
 import {runPing,setPingBackend,validHost} from './ping.mjs';
 import {Store,loadConfig} from './store.mjs';
@@ -49,10 +49,10 @@ if (process.env.FORM3_PING_FIXTURE === '1') setPingBackend({
 });
 
 const activeChats = new Set(), rates = new Map(), loginFails = new Map();
+const CHAT_TOTAL_MS = Number(process.env.FORM3_CHAT_TIMEOUT_MS || 300000); // total budget across BOTH rounds
 
 function reply(res, status, data, headers) { res.writeHead(status, { 'Content-Type': 'application/json', ...(headers || {}) }); res.end(JSON.stringify(data)); }
 function sse(res, event, data) { res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`); }
-function endpoint(base) { const u = String(base).replace(/\/+$/, ''); return /\/chat\/completions$/.test(u) ? u : u + '/chat/completions'; }
 function mergeMessages(list) { const out = []; for (const m of list) { const last = out[out.length - 1]; if (last && last.role === m.role) last.content += '\n\n' + m.content; else out.push({ role: m.role, content: m.content }); } return out; }
 async function readBody(req, cap) { let bytes = 0, body = ''; for await (const chunk of req) { bytes += chunk.length; if (bytes > cap) throw Error('too large'); body += chunk; } return body; }
 
@@ -77,51 +77,6 @@ function rate(key, max, windowMs) {
   return true;
 }
 function registrationAllowed() { return store.userCount() === 0 || config.registration; }
-
-// One streaming round against the configured OpenAI-compatible provider.
-async function runRound(cfg, messages, controller, onProse, onArtifactStart) {
-  const parser = createStreamParser({ onProse, onArtifactStart });
-  let raw = '';
-  const resp = await fetch(endpoint(cfg.baseUrl), {
-    method: 'POST',
-    headers: { Authorization: 'Bearer ' + cfg.apiKey, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: cfg.model, stream: true, max_tokens: 16384, messages }),
-    signal: controller.signal
-  });
-  if (!resp.ok) {
-    let detail = '';
-    try { const t = await resp.text(); detail = String(JSON.parse(t)?.error?.message || '').slice(0, 180); } catch {}
-    throw Error(`Modell-Endpunkt antwortete ${resp.status}${detail ? ' – ' + detail : ''}`);
-  }
-  if (!resp.body) throw Error('Modell-Endpunkt lieferte keinen Stream');
-  const reader = resp.body.getReader(), dec = new TextDecoder();
-  let sseBuf = '', total = 0, content = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    const text = dec.decode(value, { stream: true });
-    total += text.length; if (raw.length < 4096) raw += text.slice(0, 4096 - raw.length);
-    if (total > 64000000) { controller.abort(); throw Error('Antwort des Modells zu gross'); }
-    sseBuf += text;
-    let nl;
-    while ((nl = sseBuf.indexOf('\n')) !== -1) {
-      const line = sseBuf.slice(0, nl).replace(/\r$/, '');
-      sseBuf = sseBuf.slice(nl + 1);
-      if (!line.startsWith('data:')) continue;
-      const payload = line.slice(5).trim();
-      if (!payload || payload === '[DONE]') continue;
-      try {
-        const j = JSON.parse(payload);
-        const delta = j.choices?.[0]?.delta?.content;
-        if (typeof delta === 'string' && delta) { content += delta.length; if (content > 200000) { controller.abort(); throw Error('Antwort des Modells zu gross'); } parser.feed(delta); }
-      } catch {}
-    }
-  }
-  const fin = parser.finish();
-  let render = null, error = null;
-  if (fin.hadArtifact) { try { render = parseArtifact(fin.artifactRaw); } catch (e) { error = String(e.message || e).slice(0, 160); } }
-  return { render, error, hadArtifact: fin.hadArtifact, raw };
-}
 
 const server = http.createServer(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
@@ -382,9 +337,12 @@ const server = http.createServer(async (req, res) => {
 
   res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no', 'Connection': 'keep-alive' });
   res.write(':form3\n\n');
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 300000); // 5 min cap; Stop aborts instantly
-  res.on('close', () => { if (!res.writableEnded) controller.abort(); });
+  // Chat budget: FORM3_CHAT_TIMEOUT_MS total across both rounds; user stop /
+  // client disconnect aborts externally and is tracked separately from a
+  // round timeout so the persisted error is accurate.
+  const stop = new AbortController();
+  const abortState = { client: false };
+  res.on('close', () => { if (!res.writableEnded) { abortState.client = true; stop.abort(); } });
   activeChats.add(user.id);
   let assistantMessageId = null;
   let liveProse = '';
@@ -403,22 +361,53 @@ const server = http.createServer(async (req, res) => {
     }
     const messages = [{ role: 'system', content: sys }, ...mergeMessages(history), { role: 'user', content: finalContent }];
 
-    const round1 = await runRound(model, messages, controller, onProse, onArtifactStart);
+    const t0 = Date.now();
+    const deadline = t0 + CHAT_TOTAL_MS;
+    const roundOpts = { signal: stop.signal, deadlineMs: deadline };
+    const round1 = await runRound(model, messages, roundOpts, onProse, onArtifactStart);
     let finalRender = round1.render;
-    let failure = (!round1.render && round1.hadArtifact) ? (round1.error || 'ungültiges JSON') : null;
+    let failure = null;
+    let failureCode = null; // 'truncated' | 'invalid-artifact'
+    if (!finalRender) {
+      if (round1.truncated) failureCode = 'truncated';
+      else if (round1.hadArtifact) failureCode = 'invalid-artifact';
+    }
 
-    if (!finalRender && round1.hadArtifact) {
-      sse(res, 'retry', { reason: round1.error || 'ungültiges JSON' });
-      const corrective = 'Your previous answer contained an invalid JSON artifact (' + (round1.error || 'parse error') + '). Answer again in the same language: FIRST a short prose answer, THEN exactly ONE corrected fenced ```json artifact {"version":1,"html","css","js","state"}. The JSON must be valid (no trailing commas, no comments, no truncation), under 20KB total, with ids matching between html and js.';
-      const round2 = await runRound(model,
-        [...messages, { role: 'assistant', content: round1.raw.slice(0, 3000) }, { role: 'user', content: corrective }],
-        controller, onProse, onArtifactStart);
-      if (round2.render) finalRender = round2.render;
-      else failure = 'Das Modell lieferte auch im zweiten Versuch kein gültiges Artefakt' + (round2.hadArtifact ? ' (' + (round2.error || 'unbekannt') + ')' : '') + '. Der Text-Anteil oben bleibt erhalten.';
+    let round2 = null;
+    if (failureCode) {
+      if (Date.now() >= deadline) {
+        const e = new Error('round-aborted'); e.name = 'RoundAbort'; e.abortKind = 'timeout'; throw e;
+      }
+      sse(res, 'retry', {
+        code: failureCode,
+        reason: failureCode === 'truncated'
+          ? 'Antwort wurde durch das Ausgabe-Längenlimit des Modells abgeschnitten — kompakter zweiter Versuch'
+          : (round1.error || 'ungültiges JSON')
+      });
+      // Retry context is the ACTUAL assistant content (prose + fenced
+      // artifact), bounded — never raw SSE envelopes.
+      const prev = round1.contentText.slice(0, 4000);
+      const corrective = failureCode === 'truncated'
+        ? 'Your previous answer was cut off by the output token limit before it completed (the JSON artifact is truncated). Answer again, much more compact: FIRST a short prose answer, THEN exactly ONE fenced ```json artifact {"version":1,"html","css","js","state"} — valid JSON, well under 10KB, minimal HTML/CSS/JS, no truncation, ids matching between html and js.'
+        : 'Your previous answer contained an invalid JSON artifact (' + (round1.error || 'parse error') + '). Answer again in the same language: FIRST a short prose answer, THEN exactly ONE corrected fenced ```json artifact {"version":1,"html","css","js","state"}. The JSON must be valid (no trailing commas, no comments, no truncation), under 20KB total, with ids matching between html and js.';
+      round2 = await runRound(model,
+        [...messages, { role: 'assistant', content: prev }, { role: 'user', content: corrective }],
+        roundOpts, onProse, onArtifactStart);
+      if (round2.render) {
+        finalRender = round2.render;
+        failure = null; // success on round2 clears round1's failure (no spurious error after render)
+      } else if (round2.truncated) {
+        failure = 'Die Antwort wurde auch im zweiten Versuch durch das Ausgabe-Längenlimit gekürzt. Der Text-Anteil oben bleibt erhalten — bitte die Darstellung kleiner/stückweise anfragen.';
+      } else {
+        failure = 'Das Modell lieferte auch im zweiten Versuch kein gültiges Artefakt' + (round2.hadArtifact ? ' (' + (round2.error || 'unbekannt') + ')' : '') + '. Der Text-Anteil oben bleibt erhalten.';
+      }
     }
 
     if (finalRender) sse(res, 'render', { render: finalRender });
-    if (failure) sse(res, 'error', { message: failure });
+    if (failure) sse(res, 'error', { message: failure, code: failureCode && !round2?.render ? failureCode : undefined });
+
+    // sanitized diagnostics: counts/flags only, no content, no secrets
+    console.log(`[chat] user=${user.username} conv=${d.sessionId.slice(0, 8)} dur=${Date.now() - t0}ms rounds=${failureCode ? 2 : 1} finish=${round1.finishReason || '-'}${round2 ? '/' + (round2.finishReason || '-') : ''} content=${round1.contentChars}${round2 ? '/' + round2.contentChars : ''} render=${finalRender ? 'yes' : 'no'} fail=${failureCode || '-'}`);
 
     // server-side persistence: in-place refine replaces the element; normal turns append
     if (d.refineTarget) {
@@ -435,14 +424,22 @@ const server = http.createServer(async (req, res) => {
     }
     sse(res, 'done', { requestId: d.requestId, userMessageId, assistantMessageId });
   } catch (e) {
-    const msg = e.name === 'AbortError' ? 'Antwort gestoppt oder Zeitlimit erreicht.' : 'Modellaufruf fehlgeschlagen: ' + String(e.message || e).slice(0, 200);
+    let msg;
+    if (e.abortKind === 'timeout') {
+      msg = 'Zeitlimit erreicht (' + Math.round(CHAT_TOTAL_MS / 1000) + ' s). Bitte die Anfrage aufteilen oder kleiner stellen.';
+    } else if (e.abortKind === 'external' || e.name === 'AbortError') {
+      msg = abortState.client ? 'Antwort gestoppt (Verbindung getrennt).' : 'Antwort gestoppt.';
+    } else if (e instanceof ProviderError || e instanceof SizeError) {
+      msg = e.message; // already bounded, no content/secrets
+    } else {
+      msg = 'Modellaufruf fehlgeschlagen: ' + String(e.message || e).slice(0, 200);
+    }
     if (!res.destroyed) {
-      sse(res, 'error', { message: msg });
+      sse(res, 'error', { message: msg, code: e.abortKind === 'timeout' ? 'timeout' : e instanceof ProviderError ? 'provider' : e instanceof SizeError ? 'size' : 'stopped' });
       try { sse(res, 'done', { requestId: d.requestId, userMessageId, assistantMessageId }); } catch {}
     }
     persistAssistant({ prose: liveProse.slice(0, 8000) || undefined, error: msg });
   } finally {
-    clearTimeout(timeout);
     activeChats.delete(user.id);
     try { res.end(); } catch {}
   }

@@ -16,7 +16,14 @@ Die Browser-Suite bekommt von `run-all.mjs` einen **eigenen Server mit frischem 
 
 ## Fixtures
 
-- `test/mock-provider.mjs` — OpenAI-kompatibler SSE-Stream mit Szenarien (`slider`, `invalid`→`corrected`, prose-only, `slow`, `boundary`), `/admin/stats` liefert Aufrufzähler, Disconnects, Auth-Check und letzte Rollen. Keine echten Keys: `test-key-1234567890`.
+- `test/mock-provider.mjs` — OpenAI-kompatibler SSE-Stream mit Szenarien (`slider`, `invalid`→`corrected`, prose-only, `slow`, `boundary`, `truncate` (finish_reason=length, abgeschnittenes Artefakt), `errframe` (expliziter Provider-Fehlerframe), `unauthorized` (HTTP 401), `trailingline` (letzte SSE-Zeile ohne Newline), `utf8split` (Multibyte-Char über TCP-Reads getrennt)), `/admin/stats` liefert Aufrufzähler, Disconnects, Auth-Check, letzte Rollen und letzte Messages. Keine echten Keys: `test-key-1234567890`.
+- `test/provider.test.mjs` — Unit-Tests des Provider-Transports (`provider.mjs`) gegen Loopback-Upstream: finish_reason=length, fehlerhafte vs. explizite Fehler-Frames, Content-/Transport-Caps (kleine Env-Limits `FORM3_CONTENT_MAX`/`FORM3_TRANSPORT_MAX`), Timeout vs. externer Abort, unabgeschlossene letzte SSE-Zeile, UTF-8-Splits, HTTP-401.
+
+### Retry-Politik (v3.2.1)
+
+- Genau EIN Korrektur-Round, nur bei unvollständigem/ungültigem Artefakt oder `finish_reason=length`. Das Replay an den Provider ist der tatsächliche Assistant-Inhalt (bounded), nie rohe SSE-Hüllen.
+- Transport-/Auth-Fehler (401/403/429, Netzwerk, Grössenlimits) werden NICHT wiederholt — permanent sichtbar als `error`-Event mit `code: provider|size`, genau ein Upstream-Aufruf.
+- Gesamt-Budget beider Rounds: `FORM3_CHAT_TIMEOUT_MS` (Default 300000); ein Round-Timeout (`code: timeout`) ist von Stopp/Disconnect (`code: stopped`) getrennt.
 - Server + Mock laufen auf Test-Ports (4598/4599) mit **eigener temporärer Models-Datei** — die echte `form.models.json` wird nie angerührt.
 
 ## Abgedeckte Akzeptanzkriterien

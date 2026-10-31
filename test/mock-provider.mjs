@@ -8,7 +8,7 @@ const PORT = Number(process.env.MOCK_PORT || 4599);
 const KEY = 'test-key-1234567890';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-const stats = { calls: {}, disconnects: 0, lastAuthOk: false, lastRoles: [], lastUserContent: '' };
+const stats = { calls: {}, disconnects: 0, lastAuthOk: false, lastRoles: [], lastUserContent: '', lastMessages: [] };
 
 const sliderArtifact = {
   version: 1,
@@ -72,14 +72,14 @@ function sseWrite(res, obj) { res.write('data: ' + JSON.stringify(obj) + '\n\n')
 async function stream(res, chunks) {
   for (const c of chunks) {
     if (res.writableEnded || res.destroyed) return;
-    sseWrite(res, { choices: [{ delta: { content: c.t } }] });
+    sseWrite(res, { choices: [{ delta: { content: c.t }, ...(c.fr ? { finish_reason: c.fr } : {}) }] });
     if (c.pause) await sleep(c.pause);
   }
   if (!res.writableEnded) { res.write('data: [DONE]\n\n'); res.end(); }
 }
 
 async function run(scenario, res) {
-  const P = (t, pause) => ({ t, pause });
+  const P = (t, pause, fr) => ({ t, pause, fr });
   if (scenario === 'slider') return stream(res, [
     P('Hier ist dein Spar-Rechner mit Regler. ', 60),
     P('Damit siehst du sofort, ', 60),
@@ -118,6 +118,30 @@ async function run(scenario, res) {
     P('Boundary-Test.', 20),
     P('```json\n' + JSON.stringify(boundaryArtifact) + '\n```', 10)
   ]);
+  // finish_reason=length truncation: prose complete, artifact JSON cut off
+  if (scenario === 'truncate') return stream(res, [
+    P('Hier verschiedene Darstellungen — leider zu lang. ', 20),
+    P('```json\n{"version":1,"name":"Cut","html":"<div id=\\"x\\">unterminated', 10, 'length')
+  ]);
+  // explicit provider error frame mid-stream
+  if (scenario === 'errframe') {
+    res.write('data: {"error":{"message":"upstream exploded"}}\n\n');
+    return res.end();
+  }
+  // final SSE line without trailing newline (unterminated)
+  if (scenario === 'trailingline') {
+    sseWrite(res, { choices: [{ delta: { content: 'Erster Teil. ' } }] });
+    res.write('data: ' + JSON.stringify({ choices: [{ delta: { content: 'Letztes Fragment.' } }] }));
+    return res.end();
+  }
+  // one delta split mid-UTF8-codepoint across two TCP writes
+  if (scenario === 'utf8split') {
+    const buf = Buffer.from('data: ' + JSON.stringify({ choices: [{ delta: { content: 'Grüsse aus Zürich' } }] }) + '\n\n');
+    const k = buf.indexOf(Buffer.from('ü')) + 1; // split INSIDE the 2-byte sequence
+    res.write(buf.slice(0, k));
+    res.write(buf.slice(k));
+    return res.end();
+  }
   // default: prose-only
   return stream(res, [
     P('VPN steht für "Virtual Private Network". ', 60),
@@ -142,6 +166,7 @@ const server = http.createServer(async (req, res) => {
   const text = String(lastUser?.content || '').toLowerCase();
   stats.lastRoles = messages.map(m => m.role);
   stats.lastUserContent = String(lastUser?.content || '').slice(0, 1200);
+  stats.lastMessages = messages.map(m => ({ role: m.role, content: String(m.content).slice(0, 500) }));
   const corrective = messages.some(m => m.role === 'user' && String(m.content).startsWith('Your previous answer'));
   const refine = messages.some(m => m.role === 'user' && String(m.content).includes('[marked-element'));
   let scenario = 'prose';
@@ -154,9 +179,18 @@ const server = http.createServer(async (req, res) => {
   else if (text.includes('invalid')) scenario = 'invalid';
   else if (text.includes('slow')) scenario = 'slow';
   else if (text.includes('boundary')) scenario = 'boundary';
+  else if (text.includes('truncate')) scenario = 'truncate';
+  else if (text.includes('errframe')) scenario = 'errframe';
+  else if (text.includes('trailingline')) scenario = 'trailingline';
+  else if (text.includes('utf8split')) scenario = 'utf8split';
+  else if (text.includes('unauthorized')) scenario = 'unauthorized';
   stats.calls[scenario] = (stats.calls[scenario] || 0) + 1;
   req.on('close', () => { if (!res.writableEnded) stats.disconnects++; });
   res.on('close', () => { if (!res.writableEnded) stats.disconnects++; });
+  if (scenario === 'unauthorized') {
+    res.writeHead(401, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ error: { message: 'Invalid API key' } }));
+  }
   res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store' });
   await run(scenario, res);
 });
