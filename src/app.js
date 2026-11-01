@@ -336,17 +336,35 @@ async function jobAction(kind,id){
     applyJob(t.job);
   }catch(e){toast((kind==='cancel'?'Abbrechen':'Erneut versuchen')+' fehlgeschlagen: '+e.message)}
 }
+let recoveryInFlight=null;
+function recoverCompletedTurns(ids){
+  for(const r of [...pending])if(ids.has(r.jobId)){
+    pending.delete(r);liveTurns.delete(r);r.controller.abort();
+  }
+  busy(pending.size>0);
+  if(!recoveryInFlight)recoveryInFlight=syncFromServer().finally(()=>{recoveryInFlight=null});
+  return recoveryInFlight;
+}
 function connectJobs(){
   if(!me||jobStream)return;
   try{
     jobStream=new EventSource('/api/jobs/stream');
     jobStream.addEventListener('snapshot',e=>{try{
       const list=JSON.parse(e.data).jobs||[];
+      const present=new Set(list.map(j=>j.id));
+      const missing=new Set([...jobs.values()].filter(j=>ACTIVE_JOB.includes(j.state)&&!present.has(j.id)).map(j=>j.id));
+      for(const r of pending)if(r.jobId&&!present.has(r.jobId))missing.add(r.jobId);
+      if(missing.size){void recoverCompletedTurns(missing);return}
       let touched=false;
       for(const j of list){const known=jobs.has(j.id);applyJob(j,{rerender:false});if(!known||j.state==='ready'||j.state==='failed'||j.state==='cancelled')touched=true}
       if(touched||list.length)renderPreservingScroll();
     }catch{}});
-    jobStream.addEventListener('job',e=>{try{applyJob(JSON.parse(e.data))}catch{}});
+    jobStream.addEventListener('job',e=>{try{
+      const j=JSON.parse(e.data);
+      if(!ACTIVE_JOB.includes(j.state)&&[...pending].some(r=>r.jobId===j.id)){
+        void recoverCompletedTurns(new Set([j.id]));
+      }else applyJob(j);
+    }catch{}});
     jobStream.onerror=()=>{ // auth lost or stream failed: reconnect with fresh snapshot
       try{jobStream.close()}catch{}
       jobStream=null;
@@ -600,6 +618,7 @@ async function send(text){
       else if(event==='error'){errorMsg=String(data.message||'Antwort fehlgeschlagen.');}
       else if(event==='done'){doneUser=data.userMessageId||null;doneAssist=data.assistantMessageId||null}
     });
+    if(jobStarted&&!doneAssist&&!doneUser)transportLost=true; // clean EOF without done is also a lost stream
   }catch(e){if(pending.has(request)&&e.name!=='AbortError'){errorMsg=e.message;transportLost=true}}
   if(!pending.has(request)){liveTurns.delete(request);return} // stopped: stop() cancels the server job and syncs
   pending.delete(request);liveTurns.delete(request);busy(pending.size>0);

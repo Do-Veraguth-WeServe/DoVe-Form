@@ -437,8 +437,15 @@ async function registerUI(p, username, password) {
     ok('background job survives reload + tab close; reopen shows exactly one element, one provider call');
     // release p's STILL-HELD first job so the per-user concurrency slot frees
     // for 7d (two concurrent generations must both be able to run)
+    // Lose the completion event while offline; reconnect WITHOUT reloading.
+    await ctx.setOffline(true);
+    await p.waitForTimeout(300);
     await release('sitehold');
-    await p.waitForFunction(() => !document.querySelector('.site[data-jobid="' + window.__lastJobSel + '"]'), undefined, { timeout: 8000 }).catch(() => {});
+    await p.waitForTimeout(700);
+    await ctx.setOffline(false);
+    await p.waitForFunction(() => !document.querySelector('.site[data-jobid="' + window.__lastJobSel + '"]'), undefined, { timeout: 15000 });
+    await p.locator('.elname').filter({hasText:'Baustellen-Element'}).first().waitFor();
+    ok('missed completion recovered after network reconnect WITHOUT page reload');
     await new Promise(r => setTimeout(r, 300));
 
     // 7d. two jobs complete in REVERSE order and land on their own containers
