@@ -899,4 +899,11 @@ async function refreshApprovals(){
  }catch{}finally{approvalBusy=false}
 }
 setInterval(refreshApprovals,2500);
+async function memoryRequest(route,data){const r=await fetch('/api/memory'+route,data===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify(data)});const t=await r.json();if(!r.ok)throw Error(t.error);return t;}
+async function showMemory(){try{const data=await memoryRequest('');$('#memoryenabled').checked=data.enabled;await renderMemories();$('#memorydialog').showModal?.()}catch(e){toast(e.message)}}
+async function renderMemories(){try{const data=await memoryRequest('/search',{query:$('#memorysearch').value,limit:50});const list=$('#memorylist');list.replaceChildren();for(const m of data.memories){const row=document.createElement('section');row.className='notice';const text=document.createElement('textarea');text.value=m.content;text.maxLength=4000;text.setAttribute('aria-label','Erinnerung bearbeiten');const save=document.createElement('button');save.textContent='Speichern';save.onclick=async()=>{try{await memoryRequest('/save',{id:m.id,content:text.value,project:m.project});toast('Gespeichert.')}catch(e){toast(e.message)}};const del=document.createElement('button');del.textContent='Löschen';del.onclick=async()=>{if(!confirm('Erinnerung löschen?'))return;try{await memoryRequest('/delete',{id:m.id});await renderMemories()}catch(e){toast(e.message)}};row.append(text,save,del);list.append(row)}}catch(e){toast(e.message)}}
+$('#memorybtn').onclick=showMemory;$('#memoryclose').onclick=()=>$('#memorydialog').close();
+$('#memoryenabled').onchange=async e=>{try{await memoryRequest('/enabled',{enabled:e.target.checked})}catch(err){e.target.checked=!e.target.checked;toast(err.message)}};
+$('#memorysearch').onchange=renderMemories;
+$('#memoryadd').onsubmit=async e=>{e.preventDefault();const f=e.target;try{await memoryRequest('/save',{content:f.content.value,project:f.project.value});f.reset();await renderMemories()}catch(err){toast(err.message)}};
 boot();

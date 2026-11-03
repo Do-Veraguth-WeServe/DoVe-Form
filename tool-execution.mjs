@@ -27,7 +27,7 @@ export class ToolExecution{
  if(this.store.getUser(job.userId)?.role!=='owner'||!this.mcp.catalog().some(t=>t.name===tool.name&&t.fingerprint===tool.fingerprint))throw Error('Berechtigung wurde entzogen.');
  this.store.db.prepare("UPDATE tool_calls SET state='running' WHERE id=? AND state='approved'").run(id);
  try{
- const result=await this.mcp.call(tool.name,args,{signal});
+ const result=await this.mcp.call(tool.name,args,{signal,userId:job.userId});
  this.store.db.prepare("UPDATE tool_calls SET state='completed',result=? WHERE id=?").run(JSON.stringify(result),id);return result;
  }catch(e){this.store.db.prepare("UPDATE tool_calls SET state='unknown' WHERE id=?").run(id);throw Error('Tool-Ergebnis unklar. Nicht automatisch wiederholen.');}
  }

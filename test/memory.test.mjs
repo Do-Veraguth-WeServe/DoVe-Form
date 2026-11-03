@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import {Store} from '../store.mjs';import {MemoryStore} from '../memory.mjs';
+test('standalone memories isolate owners and support search edit delete',()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'form-memory-'));const s=new Store(dir);
+ try{const a=s.createUser('alice','password123'),b=s.createUser('bob','password123');const m=new MemoryStore(s);const id=m.save(a.id,{content:'Preferred colour blue',project:'design'});assert.equal(m.search(a.id,{query:'BLUE'}).length,1);assert.deepEqual(m.search(b.id),[]);assert.throws(()=>m.save(b.id,{id,content:'overwrite'}));assert.throws(()=>m.remove(b.id,id));assert.equal(new MemoryStore(s).search(a.id)[0].id,id);m.save(a.id,{id,content:'Green',project:'design'});assert.equal(m.search(a.id,{project:'other'}).length,0);m.remove(a.id,id);assert.deepEqual(m.search(a.id),[]);}finally{s.db.close();fs.rmSync(dir,{recursive:true,force:true})}
+});

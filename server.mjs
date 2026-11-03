@@ -11,6 +11,8 @@ import {ElementDB} from './db.mjs';
 import {JobRunner} from './jobs.mjs';
 import {MCPConnections} from './mcp.mjs';
 import {ToolExecution} from './tool-execution.mjs';
+import {MemoryStore} from './memory.mjs';
+import {memoryRegistry} from './memory-tools.mjs';
 
 // Form v3.2 — local server with user accounts, server-side conversations and
 // per-element app databases. Binds 127.0.0.1 only (tailnet via tailscale serve).
@@ -32,9 +34,11 @@ if (store.interruptedOnStart > 0)
   console.log(`[jobs] marked ${store.interruptedOnStart} interrupted job(s) as failed (server restart)`);
 const CHAT_TOTAL_MS = Number(process.env.FORM3_CHAT_TIMEOUT_MS || 300000); // total job budget across BOTH rounds
 const mcp=new MCPConnections(path.join(DATA_DIR,'mcp.json'));
-const toolExecution=new ToolExecution(store,mcp);
+const memory=new MemoryStore(store);
+const registry=memoryRegistry(mcp,memory);
+const toolExecution=new ToolExecution(store,registry);
 const runner = new JobRunner(store, {
-  getToolContext:job=>store.getUser(job.userId)?.role==='owner'?{catalog:mcp.catalog(),execute:(call,args,opts)=>toolExecution.execute(job,call,args,opts)}:null,
+  getToolContext:job=>store.getUser(job.userId)?.role==='owner'?{catalog:registry.catalog().filter(t=>!t.name.startsWith("memory_")||memory.enabled(job.userId)),execute:(call,args,opts)=>toolExecution.execute(job,call,args,opts)}:null,
   hasToolCalls:id=>toolExecution.hasCalls(id),
   concurrency: Number(process.env.FORM3_JOB_CONCURRENCY || 2),
   perUser: Number(process.env.FORM3_JOB_PER_USER || 2),
@@ -166,6 +170,19 @@ const server = http.createServer(async (req, res) => {
     if (req.headers['x-form-csrf'] !== sess.csrf) return reply(res, 403, { error: 'CSRF-Schutz fehlgeschlagen.' });
   }
 
+  if(pathname==='/api/memory'||pathname.startsWith('/api/memory/')){
+    try{
+      if(req.method==='GET'&&pathname==='/api/memory')return reply(res,200,{enabled:memory.enabled(user.id),memories:memory.search(user.id,{limit:50})});
+      if(req.method==='POST'){
+        const d=JSON.parse(await readBody(req,6000));
+        if(pathname==='/api/memory/enabled'){if(typeof d.enabled!=='boolean')throw Error();memory.setEnabled(user.id,d.enabled);return reply(res,200,{ok:true});}
+        if(pathname==='/api/memory/save')return reply(res,200,{id:memory.save(user.id,d)});
+        if(pathname==='/api/memory/delete'){memory.remove(user.id,d.id);return reply(res,200,{ok:true});}
+        if(pathname==='/api/memory/search')return reply(res,200,{memories:memory.search(user.id,d)});
+      }
+      return reply(res,404,{error:'Nicht gefunden.'});
+    }catch{return reply(res,400,{error:'Erinnerung konnte nicht verarbeitet werden.'});}
+  }
   if(pathname==='/api/mcp'||pathname.startsWith('/api/mcp/')){
     if(user.role!=='owner')return reply(res,403,{error:'Nur Owner.'});
     try{
