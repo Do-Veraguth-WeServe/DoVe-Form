@@ -32,7 +32,7 @@ function abortErr(external) {
 }
 
 export async function runRound(cfg, messages, opts, onProse, onArtifactStart) {
-  const { signal = null, deadlineMs = Date.now() + ROUND_CAP_MS } = opts || {};
+  const { signal = null, deadlineMs = Date.now() + ROUND_CAP_MS, tools = [] } = opts || {};
   const parser = createStreamParser({ onProse, onArtifactStart });
   const round = new AbortController();
   const onExternal = () => round.abort();
@@ -50,7 +50,7 @@ export async function runRound(cfg, messages, opts, onProse, onArtifactStart) {
     const resp = await fetch(endpoint(cfg.baseUrl), {
       method: 'POST',
       headers: { Authorization: 'Bearer ' + cfg.apiKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: cfg.model, stream: true, max_tokens: 16384, messages }),
+      body: JSON.stringify({ model: cfg.model, stream: true, max_tokens: 16384, messages, ...(tools.length ? {tools,tool_choice:"auto"} : {}) }),
       signal: round.signal
     });
     if (!resp.ok) {
@@ -63,6 +63,8 @@ export async function runRound(cfg, messages, opts, onProse, onArtifactStart) {
     const reader = resp.body.getReader(), dec = new TextDecoder();
     let sseBuf = '', total = 0, content = 0, contentText = '', finishReason = null;
 
+    const toolCalls=new Map();
+    let toolBytes=0;
     const handleLine = line => {
       if (!line.startsWith('data:')) return;
       const payload = line.slice(5).trim();
@@ -75,6 +77,16 @@ export async function runRound(cfg, messages, opts, onProse, onArtifactStart) {
       }
       const ch = Array.isArray(j?.choices) && j.choices[0] ? j.choices[0] : null;
       if (ch && ch.finish_reason) finishReason = String(ch.finish_reason);
+      for(const part of ch?.delta?.tool_calls||[]){
+        if(!Number.isInteger(part.index)||part.index<0||part.index>7)throw new SizeError('Zu viele Tool-Aufrufe.');
+        const tc=toolCalls.get(part.index)||{id:'',type:'function',function:{name:'',arguments:''}};
+        if(part.id)tc.id+=part.id;
+        if(part.function?.name)tc.function.name+=part.function.name;
+        if(part.function?.arguments)tc.function.arguments+=part.function.arguments;
+        toolBytes+=JSON.stringify(part).length;
+        if(toolBytes>64000||tc.id.length>200||tc.function.name.length>100||tc.function.arguments.length>16000)throw new SizeError('Tool-Aufruf zu gross.');
+        toolCalls.set(part.index,tc);
+      }
       const delta = ch?.delta?.content;
       if (typeof delta === 'string' && delta) {
         content += delta.length;
@@ -115,7 +127,7 @@ export async function runRound(cfg, messages, opts, onProse, onArtifactStart) {
     return {
       render, error, hadArtifact: fin.hadArtifact,
       truncated: finishReason === 'length', finishReason,
-      contentText, contentChars: content
+      toolCalls:[...toolCalls.values()], contentText, contentChars: content
     };
   } catch (e) {
     if (e && (e.name === 'AbortError' || e.name === 'RoundAbort')) {

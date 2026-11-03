@@ -9,6 +9,8 @@ import {runPing,setPingBackend,validHost} from './ping.mjs';
 import {Store,loadConfig} from './store.mjs';
 import {ElementDB} from './db.mjs';
 import {JobRunner} from './jobs.mjs';
+import {MCPConnections} from './mcp.mjs';
+import {ToolExecution} from './tool-execution.mjs';
 
 // Form v3.2 — local server with user accounts, server-side conversations and
 // per-element app databases. Binds 127.0.0.1 only (tailnet via tailscale serve).
@@ -29,7 +31,11 @@ catch (e) { console.error('store init failed:', e.message); process.exit(1); }
 if (store.interruptedOnStart > 0)
   console.log(`[jobs] marked ${store.interruptedOnStart} interrupted job(s) as failed (server restart)`);
 const CHAT_TOTAL_MS = Number(process.env.FORM3_CHAT_TIMEOUT_MS || 300000); // total job budget across BOTH rounds
+const mcp=new MCPConnections(path.join(DATA_DIR,'mcp.json'));
+const toolExecution=new ToolExecution(store,mcp);
 const runner = new JobRunner(store, {
+  getToolContext:job=>store.getUser(job.userId)?.role==='owner'?{catalog:mcp.catalog(),execute:(call,args,opts)=>toolExecution.execute(job,call,args,opts)}:null,
+  hasToolCalls:id=>toolExecution.hasCalls(id),
   concurrency: Number(process.env.FORM3_JOB_CONCURRENCY || 2),
   perUser: Number(process.env.FORM3_JOB_PER_USER || 2),
   totalMs: CHAT_TOTAL_MS,
@@ -158,6 +164,24 @@ const server = http.createServer(async (req, res) => {
     if (req.headers.origin !== undefined && !ORIGINS.includes(req.headers.origin)) return reply(res, 403, { error: 'Ungültiger Ursprung.' });
     if (req.method !== 'DELETE' && req.headers['content-type'] !== 'application/json') return reply(res, 415, { error: 'JSON erwartet.' });
     if (req.headers['x-form-csrf'] !== sess.csrf) return reply(res, 403, { error: 'CSRF-Schutz fehlgeschlagen.' });
+  }
+
+  if(pathname==='/api/mcp'||pathname.startsWith('/api/mcp/')){
+    if(user.role!=='owner')return reply(res,403,{error:'Nur Owner.'});
+    try{
+      if(req.method==='GET'&&pathname==='/api/mcp')return reply(res,200,{connections:mcp.publicList()});
+      if(req.method==='GET'&&pathname==='/api/mcp/calls')return reply(res,200,{calls:toolExecution.list(user.id)});
+      if(req.method==='POST'){
+        if(!rate('mcp:'+user.id,30,60000))return reply(res,429,{error:'Bitte kurz warten.'});
+        const d=JSON.parse(await readBody(req,20000));
+        if(pathname==='/api/mcp'){const id=mcp.add(d);return reply(res,200,{id});}
+        if(pathname==='/api/mcp/discover'){await mcp.discover(d.id);return reply(res,200,{ok:true});}
+        if(pathname==='/api/mcp/configure'){mcp.configure(d.id,d);return reply(res,200,{ok:true});}
+        if(pathname==='/api/mcp/decide'){if(typeof d.approve!=='boolean')throw Error('Ungültige Freigabe');toolExecution.decide(user.id,d.id,d.approve);return reply(res,200,{ok:true});}
+        if(pathname==='/api/mcp/remove'){mcp.remove(d.id);return reply(res,200,{ok:true});}
+      }
+      return reply(res,404,{error:'Nicht gefunden.'});
+    }catch{return reply(res,400,{error:'MCP-Anfrage fehlgeschlagen. Verbindung, Berechtigung und Eingaben prüfen.'});}
   }
 
   if (req.method === 'POST' && pathname === '/api/auth/logout') {

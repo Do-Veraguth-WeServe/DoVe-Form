@@ -26,6 +26,8 @@ const waitReady = (proc, tag, pattern = /ready/) => new Promise((resolve, reject
 });
 
 step('build (esbuild + bridge hash + wasm)', run('node', ['build.mjs']));
+step('standalone MCP + agent loop + approvals', run('node', ['--test', 'test/mcp.test.mjs', 'test/agent-loop.test.mjs', 'test/tool-execution.test.mjs']));
+step('MCP browser approval roundtrip', run('node', ['--test', 'test/mcp-e2e.test.mjs']));
 step('unit tests (contract, stream parser, models, QuickJS sandbox)', run('node', ['--test', 'test/unit.test.mjs']));
 step('provider transport tests (truncation, error frames, caps, abort/timeout)', run('node', ['--test', 'test/provider.test.mjs']));
 

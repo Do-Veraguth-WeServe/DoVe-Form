@@ -407,6 +407,7 @@ function updateComposer(){
   const who=me?String(me.username).slice(0,12):'';
   $('#statuslabel').textContent=!me?'NICHT ANGEMELDET':(has?('ANGEMELDET · '+who.toUpperCase()):'KEIN MODELL');
   $('#prompt').placeholder=has?'Nachricht …':'Zuerst ein Modell hinzufügen (⚙ oben rechts)';
+  $('#mcpbtn').classList.toggle('hidden',me?.role!=='owner');
   $('#whoami').textContent=me?(me.username+(me.role==='owner'?' · Owner':'')):'';
 }
 
@@ -865,4 +866,37 @@ $('#prompt').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.pr
 $('#stop').onclick=stop;$('#new').onclick=()=>newSession();
 $('#mobile').onclick=()=>{$('#sidebar').classList.toggle('open');$('#mobile').setAttribute('aria-expanded',$('#sidebar').classList.contains('open'))};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('#sidebar').classList.remove('open');$('#mobile').setAttribute('aria-expanded','false')}});
+// MCP credentials and execution stay on the server; confirmations are app-owned.
+async function mcpRequest(route,data){
+ const r=await fetch('/api/mcp'+route,data===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify(data)});
+ const t=await r.json();if(!r.ok)throw Error(t.error||'MCP fehlgeschlagen');return t;
+}
+async function showConnections(){
+ try{
+ const {connections}=await mcpRequest('');const list=$('#mcplist');list.replaceChildren();
+ for(const c of connections){
+ const row=document.createElement('section');row.className='notice';
+ const title=document.createElement('strong');title.textContent=c.name;row.append(title);
+ const test=document.createElement('button');test.textContent='Tools laden';test.onclick=async()=>{try{await mcpRequest('/discover',{id:c.id});await showConnections()}catch(e){toast(e.message)}};row.append(test);
+ const checks=[];
+ for(const tool of c.tools){const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.checked=tool.allowed;checks.push([tool.name,check]);label.append(check,document.createTextNode(tool.name));row.append(label)}
+ const enable=document.createElement('button');enable.textContent='Auswahl aktivieren';enable.onclick=async()=>{try{await mcpRequest('/configure',{id:c.id,enabled:true,allowedTools:checks.filter(x=>x[1].checked).map(x=>x[0])});toast('Tools aktiviert — Aufrufe benötigen deine Freigabe.')}catch(e){toast(e.message)}};row.append(enable);
+ const disable=document.createElement('button');disable.textContent='Deaktivieren';disable.onclick=async()=>{try{await mcpRequest('/configure',{id:c.id,enabled:false,allowedTools:[]});await showConnections()}catch(e){toast(e.message)}};row.append(disable);list.append(row);
+ }
+ $('#mcpdialog').showModal?.();
+ }catch(e){toast(e.message)}
+}
+$('#mcpbtn').onclick=showConnections;$('#mcpclose').onclick=()=>$('#mcpdialog').close();
+$('#mcpadd').onsubmit=async e=>{e.preventDefault();const f=e.target;try{await mcpRequest('',{name:f.name.value,url:f.url.value,token:f.token.value});f.reset();await showConnections()}catch(e){toast(e.message)}};
+let approvalBusy=false,approvalKey='';
+async function refreshApprovals(){
+ if(!me||me.role!=='owner'||approvalBusy)return;
+ approvalBusy=true;
+ try{const {calls}=await mcpRequest('/calls');const pendingCalls=calls.filter(c=>c.state==='pending');const key=JSON.stringify(pendingCalls);if(key===approvalKey)return;approvalKey=key;
+ const host=$('#toolapprovals');host.replaceChildren();
+ for(const c of pendingCalls){const box=document.createElement('section');box.className='notice';box.style.background='var(--bg)';box.setAttribute('role','region');box.setAttribute('aria-label','Tool-Freigabe');const name=document.createElement('strong');name.textContent='Tool-Aufruf bestätigen';const args=document.createElement('pre');args.style.whiteSpace='pre-wrap';args.textContent=c.label+'\n'+JSON.stringify(c.args,null,2);box.append(name,args);
+ for(const [label,approve] of [['Bestätigen',true],['Ablehnen',false]]){const b=document.createElement('button');b.textContent=label;b.onclick=async()=>{try{await mcpRequest('/decide',{id:c.id,approve});approvalKey='';await refreshApprovals()}catch(e){toast(e.message)}};box.append(b)}host.append(box);}
+ }catch{}finally{approvalBusy=false}
+}
+setInterval(refreshApprovals,2500);
 boot();

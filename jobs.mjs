@@ -24,6 +24,7 @@
 // discard stale events and reconcile gaplessly via snapshot + event stream.
 
 import crypto from 'node:crypto';
+import {runToolLoop} from './agent-loop.mjs';
 import { runRound, ProviderError, SizeError } from './provider.mjs';
 
 // The two-round turn with exactly ONE bounded corrective retry — semantics
@@ -39,7 +40,11 @@ export async function executeTurn(model, messages, opts, emit) {
   const wrapProse = t => { liveProse += t; onProse(t); };
 
   const roundOpts = { signal, deadlineMs };
-  const round1 = await runRound(model, messages, roundOpts, wrapProse, onArtifactStart);
+  let round1;
+  if(opts?.toolContext?.catalog.length){
+    const out=await runToolLoop(model,messages,{...roundOpts,...opts.toolContext},ev=>{if(ev.type==='prose-chunk')wrapProse(ev.text);else emit(ev)});
+    round1=out.result;messages=out.messages;
+  }else round1 = await runRound(model, messages, roundOpts, wrapProse, onArtifactStart);
   let finalRender = round1.render;
   let failure = null;
   let failureCode = null; // 'truncated' | 'invalid-artifact'
@@ -86,8 +91,9 @@ export async function executeTurn(model, messages, opts, emit) {
 }
 
 export class JobRunner {
-  constructor(store, { concurrency = 2, perUser = 2, getModel = () => null, totalMs = 300000 } = {}) {
+  constructor(store, { concurrency = 2, perUser = 2, getModel = () => null, totalMs = 300000, getToolContext = () => null, hasToolCalls = () => false } = {}) {
     this.store = store;
+    this.getToolContext=getToolContext;this.hasToolCalls=hasToolCalls;
     this.concurrency = Math.max(1, Math.min(Number(concurrency) || 2, 4));
     this.perUser = Math.max(1, Math.min(Number(perUser) || 2, 4));
     this.getModel = getModel; // (modelId) -> {baseUrl, apiKey, model} | null (keys never persisted)
@@ -199,6 +205,7 @@ export class JobRunner {
       const t0 = Date.now();
       const result = await executeTurn(model, job.request.messages, {
         signal: ctrl.signal,
+        toolContext: this.getToolContext(job),
         deadlineMs: t0 + this.totalMs
       }, emit);
       try { this.store.setJobProse(jobId, result.prose); } catch {}
@@ -310,6 +317,7 @@ export class JobRunner {
   // explicit retry of a FAILED job: re-runs the generation from the STORED
   // snapshot — this MAY call the provider again (disclosed, never silent).
   retry(jobId) {
+    if(this.hasToolCalls(jobId))return {ok:false,status:409,error:"Auftrag enthält Tool-Aufrufe. Kein automatischer Neustart; bitte Ergebnis prüfen und neuen Auftrag senden."};
     const job = this.store.getJob(jobId);
     if (!job) return { ok: false, status: 404, error: 'Job nicht gefunden' };
     if (job.state !== 'failed') return { ok: false, status: 409, error: 'Nur fehlgeschlagene Jobs können wiederholt werden.' };
