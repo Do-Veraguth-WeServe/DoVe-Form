@@ -157,7 +157,7 @@ async function registerUI(p, username, password) {
     // 6b. elements: name from artifact JSON, pin -> quick access -> overlay
     assert.equal(await p.locator('.elname').first().textContent(), 'Spar-Rechner', 'element shows model-supplied name');
     const pinBtn = p.locator('.elhead button[aria-label="Element anpinnen"]').first();
-    await pinBtn.scrollIntoViewIfNeeded();
+    // click auto-scrolls and retries when final stream reconciliation replaces the node.
     await pinBtn.click();
     const chip = p.locator('#quickbar .qchip');
     await chip.waitFor({ state: 'visible', timeout: 3000 });

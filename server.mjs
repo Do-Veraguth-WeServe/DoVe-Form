@@ -12,6 +12,7 @@ import {JobRunner} from './jobs.mjs';
 import {MCPConnections} from './mcp.mjs';
 import {ToolExecution} from './tool-execution.mjs';
 import {MemoryStore} from './memory.mjs';
+import {ElementActions} from './element-actions.mjs';
 import {memoryRegistry} from './memory-tools.mjs';
 
 // Form v3.2 — local server with user accounts, server-side conversations and
@@ -37,6 +38,7 @@ const mcp=new MCPConnections(path.join(DATA_DIR,'mcp.json'));
 const memory=new MemoryStore(store);
 const registry=memoryRegistry(mcp,memory);
 const toolExecution=new ToolExecution(store,registry);
+const elementActions=new ElementActions(store,mcp,toolExecution);
 const runner = new JobRunner(store, {
   getToolContext:job=>store.getUser(job.userId)?.role==='owner'?{catalog:registry.catalog().filter(t=>!t.name.startsWith("memory_")||memory.enabled(job.userId)),execute:(call,args,opts)=>toolExecution.execute(job,call,args,opts)}:null,
   hasToolCalls:id=>toolExecution.hasCalls(id),
@@ -170,6 +172,20 @@ const server = http.createServer(async (req, res) => {
     if (req.headers['x-form-csrf'] !== sess.csrf) return reply(res, 403, { error: 'CSRF-Schutz fehlgeschlagen.' });
   }
 
+  if(pathname.startsWith('/api/element-actions')){
+    if(user.role!=='owner')return reply(res,403,{error:'Nur Owner.'});
+    try{
+      if(req.method==='GET')return reply(res,200,{actions:elementActions.list(user.id,url.searchParams.get('messageId')),tools:mcp.catalog().map(t=>({name:t.name,label:t.connectionName+' / '+t.toolName}))});
+      if(req.method==='POST'){
+        if(!rate('element-action:'+user.id,20,60000))return reply(res,429,{error:'Bitte warten.'});
+        const d=JSON.parse(await readBody(req,20000));
+        if(pathname==='/api/element-actions/add')return reply(res,200,{id:elementActions.add(user.id,d)});
+        if(pathname==='/api/element-actions/run')return reply(res,200,{jobId:elementActions.run(user.id,d.id)});
+        if(pathname==='/api/element-actions/remove'){elementActions.remove(user.id,d.id);return reply(res,200,{ok:true});}
+      }
+      return reply(res,404,{error:'Nicht gefunden.'});
+    }catch{return reply(res,400,{error:'Element-Aktion nicht verfügbar. Freigaben und Konfiguration prüfen.'});}
+  }
   if(pathname==='/api/memory'||pathname.startsWith('/api/memory/')){
     try{
       if(req.method==='GET'&&pathname==='/api/memory')return reply(res,200,{enabled:memory.enabled(user.id),memories:memory.search(user.id,{limit:50})});

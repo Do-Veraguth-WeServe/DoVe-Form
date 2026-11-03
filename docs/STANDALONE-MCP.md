@@ -15,7 +15,8 @@ Form calls the configured model directly. No external agent harness is required.
 - OAuth, stdio transports, MCP resources/prompts, server-initiated sampling.
 - Per-user shared connection grants; initially owner only.
 - Tool-capability probing for arbitrary live models (must be verified with each provider).
-- Dedicated element action bindings and standalone memory (next steps).
+- Generated iframe code cannot call arbitrary tools; actions are explicitly bound through trusted Form controls.
+- Action results currently appear as JSON in the trusted action panel; automatic binding into generated visual widgets is not included.
 - Automatic continuation across server restart; interrupted jobs fail honestly.
 
 ## Trust boundary
@@ -23,3 +24,12 @@ Only the owner configures destinations. Connecting a server is not proof of trus
 
 ## Verification
 npm test includes MCP protocol fixture, argument checks, approval isolation, bounded agent loop, and browser end-to-end owner setup/approval/result/reload. These use deterministic fixtures, not claims of live provider compatibility.
+
+## Memory
+User-owned memories support literal text search, edit and delete. Chat access is opt-in (off by default); owner tool calls use the same confirmation mechanism. No OpenClaw files are imported. Non-owner accounts can manage their own stored memories, but agent tool execution remains owner-only in this release.
+
+## Element actions
+Open an element, expand Tool-Aktionen, select a granted MCP tool and fixed JSON arguments. Every run requires approval and stores its result. No model request is needed. Changed endpoint/schema credentials invalidate old bindings; simultaneous duplicate clicks are rejected.
+
+## Live provider probe (2026-11-03)
+Both configured models returned a valid native tool call for a harmless protocol probe: minimax-m3.1-flash (1192 ms), glm-5.3-flash (4768 ms). No external tool was executed. This proves basic tool-call compatibility, not general tool-use quality or end-to-end production MCP credentials.

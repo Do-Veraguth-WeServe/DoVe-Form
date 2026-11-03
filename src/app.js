@@ -708,6 +708,7 @@ function openOverlay(m){
   $('#overlay').showModal?.();
 }
 function closeOverlay(){$('#overlay')?.close()}
+document.addEventListener('close',e=>{if(e.target.tagName==='DIALOG'&&e.target.contains($('#toolapprovals')))document.body.append($('#toolapprovals'))},true);
 $('#overlay').addEventListener('close',()=>{
   overlayView?.destroy();overlayView=null;overlayMsg=null;overlayMode='view';
   $('#ovcontent').replaceChildren();
@@ -717,7 +718,7 @@ let overlayMsg=null,overlayMode='view',overlayView=null;
 function fillOverlay(){
   const m=overlayMsg;if(!m)return;
   if(overlayView){overlayView.destroy();overlayView=null}
-  const c=$('#ovcontent');c.replaceChildren();
+  const c=$('#ovcontent');document.body.append($('#toolapprovals'));c.replaceChildren();
   const head=document.createElement('div');head.className='ovhead';
   const t=document.createElement('strong');t.textContent=elementName(m);
   const pin=document.createElement('button');pin.type='button';pin.className='icon';pin.textContent=isPinned(m)?'★':'☆';
@@ -746,6 +747,7 @@ function fillOverlay(){
     const b2=document.createElement('button');b2.type='button';b2.textContent='Code bearbeiten';b2.onclick=()=>{overlayMode='code';fillOverlay()};
     const b3=document.createElement('button');b3.type='button';b3.textContent='Versionen';b3.onclick=()=>{overlayMode='versions';fillOverlay()};
     foot.append(b1,b2,b3);body.append(foot);
+    if(me?.role==='owner')void renderElementActions(body,m);
   }
 
   else if(overlayMode==='code'){
@@ -892,13 +894,25 @@ let approvalBusy=false,approvalKey='';
 async function refreshApprovals(){
  if(!me||me.role!=='owner'||approvalBusy)return;
  approvalBusy=true;
- try{const {calls}=await mcpRequest('/calls');const pendingCalls=calls.filter(c=>c.state==='pending');const key=JSON.stringify(pendingCalls);if(key===approvalKey)return;approvalKey=key;
+ try{const {calls}=await mcpRequest('/calls');const pendingCalls=calls.filter(c=>c.state==='pending');const key=JSON.stringify(pendingCalls);const approvalHost=$('#toolapprovals');const activeDialog=document.querySelector('dialog[open] .dlg');(activeDialog||document.body).append(approvalHost);if(key===approvalKey)return;approvalKey=key;
  const host=$('#toolapprovals');host.replaceChildren();
  for(const c of pendingCalls){const box=document.createElement('section');box.className='notice';box.style.background='var(--bg)';box.setAttribute('role','region');box.setAttribute('aria-label','Tool-Freigabe');const name=document.createElement('strong');name.textContent='Tool-Aufruf bestätigen';const args=document.createElement('pre');args.style.whiteSpace='pre-wrap';args.textContent=c.label+'\n'+JSON.stringify(c.args,null,2);box.append(name,args);
  for(const [label,approve] of [['Bestätigen',true],['Ablehnen',false]]){const b=document.createElement('button');b.textContent=label;b.onclick=async()=>{try{await mcpRequest('/decide',{id:c.id,approve});approvalKey='';await refreshApprovals()}catch(e){toast(e.message)}};box.append(b)}host.append(box);}
  }catch{}finally{approvalBusy=false}
 }
 setInterval(refreshApprovals,2500);
+async function actionRequest(route,data){const r=await fetch('/api/element-actions'+route,data===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify(data)});const t=await r.json();if(!r.ok)throw Error(t.error);return t;}
+async function renderElementActions(body,m){
+ const panel=document.createElement('details');panel.className='element-actions';const summary=document.createElement('summary');summary.textContent='Tool-Aktionen';panel.append(summary);body.append(panel);
+ const list=document.createElement('div');panel.append(list);
+ async function refresh(){const data=await actionRequest('?messageId='+encodeURIComponent(m.id));if(!panel.isConnected)return;list.replaceChildren();
+ for(const action of data.actions){const row=document.createElement('div');const run=document.createElement('button');run.textContent=action.label;run.disabled=['pending','approved','running'].includes(action.state);run.onclick=async()=>{try{await actionRequest('/run',{id:action.id});await refresh();await refreshApprovals()}catch(e){toast(e.message)}};const remove=document.createElement('button');remove.textContent='Entfernen';remove.onclick=async()=>{try{await actionRequest('/remove',{id:action.id});await refresh()}catch(e){toast(e.message)}};row.append(run,remove);if(action.state){const status=document.createElement('small');status.textContent=' '+action.state;row.append(status)}if(action.result){const result=document.createElement('pre');result.style.whiteSpace='pre-wrap';result.textContent=JSON.stringify(action.result,null,2);row.append(result)}list.append(row);}
+ return data;
+ }
+ try{const data=await refresh();if(!data)return;const form=document.createElement('form');const label=document.createElement('input');label.placeholder='Name der Aktion';label.required=true;label.maxLength=60;label.setAttribute('aria-label','Aktionsname');const select=document.createElement('select');select.setAttribute('aria-label','Tool für Element');for(const tool of data.tools){const o=document.createElement('option');o.value=tool.name;o.textContent=tool.label;select.append(o)}const args=document.createElement('textarea');args.value='{}';args.setAttribute('aria-label','Tool-Argumente JSON');const add=document.createElement('button');add.textContent='Verknüpfen';add.disabled=!data.tools.length;form.append(label,select,args,add);panel.append(form);form.onsubmit=async e=>{e.preventDefault();try{await actionRequest('/add',{messageId:m.id,label:label.value,tool:select.value,args:JSON.parse(args.value)});await refresh()}catch(e){toast(e.message)}};
+ const timer=setInterval(()=>{if(!panel.isConnected){clearInterval(timer);return}if(panel.open)refresh().catch(()=>{})},2500);
+ }catch(e){summary.textContent='Tool-Aktionen nicht verfügbar';}
+}
 async function memoryRequest(route,data){const r=await fetch('/api/memory'+route,data===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify(data)});const t=await r.json();if(!r.ok)throw Error(t.error);return t;}
 async function showMemory(){try{const data=await memoryRequest('');$('#memoryenabled').checked=data.enabled;await renderMemories();$('#memorydialog').showModal?.()}catch(e){toast(e.message)}}
 async function renderMemories(){try{const data=await memoryRequest('/search',{query:$('#memorysearch').value,limit:50});const list=$('#memorylist');list.replaceChildren();for(const m of data.memories){const row=document.createElement('section');row.className='notice';const text=document.createElement('textarea');text.value=m.content;text.maxLength=4000;text.setAttribute('aria-label','Erinnerung bearbeiten');const save=document.createElement('button');save.textContent='Speichern';save.onclick=async()=>{try{await memoryRequest('/save',{id:m.id,content:text.value,project:m.project});toast('Gespeichert.')}catch(e){toast(e.message)}};const del=document.createElement('button');del.textContent='Löschen';del.onclick=async()=>{if(!confirm('Erinnerung löschen?'))return;try{await memoryRequest('/delete',{id:m.id});await renderMemories()}catch(e){toast(e.message)}};row.append(text,save,del);list.append(row)}}catch(e){toast(e.message)}}
