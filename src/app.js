@@ -263,6 +263,7 @@ function pendingJobFor(msgId){
 const ACTIVE_JOB=['queued','building','validating'];
 function applyJob(job,opts){
   if(!job||!job.id)return;
+  if(job.kind==='action')return;
   const rerender=opts?opts.rerender!==false:true;
   const prev=jobs.get(job.id);
   if(prev&&Number(prev.rev)>=Number(job.rev)&&prev.state!=='queued'&&job.state!=='ready')return; // stale event
@@ -509,7 +510,8 @@ function render(){  views.forEach(v=>v.destroy());views=[];
             head.append(nm,pinB,exp);
             const note=document.createElement('div');note.className='small';
             const view=renderUI(m.render,{
-              onState:state=>{m.render.state=state;save();scheduleStateSync(m.id,state)},
+              onAction:(name,inputs)=>runBoundAction(m,name,inputs),
+      onState:state=>{m.render.state=state;save();scheduleStateSync(m.id,state)},
               onSuggest:text=>{$('#prompt').value=text;toast('Vorschlag eingefügt — nur du sendest ihn.')},
               onError:text=>{note.textContent=text;note.className='notice error'},
               onPing:doPing,
@@ -734,6 +736,7 @@ function fillOverlay(){
     const holder=document.createElement('div');body.append(holder);
     const note=document.createElement('div');note.className='small';body.append(note);
     overlayView=renderUI(m.render,{
+      onAction:(name,inputs)=>runBoundAction(m,name,inputs),
       onState:state=>{m.render.state=state;save();scheduleStateSync(m.id,state)},
       onSuggest:text=>{$('#prompt').value=text;toast('Vorschlag eingefügt — nur du sendest ihn.')},
       onError:tx=>{note.textContent=tx;note.className='notice error'},
@@ -901,16 +904,27 @@ async function refreshApprovals(){
  }catch{}finally{approvalBusy=false}
 }
 setInterval(refreshApprovals,2500);
+async function httpRequest(route,data){const r=await fetch('/api/http'+route,data===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify(data)});const t=await r.json();if(!r.ok)throw Error(t.error);return t;}
+async function showHTTP(){try{const {connections}=await httpRequest('');const list=$('#httplist');list.replaceChildren();for(const c of connections){const row=document.createElement('section');row.className='notice';const title=document.createElement('p');title.textContent=c.name+' · '+c.method+' '+c.url;const toggle=document.createElement('button');toggle.textContent=c.enabled?'Deaktivieren':'Aktivieren';toggle.onclick=async()=>{try{await httpRequest('/configure',{id:c.id,enabled:!c.enabled});await showHTTP()}catch(e){toast(e.message)}};const del=document.createElement('button');del.textContent='Entfernen';del.onclick=async()=>{if(!confirm('HTTP-Verbindung entfernen?'))return;try{await httpRequest('/remove',{id:c.id});await showHTTP()}catch(e){toast(e.message)}};row.append(title,toggle,del);list.append(row)}if(!$('#httpdialog').open)$('#httpdialog').showModal()}catch(e){toast(e.message)}}
+$('#httpbtn').onclick=()=>{$('#mcpdialog').close();void showHTTP()};$('#httpclose').onclick=()=>$('#httpdialog').close();
+$('#httpadd').onsubmit=async e=>{e.preventDefault();const f=e.target;try{await httpRequest('',{name:f.name.value,url:f.url.value,method:f.method.value,headers:JSON.parse(f.headers.value||'{}')});f.reset();await showHTTP()}catch(err){toast(err.message)}};
+async function runBoundAction(m,name,inputs){
+ const {actions}=await actionRequest('?messageId='+encodeURIComponent(m.id));const matches=actions.filter(a=>a.label===name);if(matches.length!==1)throw Error('Aktion nicht eindeutig verknüpft.');const id=matches[0].id;
+ const {jobId}=await actionRequest('/run',{id,inputs});void refreshApprovals();
+ const end=Date.now()+155000;
+ while(Date.now()<end){await new Promise(r=>setTimeout(r,1500));const {actions}=await actionRequest('?messageId='+encodeURIComponent(m.id));const action=actions.find(a=>a.id===id);if(!action||action.jobId!==jobId)throw Error('Aktion entfernt oder erneut gestartet.');if(action.state==='completed')return action.result;if(['denied','expired','unknown'].includes(action.state))throw Error('Aktion nicht abgeschlossen.');}
+ throw Error('Zeitlimit. Ergebnis prüfen.');
+}
 async function actionRequest(route,data){const r=await fetch('/api/element-actions'+route,data===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify(data)});const t=await r.json();if(!r.ok)throw Error(t.error);return t;}
 async function renderElementActions(body,m){
  const panel=document.createElement('details');panel.className='element-actions';const summary=document.createElement('summary');summary.textContent='Tool-Aktionen';panel.append(summary);body.append(panel);
  const list=document.createElement('div');panel.append(list);
  async function refresh(){const data=await actionRequest('?messageId='+encodeURIComponent(m.id));if(!panel.isConnected)return;list.replaceChildren();
- for(const action of data.actions){const row=document.createElement('div');const run=document.createElement('button');run.textContent=action.label;run.disabled=['pending','approved','running'].includes(action.state);run.onclick=async()=>{try{await actionRequest('/run',{id:action.id});await refresh();await refreshApprovals()}catch(e){toast(e.message)}};const remove=document.createElement('button');remove.textContent='Entfernen';remove.onclick=async()=>{try{await actionRequest('/remove',{id:action.id});await refresh()}catch(e){toast(e.message)}};row.append(run,remove);if(action.state){const status=document.createElement('small');status.textContent=' '+action.state;row.append(status)}if(action.result){const result=document.createElement('pre');result.style.whiteSpace='pre-wrap';result.textContent=JSON.stringify(action.result,null,2);row.append(result)}list.append(row);}
+ for(const action of data.actions){const row=document.createElement('div');const inputValues={};for(const key of [...new Set([...JSON.stringify(action.args).matchAll(/\{\{([a-zA-Z0-9_]{1,40})\}\}/g)].map(m=>m[1]))]){const field=document.createElement('input');field.placeholder=key;field.setAttribute('aria-label','Parameter '+key);field.oninput=()=>{inputValues[key]=field.value};row.append(field)}const run=document.createElement('button');run.textContent=action.label;run.disabled=['pending','approved','running'].includes(action.state);run.onclick=async()=>{try{await actionRequest('/run',{id:action.id,inputs:inputValues});await refresh();await refreshApprovals()}catch(e){toast(e.message)}};const remove=document.createElement('button');remove.textContent='Entfernen';remove.onclick=async()=>{try{await actionRequest('/remove',{id:action.id});await refresh()}catch(e){toast(e.message)}};row.append(run,remove);if(action.state){const status=document.createElement('small');status.textContent=' '+action.state;row.append(status)}if(action.result){const result=document.createElement('pre');result.style.whiteSpace='pre-wrap';result.textContent=JSON.stringify(action.result,null,2);row.append(result)}list.append(row);}
  return data;
  }
- try{const data=await refresh();if(!data)return;const form=document.createElement('form');const label=document.createElement('input');label.placeholder='Name der Aktion';label.required=true;label.maxLength=60;label.setAttribute('aria-label','Aktionsname');const select=document.createElement('select');select.setAttribute('aria-label','Tool für Element');for(const tool of data.tools){const o=document.createElement('option');o.value=tool.name;o.textContent=tool.label;select.append(o)}const args=document.createElement('textarea');args.value='{}';args.setAttribute('aria-label','Tool-Argumente JSON');const add=document.createElement('button');add.textContent='Verknüpfen';add.disabled=!data.tools.length;form.append(label,select,args,add);panel.append(form);form.onsubmit=async e=>{e.preventDefault();try{await actionRequest('/add',{messageId:m.id,label:label.value,tool:select.value,args:JSON.parse(args.value)});await refresh()}catch(e){toast(e.message)}};
- const timer=setInterval(()=>{if(!panel.isConnected){clearInterval(timer);return}if(panel.open)refresh().catch(()=>{})},2500);
+ try{const data=await refresh();if(!data)return;const form=document.createElement('form');const label=document.createElement('input');label.placeholder='Name der Aktion';label.required=true;label.maxLength=60;label.setAttribute('aria-label','Aktionsname');const select=document.createElement('select');select.setAttribute('aria-label','Tool für Element');for(const tool of data.tools){const o=document.createElement('option');o.value=tool.name;o.textContent=tool.label;select.append(o)}const args=document.createElement('textarea');args.value='{}';args.setAttribute('aria-label','Tool-Argumente JSON');args.title='Dynamische Werte: {{parameter}}, z. B. {"query":{"city":"{{city}}"}}';const add=document.createElement('button');add.textContent='Verknüpfen';add.disabled=!data.tools.length;form.append(label,select,args,add);panel.append(form);form.onsubmit=async e=>{e.preventDefault();try{await actionRequest('/add',{messageId:m.id,label:label.value,tool:select.value,args:JSON.parse(args.value)});await refresh()}catch(e){toast(e.message)}};
+ const timer=setInterval(()=>{if(!panel.isConnected){clearInterval(timer);return}if(panel.open&&!panel.contains(document.activeElement))refresh().catch(()=>{})},2500);
  }catch(e){summary.textContent='Tool-Aktionen nicht verfügbar';}
 }
 async function memoryRequest(route,data){const r=await fetch('/api/memory'+route,data===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify(data)});const t=await r.json();if(!r.ok)throw Error(t.error);return t;}

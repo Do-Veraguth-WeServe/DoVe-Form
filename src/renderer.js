@@ -40,7 +40,7 @@ export function bridge(){
 }
 
 
-export function renderUI(data,{onState,onSuggest,onError,onPing,onDb}={}){
+export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction}={}){
   const f=document.createElement('iframe');
   f.className='render';
   f.title='Form · interaktive Antwort';
@@ -117,6 +117,13 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb}={}){
               ms:typeof v.ms==='number'&&isFinite(v.ms)?Math.round(v.ms):undefined,
               error:typeof v.error==='string'?v.error.slice(0,120):undefined
             }));
+        }else if(o.op==='action'){
+          const ref=String(o.ref||'');
+          if(!/^a[0-9]{1,8}$/.test(ref)||typeof o.name!=='string'||o.name.length>60||!o.inputs||typeof o.inputs!=='object'||JSON.stringify(o.inputs).length>6000||asyncQ.length>=8){
+            deliver('__action:'+ref,'action',{ok:false,error:'Ungültige Aktion.'});
+          }else Promise.resolve(typeof onAction==='function'?onAction(o.name,o.inputs):Promise.reject(Error('Aktion nicht verknüpft.')))
+            .then(result=>deliver('__action:'+ref,'action',{ok:true,result}))
+            .catch(()=>deliver('__action:'+ref,'action',{ok:false,error:'Aktion nicht abgeschlossen. Freigabe und Ergebnis prüfen.'}));
         }else if(o.op==='db'){
           const ref=typeof o.ref==='string'?o.ref.slice(0,32):'';
           const dbop=typeof o.dbop==='string'?o.dbop:'';

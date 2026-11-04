@@ -8,6 +8,7 @@ const INIT = `
 let state = __state;
 let pingc = 0;
 let dbc = 0;
+let actionc = 0;
 const handlers = Object.create(null);
 const ui = Object.freeze({
   text: (id, value) => __emit(JSON.stringify({op:"text", id, value:String(value)})),
@@ -21,6 +22,11 @@ const ui = Object.freeze({
     const ref = String(++pingc);
     handlers["__ping:"+ref+":ping"] = fn;
     __emit(JSON.stringify({op:"ping", host:String(host), ref}));
+  },
+  action: (name, inputs, fn) => {
+    const ref='a'+String(++actionc);
+    if(typeof fn==='function')handlers['__action:'+ref+':action']=fn;
+    __emit(JSON.stringify({op:'action',name:String(name),inputs,ref}));
   },
   db: (() => {
     const call = (dbop, table, args, cb) => {

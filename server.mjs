@@ -1,3 +1,4 @@
+import {HTTPConnections,httpRegistry} from './http-tools.mjs';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -36,9 +37,11 @@ if (store.interruptedOnStart > 0)
 const CHAT_TOTAL_MS = Number(process.env.FORM3_CHAT_TIMEOUT_MS || 300000); // total job budget across BOTH rounds
 const mcp=new MCPConnections(path.join(DATA_DIR,'mcp.json'));
 const memory=new MemoryStore(store);
-const registry=memoryRegistry(mcp,memory);
+const httpConnections=new HTTPConnections(path.join(DATA_DIR,'http.json'));
+const actionRegistry=httpRegistry(mcp,httpConnections);
+const registry=memoryRegistry(actionRegistry,memory);
 const toolExecution=new ToolExecution(store,registry);
-const elementActions=new ElementActions(store,mcp,toolExecution);
+const elementActions=new ElementActions(store,actionRegistry,toolExecution);
 const runner = new JobRunner(store, {
   getToolContext:job=>store.getUser(job.userId)?.role==='owner'?{catalog:registry.catalog().filter(t=>!t.name.startsWith("memory_")||memory.enabled(job.userId)),execute:(call,args,opts)=>toolExecution.execute(job,call,args,opts)}:null,
   hasToolCalls:id=>toolExecution.hasCalls(id),
@@ -172,15 +175,30 @@ const server = http.createServer(async (req, res) => {
     if (req.headers['x-form-csrf'] !== sess.csrf) return reply(res, 403, { error: 'CSRF-Schutz fehlgeschlagen.' });
   }
 
+  if(pathname==='/api/http'||pathname.startsWith('/api/http/')){
+    if(user.role!=='owner')return reply(res,403,{error:'Nur Owner.'});
+    try{
+      if(req.method==='GET')return reply(res,200,{connections:httpConnections.publicList()});
+      if(req.method==='POST'){
+        if(!rate('http-config:'+user.id,30,60000))return reply(res,429,{error:'Bitte warten.'});
+        const d=JSON.parse(await readBody(req,14000));
+        if(pathname==='/api/http')return reply(res,200,{id:httpConnections.add(d)});
+        if(pathname==='/api/http/configure')httpConnections.configure(d.id,d.enabled);
+        else if(pathname==='/api/http/remove')httpConnections.remove(d.id);
+        else return reply(res,404,{error:'Nicht gefunden.'});
+        return reply(res,200,{ok:true});
+      }
+    }catch{return reply(res,400,{error:'HTTP-Konfiguration ungültig.'});}
+  }
   if(pathname.startsWith('/api/element-actions')){
     if(user.role!=='owner')return reply(res,403,{error:'Nur Owner.'});
     try{
-      if(req.method==='GET')return reply(res,200,{actions:elementActions.list(user.id,url.searchParams.get('messageId')),tools:mcp.catalog().map(t=>({name:t.name,label:t.connectionName+' / '+t.toolName}))});
+      if(req.method==='GET')return reply(res,200,{actions:elementActions.list(user.id,url.searchParams.get('messageId')),tools:actionRegistry.catalog().map(t=>({name:t.name,label:t.connectionName+' / '+t.toolName}))});
       if(req.method==='POST'){
         if(!rate('element-action:'+user.id,20,60000))return reply(res,429,{error:'Bitte warten.'});
         const d=JSON.parse(await readBody(req,20000));
         if(pathname==='/api/element-actions/add')return reply(res,200,{id:elementActions.add(user.id,d)});
-        if(pathname==='/api/element-actions/run')return reply(res,200,{jobId:elementActions.run(user.id,d.id)});
+        if(pathname==='/api/element-actions/run')return reply(res,200,{jobId:elementActions.run(user.id,d.id,d.inputs)});
         if(pathname==='/api/element-actions/remove'){elementActions.remove(user.id,d.id);return reply(res,200,{ok:true});}
       }
       return reply(res,404,{error:'Nicht gefunden.'});

@@ -16,7 +16,7 @@ Form calls the configured model directly. No external agent harness is required.
 - Per-user shared connection grants; initially owner only.
 - Tool-capability probing for arbitrary live models (must be verified with each provider).
 - Generated iframe code cannot call arbitrary tools; actions are explicitly bound through trusted Form controls.
-- Action results currently appear as JSON in the trusted action panel; automatic binding into generated visual widgets is not included.
+- Action results appear in the trusted panel and can be delivered into generated widgets through explicitly linked ui.action callbacks; see HTTP-ACTIONS.md.
 - Automatic continuation across server restart; interrupted jobs fail honestly.
 
 ## Trust boundary
@@ -33,3 +33,5 @@ Open an element, expand Tool-Aktionen, select a granted MCP tool and fixed JSON 
 
 ## Live provider probe (2026-11-03)
 Both configured models returned a valid native tool call for a harmless protocol probe: minimax-m3.1-flash (1192 ms), glm-5.3-flash (4768 ms). No external tool was executed. This proves basic tool-call compatibility, not general tool-use quality or end-to-end production MCP credentials.
+
+HTTP/API integration: see [HTTP actions](HTTP-ACTIONS.md). Fixed public HTTPS endpoints, secret headers, dynamic query/body arguments and explicit element-scoped callbacks use the existing approval journal.

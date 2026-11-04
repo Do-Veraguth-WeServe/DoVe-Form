@@ -1,0 +1,15 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import https from 'node:https';import dns from 'node:dns/promises';import {EventEmitter} from 'node:events';import {HTTPConnections,endpoint,publicIPv4} from '../http-tools.mjs';import {resolveInputs} from '../element-actions.mjs';
+test('HTTP rejects local, metadata, encoded IPs and unsafe configuration',()=>{
+ for(const v of ['http://example.com','https://127.1','https://2130706433','https://0x7f000001','https://[::ffff:127.0.0.1]','https://169.254.169.254','https://100.100.100.200','https://user:pass@example.com','https://example.com:8443','https://example.com?a=b'])assert.throws(()=>endpoint(v),v);
+ for(const ip of ['10.1.2.3','172.18.0.1','192.168.1.1','0.0.0.0','198.18.0.1','224.0.0.1'])assert.equal(publicIPv4(ip),false);assert.equal(publicIPv4('8.8.8.8'),true);
+ assert.deepEqual(resolveInputs({query:{city:'{{city}}'},body:['{{city}}']},{city:'Bern'}),{query:{city:'Bern'},body:['Bern']});assert.throws(()=>resolveInputs({q:'{{missing}}'},{}));
+});
+test('HTTP permission, hidden credentials, DNS pinning, redirect and size limits',async t=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'form-http-'));try{const h=new HTTPConnections(path.join(dir,'http.json'));assert.throws(()=>h.add({name:'bad',url:'https://example.com',headers:{Host:'internal'}}));const id=h.add({name:'API',url:'https://example.com/data',headers:{Authorization:'Bearer secret-value'}});assert.deepEqual(h.catalog(),[]);assert.ok(!JSON.stringify(h.publicList()).includes('secret-value'));h.configure(id,true);const name=h.catalog()[0].name;
+ let status=200,payload='{"city":"Bern"}',seen;const lookup=t.mock.method(dns,'lookup',async()=>[{address:'8.8.8.8',family:4}]);
+ t.mock.method(https,'request',(url,opts,cb)=>{seen={url,opts};const req=new EventEmitter();req.end=body=>{seen.body=body;queueMicrotask(()=>{const res=new EventEmitter();res.statusCode=status;res.destroy=e=>{if(e)queueMicrotask(()=>res.emit('error',e))};cb(res);if(status<300){res.emit('data',Buffer.from(payload));if(payload.length<=48000)res.emit('end')}})};return req;});
+ const r=await h.call(name,{query:{city:'Bern'}});assert.equal(r.data.city,'Bern');assert.equal(seen.url.searchParams.get('city'),'Bern');assert.equal(seen.opts.headers.Authorization,'Bearer secret-value');await new Promise((resolve,reject)=>seen.opts.lookup('example.com',{all:true},(err,a)=>{if(err)reject(err);else{assert.equal(a[0].address,'8.8.8.8');resolve()}}));
+ status=302;await assert.rejects(h.call(name,{}),/Redirect/);status=200;payload='x'.repeat(48001);await assert.rejects(h.call(name,{}));payload='ok';lookup.mock.mockImplementation(async()=>[{address:'127.0.0.1',family:4}]);await assert.rejects(h.call(name,{}),/Zieladresse/);
+ h.configure(id,false);await assert.rejects(h.call(name,{}));assert.equal(fs.statSync(path.join(dir,'http.json')).mode&0o777,0o600);
+ }finally{fs.rmSync(dir,{recursive:true,force:true})}
+});
