@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "html": "<div class=\"app\"><h2>Ortssuche</h2><div id=\"f\"><input id=\"q\" placeholder=\"Ortsname eingeben\" autocomplete=\"off\"><button id=\"go\">Suchen</button></div><p id=\"s\" role=\"status\">Gib einen Ortsnamen ein.</p><div id=\"r\"></div><small>Open-Meteo Geocoding API · ohne API-Key</small></div>",
+  "css": ".app{max-width:720px;margin:auto;padding:24px;background:#141718;color:#e9e9de;border:1px solid #303638;border-radius:16px;font-family:system-ui,sans-serif}.app h2{margin:0 0 18px}.app form{display:flex;gap:8px}.app input{flex:1;min-width:0;padding:12px;color:#e9e9de;background:#0d0f10;border:1px solid #485055;border-radius:8px;font:inherit}.app button{padding:12px 18px;color:#162016;background:#d4ef8b;border:0;border-radius:8px;font:inherit;font-weight:700;cursor:pointer}.app button:disabled{opacity:.6;cursor:wait}.app #s{color:#aeb5ae;min-height:20px}.app #r{margin:18px 0}.app article{padding:14px 0;border-top:1px solid #303638}.app article strong{display:block;font-size:17px}.app article span{display:block;margin-top:4px;color:#bcc3bc}.app small{color:#7f8981}.err{color:#ffaaa0!important}@media(max-width:480px){.app form{flex-direction:column}.app button{width:100%}}",
+  "js": "function esc(s){return String(s==null?'':s).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]))}function setStatus(t,e){ui.text('s',t)}var searching=false;function search(){if(searching)return;var q=(state.ort||'').trim();if(!q){setStatus('Bitte einen Ortsnamen eingeben.',true);return}searching=true;setStatus('Suche läuft …');ui.action('Ortssuche',{ort:q},function(res){searching=false;if(!res.ok){setStatus('Die Suche ist fehlgeschlagen: '+esc(res.error||'Unbekannter Fehler'),true);ui.html('r','');return}var data=res.result&&res.result.data||{};var list=(data.results||[]);if(!list.length){setStatus('Kein Ort für „'+esc(q)+'“ gefunden.',false);ui.html('r','');return}setStatus(list.length+' Treffer für „'+esc(q)+'“ gefunden.',false);ui.html('r',list.map(function(x){return '<article><strong>'+esc(x.name)+'</strong><span>'+esc([x.admin1,x.country].filter(Boolean).join(', '))+'</span><span>Koordinaten: '+esc(x.latitude)+', '+esc(x.longitude)+'</span></article>'}).join(''))})}ui.value('q',state.ort||'');ui.on('q','input',function(e){state.ort=e.value;ui.persist()});ui.on('go','click',search);",
+  "state": {},
+  "actions": [
+    {
+      "name": "Ortssuche",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "method": "GET",
+      "args": {
+        "query": {
+          "name": "{{ort}}",
+          "count": "10",
+          "language": "de",
+          "format": "json"
+        }
+      }
+    }
+  ],
+  "name": "Ortssuche"
+}

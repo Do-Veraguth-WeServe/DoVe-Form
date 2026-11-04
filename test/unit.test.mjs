@@ -401,3 +401,9 @@ test('QuickJS interrupts CPU exhaustion', async () => {
   c.dispose();
   r.dispose();
 });
+
+test('generated interaction validation catches DOM event and value getter mistakes without hiding stored elements',()=>{
+ const base={version:1,html:'<input id="q"><button id="go">Go</button>',css:'',js:'',state:{}};
+ for(const js of ["ui.on('go','click',e=>e.preventDefault())","ui.value('q').trim()","ui.on('f','submit',()=>{})"]){assert.throws(()=>parseArtifact(JSON.stringify({...base,js})));assert.doesNotThrow(()=>validateRender({...base,js}),'existing stored renders remain readable');}
+ const repaired=JSON.parse(fs.readFileSync(new URL('./fixtures/place-search-repaired-api.json',import.meta.url),'utf8'));assert.equal(parseArtifact(JSON.stringify(repaired)).actions[0].name,'Ortssuche');
+});
