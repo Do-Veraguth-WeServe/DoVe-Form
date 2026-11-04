@@ -11,6 +11,7 @@ let dbc = 0;
 let actionc = 0;
 const handlers = Object.create(null);
 const ui = Object.freeze({
+  every: (ms, fn) => { if(typeof fn!=='function')throw Error('ui.every requires callback'); handlers['__clock:tick']=fn; __emit(JSON.stringify({op:'clock',ms:Math.max(50,Math.min(1000,Number(ms)||50))})); },
   text: (id, value) => __emit(JSON.stringify({op:"text", id, value:String(value)})),
   value: (id, value) => __emit(JSON.stringify({op:"value", id, value:String(value)})),
   html: (id, html) => __emit(JSON.stringify({op:"html", id, html:String(html)})),

@@ -27,6 +27,7 @@ const waitReady = (proc, tag, pattern = /ready/) => new Promise((resolve, reject
 
 step('build (esbuild + bridge hash + wasm)', run('node', ['build.mjs']));
 step('standalone MCP + agent loop + approvals', run('node', ['--test', 'test/mcp.test.mjs', 'test/agent-loop.test.mjs', 'test/tool-execution.test.mjs', 'test/memory.test.mjs', 'test/element-actions.test.mjs', 'test/http-tools.test.mjs']));
+step('realtime game loop and inputs', run('node', ['test/flappy.test.mjs']));
 step('saved calendars + dynamic table sanitizer', run('node', ['test/calendar.test.mjs']));
 step('zero-setup public API elements + restart', run('node', ['--test','test/auto-api.test.mjs']));
 step('MCP browser approval roundtrip', run('node', ['--test', 'test/mcp-e2e.test.mjs']));

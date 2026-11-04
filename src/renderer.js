@@ -27,8 +27,9 @@ export function bridge(){
             el.tagName==='TR'&&typeof o.row==='string'?o.row:o.html;
         if(o.op==='attr'&&['d','points','aria-pressed','aria-label'].includes(o.name)&&typeof o.value==='string'&&o.value.length<8000)
           el.setAttribute(o.name,o.value);
-        if(o.op==='on'&&['click','input','change'].includes(o.event)){
-          el['on'+o.event]=()=>port.postMessage({type:'event',id:o.id,event:o.event,value:{value:String(el.value??'').slice(0,1000),checked:!!el.checked}});
+        if(o.op==='on'&&['click','input','change','keydown'].includes(o.event)){
+          if(o.event==='keydown')el.setAttribute('tabindex','0');
+          el['on'+o.event]=e=>{if(o.event==='keydown'&&['Space','ArrowUp'].includes(e.code))e.preventDefault();port.postMessage({type:'event',id:o.id,event:o.event,value:{value:String(el.value??'').slice(0,1000),checked:!!el.checked,key:String(e.key||'').slice(0,30),code:String(e.code||'').slice(0,30),repeat:!!e.repeat}});};
         }
       }
       port.postMessage({type:'applied'});
@@ -53,7 +54,7 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction}={
   f.referrerPolicy='no-referrer';
   f.setAttribute('allow',"camera 'none'; microphone 'none'; geolocation 'none'");
   const channel=crypto.randomUUID(),nonce=crypto.randomUUID();
-  let worker,port,timer,inflight=false;
+  let worker,port,timer,clock,inflight=false,stopped=false;
   const asyncQ=[]; // pending synthetic-event deliveries (ping/db results)
   const html=safeHTML(data.html),css=safeCSS(data.css);
   const listener=e=>{
@@ -65,11 +66,11 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction}={
     f.contentWindow.postMessage({channel},'*',[ch.port2]);
     worker=new Worker('/worker.js',{type:'module'});
     const dispatch=d=>{
-      if(!worker)return;
+      if(!worker||stopped)return;
       if(inflight){if(d.type==='event'&&asyncQ.length<32)asyncQ.push({id:d.id,event:d.event,value:d.value});return;}
       inflight=true;
       clearTimeout(timer);
-      timer=setTimeout(()=>{worker.terminate();onError(d.type==='init'?'Interaktions-Engine konnte nicht rechtzeitig geladen werden. Bitte erneut öffnen.':'Interaktion angehalten (Zeitlimit).');},d.type==='init'?30000:3000);
+      timer=setTimeout(()=>{stopped=true;clearInterval(clock);worker.terminate();onError(d.type==='init'?'Interaktions-Engine konnte nicht rechtzeitig geladen werden. Bitte erneut öffnen.':'Interaktion angehalten (Zeitlimit).');},d.type==='init'?30000:3000);
       worker.postMessage(d);
     };
     const deliver=(id,event,value)=>{
@@ -77,11 +78,11 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction}={
       pumpAsync();
     };
     const pumpAsync=()=>{
-      while(worker&&!inflight&&asyncQ.length){
+      while(worker&&!stopped&&!inflight&&asyncQ.length){
         const j=asyncQ.shift();
         inflight=true;
         clearTimeout(timer);
-        timer=setTimeout(()=>{worker.terminate();onError('Interaktion angehalten (Zeitlimit).');},3000);
+        timer=setTimeout(()=>{stopped=true;clearInterval(clock);worker.terminate();onError('Interaktion angehalten (Zeitlimit).');},3000);
         worker.postMessage({type:'event',id:j.id,event:j.event,value:j.value});
       }
     };
@@ -93,15 +94,17 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction}={
     worker.onmessage=({data:d})=>{
       if(d.type==='engine-ready'){
         clearTimeout(timer);
-        timer=setTimeout(()=>{worker.terminate();onError('Interaktion angehalten (Zeitlimit).');},3000);
+        timer=setTimeout(()=>{stopped=true;clearInterval(clock);worker.terminate();onError('Interaktion angehalten (Zeitlimit).');},3000);
         return;
       }
       inflight=false;clearTimeout(timer);
-      if(d.type==='error')return onError(d.message);
+      if(d.type==='error'){stopped=true;clearInterval(clock);return onError(d.message);}
       if(d.type!=='ops'||!Array.isArray(d.ops)||d.ops.length>250){pumpAsync();return;}
       const dom=[];
       for(const o of d.ops){
-        if(o.op==='state'){
+        if(o.op==='clock'){
+          clearInterval(clock);if(Number.isFinite(o.ms))clock=setInterval(()=>{if(!stopped&&f.isConnected&&!document.hidden&&!inflight&&!asyncQ.length)dispatch({type:'event',id:'__clock',event:'tick',value:{dt:Math.max(50,Math.min(1000,o.ms))}});},Math.max(50,Math.min(1000,o.ms)));
+        }else if(o.op==='state'){
           if(o.state&&typeof o.state==='object'&&!Array.isArray(o.state)&&JSON.stringify(o.state).length<=4096)onState(o.state);
         }else if(o.op==='suggest'){
           if(typeof o.text==='string')onSuggest(o.text.slice(0,500));
@@ -154,7 +157,7 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction}={
       port.postMessage(dom);
       pumpAsync();
     };
-    worker.onerror=()=>{clearTimeout(timer);onError('Interaktion konnte nicht gestartet werden.');};
+    worker.onerror=()=>{stopped=true;clearInterval(clock);clearTimeout(timer);onError('Interaktion konnte nicht gestartet werden.');};
     dispatch({type:'init',js:data.js,state:data.state});
   };
   addEventListener('message',listener);
@@ -164,6 +167,7 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction}={
     destroy(){
       removeEventListener('message',listener);
       clearTimeout(timer);
+      stopped=true;clearInterval(clock);
       worker?.terminate();
       port?.close();
       asyncQ.length=0;
