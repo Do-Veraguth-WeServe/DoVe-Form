@@ -25,7 +25,7 @@ const CONFIG_FILE = process.env.FORM3_CONFIG || path.join(ROOT, 'form.config.jso
 const PORT = Number(process.env.PORT || 5177);
 const HOST = '127.0.0.1';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
-const ORIGINS = [`http://127.0.0.1:${PORT}`, `http://localhost:${PORT}`, ...(process.env.FORM3_ORIGIN ? [process.env.FORM3_ORIGIN] : [])];
+const ORIGINS = [`http://127.0.0.1:${PORT}`, `http://localhost:${PORT}`, ...(process.env.FORM3_ORIGIN || '').split(',').map(s=>s.trim()).filter(Boolean)];
 const COOKIE = 'form3sess';
 
 let store;
@@ -544,3 +544,13 @@ const server = http.createServer(async (req, res) => {
 server.requestTimeout = 300000;
 server.headersTimeout = 10000;
 server.listen(PORT, HOST, () => console.log(`Form v3.3 ready on http://${HOST}:${PORT} (data: ${DATA_DIR}, models: ${MODELS_FILE}, ${storeModels.models.length} model(s), ${store.userCount()} user(s), registration: ${registrationAllowed() ? 'on' : 'off'})`));
+
+// Optional private proxy ingress; retain loopback for Tailscale Serve.
+if(process.env.FORM3_EXTRA_HOST){
+  const host=process.env.FORM3_EXTRA_HOST;
+  if(host==='0.0.0.0'||host==='::')throw Error('Wildcard proxy binding is not allowed');
+  const proxyServer=http.createServer(server.listeners('request')[0]);
+  proxyServer.requestTimeout=server.requestTimeout;
+  proxyServer.headersTimeout=server.headersTimeout;
+  proxyServer.listen(PORT,host,()=>console.log('Form private proxy ingress ready on '+host+':'+PORT));
+}
