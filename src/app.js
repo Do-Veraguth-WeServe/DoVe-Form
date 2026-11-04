@@ -885,7 +885,7 @@ async function showConnections(){
  const test=document.createElement('button');test.textContent='Tools laden';test.onclick=async()=>{try{await mcpRequest('/discover',{id:c.id});await showConnections()}catch(e){toast(e.message)}};row.append(test);
  const checks=[];
  for(const tool of c.tools){const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.checked=tool.allowed;checks.push([tool.name,check]);label.append(check,document.createTextNode(tool.name));row.append(label)}
- const enable=document.createElement('button');enable.textContent='Auswahl aktivieren';enable.onclick=async()=>{try{await mcpRequest('/configure',{id:c.id,enabled:true,allowedTools:checks.filter(x=>x[1].checked).map(x=>x[0])});toast('Tools aktiviert — Aufrufe benötigen deine Freigabe.')}catch(e){toast(e.message)}};row.append(enable);
+ const enable=document.createElement('button');enable.textContent='Auswahl aktivieren';enable.onclick=async()=>{try{await mcpRequest('/configure',{id:c.id,enabled:true,allowedTools:checks.filter(x=>x[1].checked).map(x=>x[0])});toast('Tools aktiviert.')}catch(e){toast(e.message)}};row.append(enable);
  const disable=document.createElement('button');disable.textContent='Deaktivieren';disable.onclick=async()=>{try{await mcpRequest('/configure',{id:c.id,enabled:false,allowedTools:[]});await showConnections()}catch(e){toast(e.message)}};row.append(disable);list.append(row);
  }
  $('#mcpdialog').showModal?.();
@@ -893,17 +893,8 @@ async function showConnections(){
 }
 $('#mcpbtn').onclick=showConnections;$('#mcpclose').onclick=()=>$('#mcpdialog').close();
 $('#mcpadd').onsubmit=async e=>{e.preventDefault();const f=e.target;try{await mcpRequest('',{name:f.name.value,url:f.url.value,token:f.token.value});f.reset();await showConnections()}catch(e){toast(e.message)}};
-let approvalBusy=false,approvalKey='';
-async function refreshApprovals(){
- if(!me||me.role!=='owner'||approvalBusy)return;
- approvalBusy=true;
- try{const {calls}=await mcpRequest('/calls');const pendingCalls=calls.filter(c=>c.state==='pending');const key=JSON.stringify(pendingCalls);const approvalHost=$('#toolapprovals');const activeDialog=document.querySelector('dialog[open] .dlg');(activeDialog||document.body).append(approvalHost);if(key===approvalKey)return;approvalKey=key;
- const host=$('#toolapprovals');host.replaceChildren();
- for(const c of pendingCalls){const box=document.createElement('section');box.className='notice';box.style.background='var(--bg)';box.setAttribute('role','region');box.setAttribute('aria-label','Tool-Freigabe');const name=document.createElement('strong');name.textContent='Tool-Aufruf bestätigen';const args=document.createElement('pre');args.style.whiteSpace='pre-wrap';args.textContent=c.label+'\n'+JSON.stringify(c.args,null,2);box.append(name,args);
- for(const [label,approve] of [['Bestätigen',true],['Ablehnen',false]]){const b=document.createElement('button');b.textContent=label;b.onclick=async()=>{try{await mcpRequest('/decide',{id:c.id,approve});approvalKey='';await refreshApprovals()}catch(e){toast(e.message)}};box.append(b)}host.append(box);}
- }catch{}finally{approvalBusy=false}
-}
-setInterval(refreshApprovals,2500);
+// Tool execution is automatic; the journal remains server-side.
+async function refreshApprovals(){}
 async function httpRequest(route,data){const r=await fetch('/api/http'+route,data===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify(data)});const t=await r.json();if(!r.ok)throw Error(t.error);return t;}
 async function showHTTP(){try{const {connections}=await httpRequest('');const list=$('#httplist');list.replaceChildren();for(const c of connections){const row=document.createElement('section');row.className='notice';const title=document.createElement('p');title.textContent=c.name+' · '+c.method+' '+c.url;const toggle=document.createElement('button');toggle.textContent=c.enabled?'Deaktivieren':'Aktivieren';toggle.onclick=async()=>{try{await httpRequest('/configure',{id:c.id,enabled:!c.enabled});await showHTTP()}catch(e){toast(e.message)}};const del=document.createElement('button');del.textContent='Entfernen';del.onclick=async()=>{if(!confirm('HTTP-Verbindung entfernen?'))return;try{await httpRequest('/remove',{id:c.id});await showHTTP()}catch(e){toast(e.message)}};row.append(title,toggle,del);list.append(row)}if(!$('#httpdialog').open)$('#httpdialog').showModal()}catch(e){toast(e.message)}}
 $('#httpbtn').onclick=()=>{$('#mcpdialog').close();void showHTTP()};$('#httpclose').onclick=()=>$('#httpdialog').close();

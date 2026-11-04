@@ -404,6 +404,11 @@ test('EXPLICIT cancel aborts the upstream provider call', async () => {
     }
   }
   assert.ok(jobId, 'job started');
+  // The durable job is announced before its provider connection starts.
+  // Wait for that connection before testing transport cancellation.
+  const deadline=Date.now()+5000;
+  while(!(await mockStats()).active.holdprose&&Date.now()<deadline)await sleep(25);
+  assert.ok((await mockStats()).active.holdprose,'held upstream is connected');
   const before = (await mockStats()).disconnects;
   const c = await api(owner, '/api/jobs/cancel', { method: 'POST', body: { jobId } });
   assert.equal(c.status, 200);

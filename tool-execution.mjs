@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 export class ToolExecution{
- constructor(store,mcp){this.store=store;this.mcp=mcp;this.waiters=new Map();
+ constructor(store,mcp,{requireApproval=false}={}){this.requireApproval=requireApproval;this.store=store;this.mcp=mcp;this.waiters=new Map();
  store.db.exec("CREATE TABLE IF NOT EXISTS tool_calls(id TEXT PRIMARY KEY,job_id TEXT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,name TEXT NOT NULL,args TEXT NOT NULL,state TEXT NOT NULL,result TEXT,created_at TEXT NOT NULL); CREATE INDEX IF NOT EXISTS tool_calls_user ON tool_calls(user_id,state);");
  store.db.exec("UPDATE tool_calls SET state='unknown' WHERE state='running'; UPDATE tool_calls SET state='expired' WHERE state IN ('pending','approved');");
  }
@@ -14,8 +14,8 @@ export class ToolExecution{
  if(this.store.getUser(job.userId)?.role!=='owner')throw Error('Tools sind nur für den Owner freigegeben.');
  const tool=this.mcp.catalog().find(t=>t.name===call.function.name);if(!tool)throw Error('Tool nicht freigegeben.');
  const id=crypto.randomUUID();
- this.store.db.prepare('INSERT INTO tool_calls(id,job_id,user_id,name,args,state,created_at) VALUES(?,?,?,?,?,?,?)').run(id,job.id,job.userId,tool.name,JSON.stringify(args),'pending',new Date().toISOString());
- const approved=await new Promise((resolve,reject)=>{
+ this.store.db.prepare('INSERT INTO tool_calls(id,job_id,user_id,name,args,state,created_at) VALUES(?,?,?,?,?,?,?)').run(id,job.id,job.userId,tool.name,JSON.stringify(args),this.requireApproval?'pending':'approved',new Date().toISOString());
+ const approved=!this.requireApproval||await new Promise((resolve,reject)=>{
   let timer;
   const cleanup=()=>{clearTimeout(timer);this.waiters.delete(id);signal?.removeEventListener('abort',abort)};
   const abort=()=>{cleanup();this.store.db.prepare("UPDATE tool_calls SET state='expired' WHERE id=? AND state='pending'").run(id);reject(Error('Tool-Freigabe abgebrochen.'))};
