@@ -21,7 +21,10 @@ export function bridge(){
           else port.postMessage({type:'misuse',id:o.id});
         }
         if(o.op==='html'&&typeof o.html==='string'&&o.html.length<=24000&&!['INPUT','SELECT','TEXTAREA'].includes(el.tagName))
-          el.innerHTML=(el.namespaceURI==='http://www.w3.org/2000/svg'&&typeof o.svg==='string')?o.svg:o.html;
+          el.innerHTML=el.namespaceURI==='http://www.w3.org/2000/svg'&&typeof o.svg==='string'?o.svg:
+            el.tagName==='TABLE'&&typeof o.table==='string'?o.table:
+            ['TBODY','THEAD','TFOOT'].includes(el.tagName)&&typeof o.section==='string'?o.section:
+            el.tagName==='TR'&&typeof o.row==='string'?o.row:o.html;
         if(o.op==='attr'&&['d','points','aria-pressed','aria-label'].includes(o.name)&&typeof o.value==='string'&&o.value.length<8000)
           el.setAttribute(o.name,o.value);
         if(o.op==='on'&&['click','input','change'].includes(o.event)){
@@ -100,7 +103,7 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction}={
           if(typeof o.text==='string')onSuggest(o.text.slice(0,500));
         }else if(o.op==='html'){
           if(typeof o.id==='string'&&typeof o.html==='string'&&o.html.length<=24000){
-            try{const fr=safeFragment(o.html);dom.push({op:'html',id:o.id,html:fr.html,svg:fr.svg})}catch{}
+            try{const fr=safeFragment(o.html);dom.push({op:'html',id:o.id,html:fr.html,svg:fr.svg,table:fr.table,section:fr.section,row:fr.row})}catch{}
           }
         }else if(o.op==='ping'){
           const ref=typeof o.ref==='string'?o.ref.slice(0,32):'';
