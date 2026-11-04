@@ -31,6 +31,7 @@ export function bridge(){
           el['on'+o.event]=()=>port.postMessage({type:'event',id:o.id,event:o.event,value:{value:String(el.value??'').slice(0,1000),checked:!!el.checked}});
         }
       }
+      port.postMessage({type:'applied'});
     };
     port.start();
   });
@@ -46,6 +47,7 @@ export function bridge(){
 export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction}={}){
   const f=document.createElement('iframe');
   f.className='render';
+  f.style.visibility='hidden';f.setAttribute('aria-busy','true');
   f.title='Form · interaktive Antwort';
   f.sandbox='allow-scripts';
   f.referrerPolicy='no-referrer';
@@ -63,7 +65,8 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction}={
     f.contentWindow.postMessage({channel},'*',[ch.port2]);
     worker=new Worker('/worker.js',{type:'module'});
     const dispatch=d=>{
-      if(!worker||inflight)return;
+      if(!worker)return;
+      if(inflight){if(d.type==='event'&&asyncQ.length<32)asyncQ.push({id:d.id,event:d.event,value:d.value});return;}
       inflight=true;
       clearTimeout(timer);
       timer=setTimeout(()=>{worker.terminate();onError(d.type==='init'?'Interaktions-Engine konnte nicht rechtzeitig geladen werden. Bitte erneut öffnen.':'Interaktion angehalten (Zeitlimit).');},d.type==='init'?30000:3000);
@@ -83,6 +86,7 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction}={
       }
     };
     port.onmessage=({data:d})=>{
+      if(d?.type==='applied'){f.style.visibility='';f.removeAttribute('aria-busy');f.dataset.ready='true';}
       if(d?.type==='event')dispatch(d);
       if(d?.type==='misuse')onError('Hinweis: ui.value gilt nur für Eingabefelder — dynamische Inhalte gehören in ui.html.');
     };

@@ -43,7 +43,7 @@ const registry=memoryRegistry(actionRegistry,memory);
 const toolExecution=new ToolExecution(store,registry);
 const elementActions=new ElementActions(store,actionRegistry,toolExecution);
 const runner = new JobRunner(store, {
-  getToolContext:job=>store.getUser(job.userId)?.role==='owner'?{catalog:registry.catalog().filter(t=>!t.name.startsWith("memory_")||memory.enabled(job.userId)),execute:(call,args,opts)=>toolExecution.execute(job,call,args,opts)}:null,
+  getToolContext:job=>store.getUser(job.userId)?.role==='owner'?{catalog:registry.catalog().filter(t=>!t.elementId&&(!t.name.startsWith("memory_")||memory.enabled(job.userId))),execute:(call,args,opts)=>toolExecution.execute(job,call,args,opts)}:null,
   hasToolCalls:id=>toolExecution.hasCalls(id),
   concurrency: Number(process.env.FORM3_JOB_CONCURRENCY || 2),
   perUser: Number(process.env.FORM3_JOB_PER_USER || 2),
@@ -193,10 +193,20 @@ const server = http.createServer(async (req, res) => {
   if(pathname.startsWith('/api/element-actions')){
     if(user.role!=='owner')return reply(res,403,{error:'Nur Owner.'});
     try{
-      if(req.method==='GET')return reply(res,200,{actions:elementActions.list(user.id,url.searchParams.get('messageId')),tools:actionRegistry.catalog().map(t=>({name:t.name,label:t.connectionName+' / '+t.toolName}))});
+      if(req.method==='GET')return reply(res,200,{actions:elementActions.list(user.id,url.searchParams.get('messageId')),tools:actionRegistry.catalog().filter(t=>!t.elementId).map(t=>({name:t.name,label:t.connectionName+' / '+t.toolName}))});
       if(req.method==='POST'){
         if(!rate('element-action:'+user.id,20,60000))return reply(res,429,{error:'Bitte warten.'});
         const d=JSON.parse(await readBody(req,20000));
+        if(pathname==='/api/element-actions/auto-run'){
+          elementActions.check(user.id,d.messageId);
+          const render=store.getRender(d.messageId);
+          const spec=render?.actions?.find(a=>a.name===d.name);
+          if(!spec)throw Error('Keine API-Deklaration.');
+          const tool=httpConnections.registerElement(d.messageId,spec);
+          const existing=elementActions.list(user.id,d.messageId).find(a=>a.label===spec.name&&a.tool===tool);
+          const id=existing?.id||elementActions.add(user.id,{messageId:d.messageId,label:spec.name,tool,args:spec.args});
+          return reply(res,200,{id,jobId:elementActions.run(user.id,id,d.inputs)});
+        }
         if(pathname==='/api/element-actions/add')return reply(res,200,{id:elementActions.add(user.id,d)});
         if(pathname==='/api/element-actions/run')return reply(res,200,{jobId:elementActions.run(user.id,d.id,d.inputs)});
         if(pathname==='/api/element-actions/remove'){elementActions.remove(user.id,d.id);return reply(res,200,{ok:true});}

@@ -351,7 +351,7 @@ function connectJobs(){
   try{
     jobStream=new EventSource('/api/jobs/stream');
     jobStream.addEventListener('snapshot',e=>{try{
-      const list=JSON.parse(e.data).jobs||[];
+      const list=(JSON.parse(e.data).jobs||[]).filter(j=>j.kind!=='action');
       const present=new Set(list.map(j=>j.id));
       const missing=new Set([...jobs.values()].filter(j=>ACTIVE_JOB.includes(j.state)&&!present.has(j.id)).map(j=>j.id));
       for(const r of pending)if(r.jobId&&!present.has(r.jobId))missing.add(r.jobId);
@@ -909,8 +909,14 @@ async function showHTTP(){try{const {connections}=await httpRequest('');const li
 $('#httpbtn').onclick=()=>{$('#mcpdialog').close();void showHTTP()};$('#httpclose').onclick=()=>$('#httpdialog').close();
 $('#httpadd').onsubmit=async e=>{e.preventDefault();const f=e.target;try{await httpRequest('',{name:f.name.value,url:f.url.value,method:f.method.value,headers:JSON.parse(f.headers.value||'{}')});f.reset();await showHTTP()}catch(err){toast(err.message)}};
 async function runBoundAction(m,name,inputs){
- const {actions}=await actionRequest('?messageId='+encodeURIComponent(m.id));const matches=actions.filter(a=>a.label===name);if(matches.length!==1)throw Error('Aktion nicht eindeutig verknüpft.');const id=matches[0].id;
- const {jobId}=await actionRequest('/run',{id,inputs});void refreshApprovals();
+ let id,jobId;
+ if(m.render?.actions?.some(a=>a.name===name)){
+   ({id,jobId}=await actionRequest('/auto-run',{messageId:m.id,name,inputs}));
+ }else{
+   const {actions}=await actionRequest('?messageId='+encodeURIComponent(m.id));const matches=actions.filter(a=>a.label===name);if(matches.length!==1)throw Error('Aktion nicht eindeutig verknüpft.');id=matches[0].id;
+   ({jobId}=await actionRequest('/run',{id,inputs}));
+ }
+ void refreshApprovals();
  const end=Date.now()+155000;
  while(Date.now()<end){await new Promise(r=>setTimeout(r,1500));const {actions}=await actionRequest('?messageId='+encodeURIComponent(m.id));const action=actions.find(a=>a.id===id);if(!action||action.jobId!==jobId)throw Error('Aktion entfernt oder erneut gestartet.');if(action.state==='completed')return action.result;if(['denied','expired','unknown'].includes(action.state))throw Error('Aktion nicht abgeschlossen.');}
  throw Error('Zeitlimit. Ergebnis prüfen.');
