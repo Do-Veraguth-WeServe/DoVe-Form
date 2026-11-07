@@ -12,13 +12,15 @@
     "dev": "node build.mjs && node server.mjs",
     "start": "node server.mjs",
     "test": "node test/run-all.mjs",
-    "test:unit": "node --test test/unit.test.mjs"
+    "test:unit": "node --test test/unit.test.mjs",
+    "test:blueprints": "node build.mjs && node --test test/element-timeline.test.mjs test/chat-envelope.test.mjs test/element-context.test.mjs test/forms.test.mjs test/blueprint-questions.test.mjs test/unit.test.mjs test/provider.test.mjs test/model-access.test.mjs test/agent-loop.test.mjs test/tool-execution.test.mjs test/mcp.test.mjs test/memory.test.mjs test/http-tools.test.mjs test/element-actions.test.mjs && node test/plan-fold.test.mjs && node test/blueprints.test.mjs && node test/forms-flow.test.mjs && node test/accounts.test.mjs && node test/sidebar-layout.test.mjs && node --test test/mcp-e2e.test.mjs test/auto-api.test.mjs && node test/calendar.test.mjs && node test/flappy.test.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",
     "ajv": "8.20.0",
     "css-tree": "3.2.1",
     "dompurify": "3.4.17",
+    "marked": "18.1.3",
     "quickjs-emscripten": "0.32.0"
   },
   "devDependencies": {

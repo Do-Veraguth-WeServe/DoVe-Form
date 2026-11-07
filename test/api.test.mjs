@@ -180,18 +180,22 @@ test('models: owner adds model, key masked everywhere, file chmod 600', async ()
   assert.equal(list.models[0].keyMasked, '…7890');
 });
 
-test('models: non-owner sees names only and cannot mutate', async () => {
+test('models: shared provider hides key, users own their private providers', async () => {
   assert.equal((await register(userB, 'bob1', 'password456')).status, 200);
   assert.equal(userB.body ? true : true, true);
+  assert.equal((await (await api(userB, '/api/models')).json()).models.length,0);
+  assert.equal((await api(owner,'/api/models/share',{method:'POST',body:{id:modelId,shared:true}})).status,200);
   const list = await (await api(userB, '/api/models')).json();
   assert.equal(list.models.length, 1);
   assert.equal(list.models[0].id, modelId);
   assert.equal('keyMasked' in list.models[0], false, 'no masked key for non-owner');
   assert.equal('baseUrl' in list.models[0], false, 'no baseUrl for non-owner');
-  const add = await addModel(userB);
-  assert.equal(add.status, 403, 'only owner manages models');
+  const add = await addModel(userB,{baseUrl:'https://api.example.com/v1',label:'Bob private'});
+  assert.equal(add.status,200,'users manage their own providers');
+  const mine=add.body.models.find(m=>m.label==='Bob private');
+  assert.equal((await api(userB,'/api/models/'+mine.id,{method:'DELETE'})).status,200);
   const del = await api(userB, '/api/models/' + modelId, { method: 'DELETE' });
-  assert.equal(del.status, 403);
+  assert.equal(del.status, 404);
 });
 
 test('conversations: server-side create + list, user B sees nothing of user A', async () => {

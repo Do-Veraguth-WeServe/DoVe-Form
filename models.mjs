@@ -43,3 +43,15 @@ export function saveModels(file, data) {
 export function toPublic(m) {
   return { id: m.id, label: m.label, baseUrl: m.baseUrl, model: m.model, keyMasked: maskKey(m.apiKey) };
 }
+
+export const isAdmin = user => ['owner','admin'].includes(user?.role);
+export const canUseModel = (model,userId) => !!model && !!userId && (model.ownerId===userId || model.shared===true);
+export function publicModels(models,user){
+ return models.filter(m=>canUseModel(m,user.id)).map(m=>({id:m.id,label:m.label,model:m.model,owned:m.ownerId===user.id,shared:m.shared===true,...(m.ownerId===user.id?{baseUrl:m.baseUrl,keyMasked:maskKey(m.apiKey),canShare:isAdmin(user)}:{})}));
+}
+// Old global entries become PRIVATE property of the existing owner, never public.
+export function claimLegacyModels(data,ownerId){
+ if(!ownerId)return false;let changed=false;
+ for(const m of data.models)if(!m.ownerId){m.ownerId=ownerId;m.shared=false;changed=true;}
+ return changed;
+}

@@ -1,5 +1,14 @@
 # Architektur
 
+## Aktueller Blueprint-Vertrag (2026-11-07)
+
+`POST /api/chat` erstellt ausschliesslich `kind=plan`-Jobs. `blueprints.mjs` gibt ein begrenztes Planungsformat vor; der Runner streamt nur den Antwortteil und speichert erst den vollständig validierten kumulativen Plan. Keine Tools und kein Render-Attachment im Planungszweig. SQLite `blueprints` speichert unveränderliche Revisionen pro Gespräch mit Ziel, Modell, zugehöriger Nachricht und genau einem bestätigten Job.
+
+`POST /api/blueprints/execute` prüft Session/Origin/CSRF, Eigentümer, aktuelle Revision, offene Planung, Bereitschaft und aktuelle Modellberechtigung. Start und Blueprint-Zuordnung erfolgen atomar; erneutes Klicken liefert denselben Job. Build-Kontext enthält ausschliesslich den bestätigten Blueprint-Snapshot und ggf. die aktuelle Zielversion mit CAS-Hash. Alte unbestätigte Jobs können nicht per Retry neu bauen. Alle neuen Änderungen brauchen wieder eine explizite Bestätigung.
+
+Planungs- und Baukapazität werden getrennt begrenzt (2 Planungen global; Bauten wie bisher konfiguriert). Pro Gespräch läuft höchstens eine Planung; sie blockiert keinen laufenden Bau. Pläne überleben Reload/Neustart; ein beim Neustart laufender Job wird wie bisher ehrlich fehlgeschlagen markiert. Neue Tabelle ist additiv, Altdaten bleiben erhalten. Historische Ablaufbeschreibungen unten gelten für den Build-Transport, nicht mehr für die automatische Erzeugung aus Chatnachrichten.
+
+
 ```
 Browser (127.0.0.1:5177; Production via tailscale serve :9444, HTTPS)
 └── index.html + dist/app.js          UI: Login, Sessions, Streaming, Settings-Dialog
@@ -108,7 +117,18 @@ Der vertrauenswürdige iframe-Bootstrap leitet vertikale Einfinger-Gesten nur be
 
 ## Grenzen
 
-- Ein Chat gleichzeitig pro User (429 mit klarem Text), 30 Chats/Minute/User, 300 s Timeout, Upstream auf 300 KB begrenzt.
+- Ein Chat gleichzeitig pro User (429 mit klarem Text), 30 Chats/Minute/User, kein standardmässiges Generierungs-Zeitlimit, Upstream auf 300 KB begrenzt.
 - Verlaufsfenster 12 Nachrichten / Zustände 3 — bewusst (Kontext-Kosten, Disclosed in UI).
 - Der Interpreter isoliert Logik, ist aber keine GPU/Layout-Isolation; CSP verhindert Netz/Navigation im Renderer.
 - Lokal ohne HTTPS: Cookie ohne `Secure` (nur loopback); hinter tailscale serve wird HTTPS erkannt und `Secure` gesetzt. CSRF + Origin-Checks gelten immer.
+
+## Expliziter Chat / Plan und Formen
+
+/api/chat kennt mode=chat (Default) und mode=plan. Chatjobs nutzen einen kurzen Gesprächsvertrag und optional abschliessende JSON-Metadaten für bekannte Formen; keine Toolausführung, keine Render-Anlage, keine Blueprint-Persistenz. Bestehender Parser hält Metadaten vom sichtbaren Prosastream fern. Formen-Ausgaben werden serverseitig typ-/grössenbegrenzt und nur gegen eigene verfügbare IDs aufgelöst. Der Renderer setzt Standardkarten ausschliesslich über textContent/app-eigene DOM-Controls um. Eigene Vorlagen bleiben im QuickJS-/iframe-Sandboxpfad.
+
+SQLite forms / form_versions / form_seeds / form_acceptances gehören Benutzern. Die Library wird einmalig pro Konto mit sechs Standards initialisiert; gelöschte Standards erscheinen nicht wieder. Updates sind revisionsgeprüft und mit Versionsjournal in einem Savepoint atomar. Bestätigte KI-Vorschläge sind pro message_id/index idempotent. Gesendete Formen speichern ihren Snapshot in messages.forms und ändern sich nicht rückwirkend bei Library-Updates. Der Modellprompt enthält keine Vorlagencodes, nur IDs/Layout/Einsatzregeln und bei eigenen Vorlagen Beispieldaten. Jobkontexte enthalten ebenfalls keine Vorlagencodes; die vor Ausführung referenzierten Revisionen werden vor Übernahme verglichen.
+
+Neue APIs: /api/forms (list), /save, /remove, /versions, /restore, /accept, /state. Alle mutations sind session-/CSRF-/Origin-gebunden; keine fremden Formen-/Nachrichten-IDs. /api/admin/users/action bietet reset/disable/role/delete mit serverseitigem Rollen- und Selbstschutz. users.disabled sperrt Login und bestehende Sessionauflösung. Offene SSE-Streams prüfen widerrufene Sessions erneut.
+
+## Build timeline projection
+Blueprint execution now appends a message anchor for both create and refine jobs. Refine still replaces the original render atomically under its stable ID, and writes build prose on the anchor rather than overwriting historical prose. Snapshot renderPositionId is derived only from ready refinement jobs in each owned conversation. elementTimeline projects the single original element onto that anchor (or a current active refinement anchor) before applying the visible-history window. State/DB/actions/pins remain bound to the original object and ID. Failed/cancelled jobs do not supersede the last successful position. No schema migration, user artifact rewrite or new grants.

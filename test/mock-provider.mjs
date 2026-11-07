@@ -239,6 +239,12 @@ const server = http.createServer(async (req, res) => {
   stats.lastAuthOk = req.headers.authorization === 'Bearer ' + KEY;
   let messages = [];
   try { messages = JSON.parse(body).messages || []; } catch {}
+  if(messages[0]?.content?.includes("fast conversational planner")){
+    const last=[...messages].reverse().find(m=>m.role==='user')?.content||'Besprechen';
+    stats.calls.plan=(stats.calls.plan||0)+1;
+    res.writeHead(200,{'Content-Type':'text/event-stream'});
+    return stream(res,[{t:'<reply>Wir besprechen zuerst den Bauplan. ',pause:70},{t:'Erst Plan starten beginnt den Bau.</reply><title>Testplan</title><summary>'+last+'</summary><ready>true</ready>',pause:10}]);
+  }
   const lastUser = [...messages].reverse().find(m => m.role === 'user');
   const text = String(lastUser?.content || '').toLowerCase();
   stats.lastRoles = messages.map(m => m.role);

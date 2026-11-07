@@ -13,11 +13,12 @@
 // - the final unterminated SSE line when the stream ends without a newline.
 import { parseArtifact } from './contract.mjs';
 import { createStreamParser } from './stream.mjs';
+import {publicProviderFetch} from './provider-network.mjs';
 
 const CONTENT_MAX = Number(process.env.FORM3_CONTENT_MAX || 200000);   // accumulated delta chars
 const TRANSPORT_MAX = Number(process.env.FORM3_TRANSPORT_MAX || 64000000); // raw SSE bytes ceiling
 const CONTEXT_MAX = 8000;      // captured assistant content for retry context
-const ROUND_CAP_MS = 300000;   // hard cap for a single round
+// No app-owned generation deadline by default; explicit deadlines remain testable.
 
 export class ProviderError extends Error { constructor(m, status) { super(m); this.name = 'ProviderError'; if (status) this.status = status; } }
 export class SizeError extends Error { constructor(m) { super(m); this.name = 'SizeError'; } }
@@ -31,9 +32,28 @@ function abortErr(external) {
   return e;
 }
 
+// Retry only a failed transport attempt that exposed no assistant output.
+// This boundary never executes tools; incomplete tool deltas are discarded.
 export async function runRound(cfg, messages, opts, onProse, onArtifactStart) {
-  const { signal = null, deadlineMs = Date.now() + ROUND_CAP_MS, tools = [] } = opts || {};
-  const parser = createStreamParser({ onProse, onArtifactStart });
+  for (let attempt = 0; ; attempt++) {
+    let exposed = false;
+    try {
+      return await runRoundAttempt(cfg, messages, opts,
+        text => { exposed = true; onProse?.(text); },
+        () => { exposed = true; onArtifactStart?.(); });
+    } catch (e) {
+      const code = String(e?.cause?.code || e?.code || '');
+      const transient = ['ECONNRESET', 'UND_ERR_SOCKET', 'EPIPE', 'ETIMEDOUT', 'UND_ERR_CONNECT_TIMEOUT', 'UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT'].includes(code);
+      if (!transient || exposed || attempt >= 1 || opts?.signal?.aborted) throw e;
+      console.warn('[provider] retry empty interrupted stream code=' + code);
+      opts?.onTransportRetry?.({code, attempt: attempt + 1});
+    }
+  }
+}
+
+async function runRoundAttempt(cfg, messages, opts, onProse, onArtifactStart) {
+  const { signal = null, deadlineMs = Infinity, tools = [] } = opts || {};
+  const parser = opts?.textOnly ? {feed:t=>onProse?.(t),finish:()=>({hadArtifact:false,prose:''})} : createStreamParser({ onProse, onArtifactStart });
   const round = new AbortController();
   const onExternal = () => round.abort();
   if (signal) {
@@ -45,12 +65,13 @@ export async function runRound(cfg, messages, opts, onProse, onArtifactStart) {
   try {
     const remaining = deadlineMs - Date.now();
     if (remaining <= 0) throw abortErr(false);
-    timer = setTimeout(() => { roundTimedOut = true; round.abort(); }, Math.min(remaining, ROUND_CAP_MS));
+    if (Number.isFinite(remaining)) timer = setTimeout(() => { roundTimedOut = true; round.abort(); }, remaining);
 
-    const resp = await fetch(endpoint(cfg.baseUrl), {
+    const resp = await (cfg.publicOnly ? publicProviderFetch : fetch)(endpoint(cfg.baseUrl), {
+      redirect: 'error',
       method: 'POST',
       headers: { Authorization: 'Bearer ' + cfg.apiKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: cfg.model, stream: true, max_tokens: 16384, messages, ...(tools.length ? {tools,tool_choice:"auto"} : {}) }),
+      body: JSON.stringify({ model: cfg.model, stream: true, max_tokens: opts?.maxTokens || 16384, messages, ...(tools.length ? {tools,tool_choice:"auto"} : {}) }),
       signal: round.signal
     });
     if (!resp.ok) {
@@ -133,6 +154,12 @@ export async function runRound(cfg, messages, opts, onProse, onArtifactStart) {
     if (e && (e.name === 'AbortError' || e.name === 'RoundAbort')) {
       const external = !!(signal && signal.aborted);
       throw abortErr(external); // else: roundTimedOut => timeout
+    }
+    const code = String(e?.cause?.code || e?.code || '');
+    if (e?.message === 'terminated' || ['ECONNRESET','UND_ERR_SOCKET','EPIPE'].includes(code)) {
+      const transport = new ProviderError('Verbindung zum Modellanbieter unterbrochen' + (code ? ' (' + code.replace(/[^A-Z0-9_]/g, '').slice(0,48) + ')' : '') + '. Bitte erneut versuchen.');
+      transport.cause = e.cause || e;
+      throw transport;
     }
     throw e;
   } finally {

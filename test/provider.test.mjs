@@ -175,6 +175,32 @@ test('already-expired deadline fails fast with timeout kind', async () => {
   );
 });
 
+test('job generation has no default or zero-configured deadline', async () => {
+  const { JobRunner } = await import('../jobs.mjs');
+  assert.equal(new JobRunner({}).totalMs, Infinity);
+  assert.equal(new JobRunner({}, {totalMs: 0}).totalMs, Infinity);
+  assert.equal(new JobRunner({}, {totalMs: 12000}).totalMs, 12000);
+});
+
 test.after(() => new Promise(r => upstream.close(r)));
 
 process.on('exit', () => upstream.close());
+
+// Deterministic connection-reset regressions; never touch a real provider.
+test('empty ECONNRESET retries once and completes, permanent reset stays bounded', async () => {
+ const original=globalThis.fetch;let calls=0,retries=0;
+ const reset=()=>new TypeError('terminated',{cause:Object.assign(Error('read ECONNRESET'),{code:'ECONNRESET'})});
+ try{
+  globalThis.fetch=async()=>{if(++calls===1)throw reset();return new Response('data: '+JSON.stringify({choices:[{delta:{content:'Recovered.'},finish_reason:'stop'}]})+'\n\n');};
+  const r=await runRound(cfg('/unused'),[],{onTransportRetry:()=>retries++});assert.equal(calls,2);assert.equal(retries,1);assert.equal(r.contentText,'Recovered.');
+  calls=0;globalThis.fetch=async()=>{calls++;throw reset()};
+  await assert.rejects(()=>runRound(cfg('/unused'),[],{}),e=>e instanceof ProviderError&&e.cause.code==='ECONNRESET');assert.equal(calls,2);
+ }finally{globalThis.fetch=original;}
+});
+test('connection reset after visible prose is not replayed',async()=>{
+ const original=globalThis.fetch;let calls=0,visible='';
+ try{
+  globalThis.fetch=async()=>{calls++;return new Response(new ReadableStream({start(c){c.enqueue(new TextEncoder().encode('data: '+JSON.stringify({choices:[{delta:{content:'Already visible.'}}]})+'\n\n'));setTimeout(()=>c.error(new TypeError('terminated',{cause:Object.assign(Error('reset'),{code:'ECONNRESET'})})),20);}}));};
+  await assert.rejects(()=>runRound(cfg('/unused'),[],{},t=>visible+=t),ProviderError);assert.equal(calls,1);assert.equal(visible,'Already visible.');
+ }finally{globalThis.fetch=original;}
+});

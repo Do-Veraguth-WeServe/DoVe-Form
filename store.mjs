@@ -78,7 +78,17 @@ export class Store {
       CREATE UNIQUE INDEX IF NOT EXISTS jobs_request ON jobs(user_id, request_id) WHERE request_id IS NOT NULL;
       CREATE INDEX IF NOT EXISTS jobs_user ON jobs(user_id, state);
       CREATE INDEX IF NOT EXISTS jobs_target ON jobs(target_message_id);
+      CREATE TABLE IF NOT EXISTS blueprints(
+        id TEXT PRIMARY KEY, conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+        message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+        revision INTEGER NOT NULL, title TEXT NOT NULL, summary TEXT NOT NULL, ready INTEGER NOT NULL,
+        target_message_id TEXT, model_id TEXT NOT NULL, executed_job_id TEXT,
+        UNIQUE(conversation_id,revision));
     `);
+    if(!this.db.prepare('PRAGMA table_info(users)').all().some(c=>c.name==='disabled'))this.db.exec('ALTER TABLE users ADD COLUMN disabled INTEGER NOT NULL DEFAULT 0');
+    // Additive migration: older blueprints had only a prose summary.
+    if(!this.db.prepare('PRAGMA table_info(blueprints)').all().some(c=>c.name==='questions'))this.db.exec("ALTER TABLE blueprints ADD COLUMN questions TEXT NOT NULL DEFAULT '[]'");
+    if(!this.db.prepare('PRAGMA table_info(messages)').all().some(c=>c.name==='forms'))this.db.exec("ALTER TABLE messages ADD COLUMN forms TEXT");
     // honest restart handling: a build interrupted by a process restart is
     // marked failed (never silently resumed — no automatic duplicate work)
     this.interruptedOnStart = this.markInterruptedJobs();
@@ -93,6 +103,7 @@ export class Store {
     if (!USERNAME.test(String(username || ''))) throw Error('Benutzername: 3–32 Zeichen, nur Buchstaben, Zahlen . _ -');
     if (typeof password !== 'string' || password.length < 8 || password.length > 200) throw Error('Passwort: 8–200 Zeichen');
     if (this.getUserByName(username)) throw Error('Benutzername ist bereits vergeben');
+    if(role&&!['owner','admin','user'].includes(role))throw Error('Ungültige Benutzerrolle');
     const finalRole = role || (this.userCount() === 0 ? 'owner' : 'user'); // first registered user = Owner
     const user = { id: crypto.randomUUID(), username, pw_hash: hashPassword(password), role: finalRole, created_at: new Date().toISOString() };
     this.db.prepare('INSERT INTO users(id, username, pw_hash, role, created_at) VALUES (?,?,?,?,?)')
@@ -103,7 +114,7 @@ export class Store {
   verifyLogin(username, password) {
     const user = this.getUserByName(username);
     if (!user) { verifyPassword(password, 'scrypt$16384$8$1$' + '0'.repeat(32) + '$' + '0'.repeat(128)); return null; } // flat timing
-    if (!verifyPassword(password, user.pw_hash)) return null;
+    if (user.disabled || !verifyPassword(password, user.pw_hash)) return null;
     return { id: user.id, username: user.username, role: user.role };
   }
 
@@ -132,7 +143,7 @@ export class Store {
   getSession(token) {
     if (typeof token !== 'string' || !token.length || token.length > 128) return null;
     const row = this.db.prepare(
-      'SELECT s.token_hash, s.csrf, s.expires_at, u.id, u.username, u.role FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ?'
+      'SELECT s.token_hash, s.csrf, s.expires_at, u.id, u.username, u.role FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ? AND u.disabled = 0'
     ).get(crypto.createHash('sha256').update(token).digest('hex'));
     if (!row) return null;
     const now = Date.now();
@@ -263,6 +274,22 @@ export class Store {
     return true;
   }
 
+  activeJobsForConversation(userId,convId){
+    return this.db.prepare("SELECT id FROM jobs WHERE user_id=? AND conversation_id=? AND state IN ('queued','building','validating')").all(userId,convId).map(r=>this.getJob(r.id));
+  }
+  latestBlueprint(convId) {
+    const r=this.db.prepare('SELECT * FROM blueprints WHERE conversation_id=? ORDER BY revision DESC LIMIT 1').get(convId);
+    return r?this.publicBlueprint(r):null;
+  }
+  publicBlueprint(r){return {id:r.id,conversationId:r.conversation_id,messageId:r.message_id,revision:r.revision,title:r.title,summary:r.summary,questions:JSON.parse(r.questions||'[]'),ready:!!r.ready&&JSON.parse(r.questions||'[]').length===0,targetMessageId:r.target_message_id,modelId:r.model_id,executedJobId:r.executed_job_id};}
+  saveBlueprint(job,plan){
+    const latest=this.latestBlueprint(job.conversationId);
+    if((latest?.revision||0)!==job.request.baseRevision)throw Error('Blueprint wurde inzwischen geändert. Bitte erneut besprechen.');
+    const id=crypto.randomUUID(),rev=(latest?.revision||0)+1;
+    this.db.prepare('INSERT INTO blueprints(id,conversation_id,message_id,revision,title,summary,ready,target_message_id,model_id,questions) VALUES (?,?,?,?,?,?,?,?,?,?)').run(id,job.conversationId,job.messageId,rev,plan.title,plan.summary,plan.ready?1:0,job.targetMessageId,job.modelId,JSON.stringify(plan.questions||[]));
+    return this.latestBlueprint(job.conversationId);
+  }
+
   // --- background element jobs (server-owned construction sites) ---
   nextJobRev() { return Number(this.db.prepare('SELECT COALESCE(MAX(rev),0)+1 AS r FROM jobs').get().r); }
 
@@ -370,7 +397,7 @@ export class Store {
 
   listJobs(userId) {
     return this.db.prepare("SELECT * FROM jobs WHERE user_id = ? AND state != 'ready' ORDER BY created_at LIMIT 100").all(String(userId || ''))
-      .map(r => ({ id: r.id, conversationId: r.conversation_id, messageId: r.message_id, targetMessageId: r.target_message_id, kind: r.kind, state: r.state, phase: r.phase, rev: r.rev, error: r.error, modelId: r.model_id, prose: r.prose, createdAt: r.created_at, updatedAt: r.updated_at, userId: r.user_id }));
+      .map(r => ({ id: r.id, conversationId: r.conversation_id, messageId: r.message_id, targetMessageId: r.target_message_id, kind: r.kind, blueprintRevision:JSON.parse(r.request||'{}').blueprintRevision||null, state: r.state, phase: r.phase, rev: r.rev, error: r.error, modelId: r.model_id, prose: r.prose, createdAt: r.created_at, updatedAt: r.updated_at, userId: r.user_id }));
   }
 
   setPinned(userId, msgId, pinned) {
@@ -391,17 +418,21 @@ export class Store {
     const convs = this.db.prepare('SELECT id, title, updated_at FROM conversations WHERE user_id = ? ORDER BY updated_at DESC LIMIT 40').all(userId);
     const out = [];
     for (const c of convs) {
-      const msgs = this.db.prepare('SELECT id, role, text, prose, error, render, pinned FROM messages WHERE conversation_id = ? ORDER BY seq LIMIT 100').all(c.id);
+      const msgs = this.db.prepare('SELECT id, role, text, prose, error, render, pinned, forms FROM messages WHERE conversation_id = ? ORDER BY seq LIMIT 100').all(c.id);
+      // Build placement changes neither element identity nor its DB namespace.
+      const placements = new Map(this.db.prepare("SELECT target_message_id,message_id FROM jobs WHERE conversation_id=? AND kind='refine' AND state='ready' AND message_id IS NOT NULL ORDER BY created_at,rev").all(c.id).map(j=>[j.target_message_id,j.message_id]));
       const messages = msgs.map(m => {
         const o = { id: m.id, role: m.role };
         if (m.text != null) o.text = m.text;
         if (m.prose != null) o.prose = m.prose;
         if (m.error != null) o.error = m.error;
         if (m.render != null) { try { o.render = JSON.parse(m.render); } catch {} }
+        if(m.forms){try{o.forms=JSON.parse(m.forms)}catch{}}
         if (m.pinned) o.pinned = true;
+        if (placements.has(m.id)) o.renderPositionId=placements.get(m.id);
         return o;
       });
-      out.push({ id: c.id, title: c.title, updatedAt: c.updated_at, messages });
+      out.push({ id: c.id, title: c.title, updatedAt: c.updated_at, messages, blueprint:this.latestBlueprint(c.id) });
     }
     const versions = {};
     for (const c of out) for (const m of c.messages) {

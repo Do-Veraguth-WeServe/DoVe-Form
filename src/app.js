@@ -1,3 +1,7 @@
+import {elementTimeline} from './element-timeline.js';
+import {planFold} from './plan-fold.js';
+import {renderMarkdown} from './markdown.js';
+import {formCard,initFormsUI} from './forms-ui.js';
 import {renderUI} from './renderer.js';
 import {safeHTML,safeCSS} from './sanitize.js';
 import {validateRender,deriveName,sanitizeName} from '../contract.mjs';
@@ -148,12 +152,14 @@ function fromServer(data){
   // reconcile background jobs (snapshot is the server's truth)
   jobs=new Map((data.jobs||[]).map(j=>[j.id,j]));
   const sessions=(data.conversations||[]).map(c=>({
-    id:c.id,title:String(c.title||'').slice(0,80),
+    id:c.id,title:String(c.title||'').slice(0,80),blueprint:c.blueprint||null,
     messages:(c.messages||[]).map(m=>{
       const o={id:m.id,role:m.role};
       if(typeof m.text==='string')o.text=m.text;
       if(typeof m.prose==='string')o.prose=m.prose;
       if(typeof m.error==='string')o.error=m.error;
+      if(m.forms)o.forms=m.forms;
+      if(m.renderPositionId)o.renderPositionId=m.renderPositionId;
       if(m.render)o.render=validateRender(m.render);
       if(m.pinned&&m.render)pins.push(m.id);
       return o;
@@ -227,6 +233,7 @@ function clearMark(){if(marked){marked=null;render()}}
 const CRANE='<rect x="6" y="88" width="208" height="5" rx="2" fill="#495153"/><g class="scaffold"><rect x="141" y="46" width="4" height="42" fill="#687374"/><rect x="195" y="46" width="4" height="42" fill="#687374"/><rect x="138" y="60" width="64" height="4" fill="#687374"/></g><rect class="block b1" x="148" y="74" width="43" height="13" rx="2"/><rect class="block b2" x="148" y="59" width="43" height="13" rx="2"/><rect class="block b3" x="148" y="44" width="43" height="13" rx="2"/><g class="craneg"><rect x="36" y="19" width="12" height="69" rx="2" fill="#d4ad54"/><rect x="24" y="83" width="36" height="6" rx="2" fill="#b58a36"/><rect x="17" y="13" width="176" height="9" rx="2" fill="#e4be63"/><rect x="12" y="21" width="22" height="16" rx="2" fill="#778385"/><rect x="48" y="23" width="18" height="16" rx="3" fill="#d4ad54"/><rect x="51" y="26" width="12" height="8" rx="1" fill="#344b57"/><g class="trolley"><rect x="113" y="22" width="10" height="6" rx="2" fill="#8c6c2e"/><path class="cable" d="M118 28V50" stroke="#bbc4c3" stroke-width="2"/><rect class="load" x="103" y="50" width="30" height="13" rx="2"/></g></g>';
 const SITE_PHASE={queued:'in Warteschlange …',building:'baut …',validating:'prüft das Ergebnis …'};
 function siteEl(job){
+  if(['plan','chat'].includes(job?.kind)){const p=document.createElement('p');p.className='notice planning';p.textContent=job.state==='failed'?(job.error||'Planung fehlgeschlagen.'):'Form denkt mit …';if(job.state==='failed'){const b=document.createElement('button');b.textContent='Erneut besprechen';b.onclick=()=>jobAction('retry',job.id);p.append(b)}return p;}
   const d=document.createElement('div');d.className='site'+(job&&job.state==='failed'?' failed':job&&job.state==='cancelled'?' cancelled':'');
   if(job)d.dataset.jobid=job.id;
   d.setAttribute('role','status');
@@ -234,7 +241,7 @@ function siteEl(job){
   svg.setAttribute('viewBox','0 0 220 96');svg.setAttribute('class','crane');svg.setAttribute('aria-hidden','true');
   svg.innerHTML=CRANE;
   const meta=document.createElement('div');meta.className='sitemeta';
-  const l1=document.createElement('span');l1.className='sitelabel';l1.textContent=job&&job.kind==='refine'?'Wird aktualisiert':'Wird gebaut';
+  const l1=document.createElement('span');l1.className='sitelabel';l1.textContent=(job&&job.kind==='refine'?'Wird aktualisiert':'Wird gebaut')+(job?.blueprintRevision?' · Planversion '+job.blueprintRevision:'');
   const l2=document.createElement('span');l2.className='sitephase';
   meta.append(l1,l2);
   if(job&&['queued','building','validating'].includes(job.state)){
@@ -254,16 +261,15 @@ function siteEl(job){
   return d;
 }
 function pendingJobFor(msgId){
-  for(const j of jobs.values()){
-    if(j.state==='ready')continue;
-    if(j.messageId===msgId||j.targetMessageId===msgId)return j;
-  }
-  return null;
+  const candidates=[...jobs.values()].filter(j=>j.state!=='ready').sort((a,b)=>Number(b.rev)-Number(a.rev));
+  return candidates.find(j=>j.messageId===msgId)||candidates.find(j=>j.kind==='refine'&&j.targetMessageId===msgId&&(!j.messageId||ACTIVE_JOB.includes(j.state)))||null;
 }
 const ACTIVE_JOB=['queued','building','validating'];
 function applyJob(job,opts){
+  if(job?.blueprint){const s=db.sessions.find(s=>s.id===job.conversationId);if(s&&(!s.blueprint||s.blueprint.revision<=job.blueprint.revision))s.blueprint=job.blueprint;}
   if(!job||!job.id)return;
   if(job.kind==='action')return;
+  if(job.kind==='plan'&&ACTIVE_JOB.includes(job.state)){const b=document.querySelector('.blueprint-execute');if(b)b.disabled=true;}
   const rerender=opts?opts.rerender!==false:true;
   const prev=jobs.get(job.id);
   if(prev&&Number(prev.rev)>=Number(job.rev)&&prev.state!=='queued'&&job.state!=='ready')return; // stale event
@@ -308,6 +314,7 @@ function applyJob(job,opts){
 function attachReadyJob(s,job){
   const target=s.messages.find(m=>m.id===(job.kind==='refine'?job.targetMessageId:job.messageId));
   if(!target)return false;
+  if(job.forms)target.forms=job.forms;
   if(!job.render){ // prose-only turn: finish the placeholder message
     target.prose=String(job.prose||'');
     if(job.error)target.error=job.error;
@@ -315,7 +322,7 @@ function attachReadyJob(s,job){
   }
   try{
     const render=validateRender(job.render);
-    if(job.kind==='refine'){pushVersion(target,target.render);target.render=render;if(job.prose)target.prose=String(job.prose).slice(0,8000);marked=null;toast('Element aktualisiert.')}
+    if(job.kind==='refine'){pushVersion(target,target.render);target.render=render;if(job.messageId){target.renderPositionId=job.messageId;const anchor=s.messages.find(m=>m.id===job.messageId);if(anchor){anchor.prose=String(job.prose||'');delete anchor.error;}}marked=null;toast('Element aktualisiert.')}
     else{target.render=render;if(job.prose)target.prose=String(job.prose).slice(0,8000);if(target.error)delete target.error}
     return true;
   }catch{return false}
@@ -389,6 +396,20 @@ async function stop(){
   await syncFromServer();
 }
 async function syncFromServer(){if(await loadFromServer())renderPreservingScroll()}
+async function deleteChat(s){
+  if(!confirm('Chat „'+s.title+'“ mit allen Nachrichten und Elementen endgültig löschen?'))return;
+  try{
+    const r=await fetch('/api/conversations/'+s.id,{method:'DELETE',headers:{'X-Form-CSRF':csrf}});
+    if(!r.ok)throw Error((await r.json()).error||'Löschen fehlgeschlagen.');
+    for(const req of [...pending])if(req.conversationId===s.id){pending.delete(req);req.controller.abort();liveTurns.delete(req);}
+    for(const [id,j]of jobs)if(j.conversationId===s.id)jobs.delete(id);
+    if(db.current===s.id){closeOverlay();db.current=null;marked=null;}
+    db.sessions=db.sessions.filter(c=>c.id!==s.id);busy(pending.size>0);
+    if(!db.current)db.current=db.sessions[0]?.id||null;
+    if(!db.current)await newSession();else {await loadFromServer();save();render();}
+    toast('Chat gelöscht.');
+  }catch(e){toast(e.message||'Chat konnte nicht gelöscht werden.');}
+}
 async function newSession(){
   if(pending.size)await stopAll();
   closeOverlay();
@@ -409,6 +430,7 @@ function updateComposer(){
   $('#statuslabel').textContent=!me?'NICHT ANGEMELDET':(has?('ANGEMELDET · '+who.toUpperCase()):'KEIN MODELL');
   $('#prompt').placeholder=has?'Nachricht …':'Zuerst ein Modell hinzufügen (⚙ oben rechts)';
   $('#mcpbtn').classList.toggle('hidden',me?.role!=='owner');
+  $('#usersbtn').classList.toggle('hidden',!['owner','admin'].includes(me?.role));
   $('#whoami').textContent=me?(me.username+(me.role==='owner'?' · Owner':'')):'';
 }
 
@@ -461,7 +483,12 @@ function renderChip(){
 const visibleStarts=new Map();
 function render(){  views.forEach(v=>v.destroy());views=[];
   $('#sessions').replaceChildren();
-  for(const s of db.sessions){const b=document.createElement('button');b.textContent=s.title;b.setAttribute('aria-current',s.id===db.current);b.onclick=async()=>{await stop();closeOverlay();db.current=s.id;marked=null;save();render();$('#sidebar').classList.remove('open')};$('#sessions').append(b)}
+  for(const s of db.sessions){
+    const row=document.createElement('div');row.className='session-row';row.dataset.sid=s.id;
+    const b=document.createElement('button');b.className='session-open';b.textContent=s.title;b.setAttribute('aria-current',s.id===db.current);b.onclick=async()=>{await stop();closeOverlay();db.current=s.id;marked=null;save();render();$('#sidebar').classList.remove('open')};
+    const del=document.createElement('button');del.className='session-delete';del.type='button';del.textContent='×';del.setAttribute('aria-label','Chat löschen: '+s.title);del.title='Chat löschen';del.onclick=()=>deleteChat(s);
+    row.append(b,del);$('#sessions').append(row);
+  }
   const feed=$('#feed');
   feed.innerHTML=current()?.messages.length?'':'<section class="intro"><h1>Was möchtest du machen?</h1></section>';
   if(!models.length)feed.insertAdjacentHTML('beforeend','<section class="empty" id="emptystate"><h2>Modell verbinden</h2><button id="emptyadd">Modell hinzufügen</button></section>');
@@ -470,27 +497,26 @@ function render(){  views.forEach(v=>v.destroy());views=[];
     if(!visibleStarts.has(s.id))visibleStarts.set(s.id,Math.max(0,s.messages.length-12));
     const visibleStart=Math.min(visibleStarts.get(s.id),s.messages.length);
     if(visibleStart>0){const h=document.createElement('p');h.className='notice';h.textContent='Ältere Nachrichten ausgeblendet.';feed.append(h)}
-    for(const m of s.messages.slice(visibleStart)){
+    for(const entry of elementTimeline(s.messages,[...jobs.values()].filter(j=>j.conversationId===s.id)).slice(visibleStart)){
+      const m=entry.message;
       const article=document.createElement('article');article.className='message '+(m.role==='user'?'user':'assistant');article.dataset.mid=m.id;
       if(m.role==='user'){const b=document.createElement('div');b.className='bubble';b.textContent=m.text;article.append(b)}
       else{
         article.innerHTML='<div class="byline">Form</div>';
-        if(m.error){const n=document.createElement('div');n.className='notice error';n.textContent=m.error;article.append(n)}
+        if(m.error&&!['queued','building','validating'].includes(pendingJobFor(m.id)?.state)){const n=document.createElement('div');n.className='notice error';n.textContent=m.error;article.append(n);const failed=pendingJobFor(m.id);if(failed?.messageId===m.id&&failed.state==='failed')article.append(siteEl(failed));}
         else{
-          if(m.prose){const p=document.createElement('p');p.className='prose';p.textContent=m.prose;article.append(p)}
-          const job=pendingJobFor(m.id);
+          if(m.prose){const p=document.createElement('div');p.className='prose';renderMarkdown(p,m.prose);article.append(p)}
+          if(m.forms){for(const f of m.forms.items||[]){if(f.layout==='custom'&&f.template){const view=renderUI({...f.template,state:{...f.template.state,...f.data}},{onSuggest:fillSuggestion,onError:toast,onState:state=>{f.data=state;save();uiRequest('/api/forms/state',{messageId:m.id,index:m.forms.items.indexOf(f),state}).catch(e=>toast(e.message));}});views.push(view);article.append(view.element);}else article.append(formCard(f,{suggest:fillSuggestion}));}for(const e of m.forms.edits||[])article.append(formsUI.proposal(e,m.id,m.forms.edits.indexOf(e)));}
+          const job=pendingJobFor(entry.element?.id||m.id);
           if(job&&job.kind==='create'&&!m.render&&!m.error){
             // generation running on the server: partial prose (persisted by the
-            // runner) survives reloads; without any prose yet: quiet row
+            // runner) survives reloads; the crane remains visible in every phase.
             const partial=m.prose||job.prose;
-            if(partial){const pP=document.createElement('p');pP.className='prose writing';pP.textContent=partial;article.append(pP)}
-            else if((job.phase||'prose')!=='artifact'){
-              const wait=document.createElement('div');wait.className='think compact';
-              wait.innerHTML='<small class="thinklabel">antwortet …</small>';
-              article.append(wait);
-            }
+            if(partial){const pP=document.createElement('div');pP.className='prose writing';renderMarkdown(pP,partial);article.append(pP)}
+
           }
-          if(m.render){
+          if(entry.element){
+            const m=entry.element;
             const wrap=document.createElement('div');
             wrap.className='elwrap'+((marked&&marked.msgId===m.id&&marked.sessionId===db.current)?' marked':'');
             const head=document.createElement('div');head.className='elhead';
@@ -507,7 +533,8 @@ function render(){  views.forEach(v=>v.destroy());views=[];
             const exp=document.createElement('button');exp.type='button';exp.className='icon';exp.textContent='↗';
             exp.setAttribute('aria-label','Element öffnen');exp.title='Element öffnen (Vollbild, Code, Versionen)';
             exp.onclick=()=>openOverlay(m);
-            head.append(nm,pinB,exp);
+            const reuse=document.createElement('button');reuse.type='button';reuse.textContent='Als Form';reuse.title='Dieses Element als wiederverwendbare Form speichern';reuse.onclick=()=>{formsUI.fromElement(m);};
+            head.append(nm,pinB,exp,reuse);
             const note=document.createElement('div');note.className='small';
             const view=renderUI(m.render,{
               onAction:(name,inputs)=>runBoundAction(m,name,inputs),
@@ -523,14 +550,15 @@ function render(){  views.forEach(v=>v.destroy());views=[];
             const b=document.createElement('button');b.textContent='Werte übernehmen';b.onclick=()=>{$('#prompt').value='Denke mit meinen aktuellen Einstellungen weiter.';$('#prompt').focus();toast('Werte werden erst mit deiner Nachricht gesendet.')};article.append(b);
           }
           // background build: construction site stands in for the future element
-          // (create, artifact phase) or marks an in-flight in-place refinement
-          else if(job&&job.kind==='create'&&(job.phase||'prose')==='artifact'){article.append(siteEl(job))}
-          if(job&&job.kind==='refine'&&m.render){article.append(siteEl(job))}
+          // (create, all phases) or marks an in-flight in-place refinement
+          else if(job&&['create','plan','chat','refine'].includes(job.kind)&&job.messageId===m.id){article.append(siteEl(job))}
+          if(job&&job.kind==='refine'&&entry.element){article.append(siteEl(job))}
         }
       }
       feed.append(article);
     }
   }
+  if(s?.blueprint)feed.append(blueprintEl(s));
   for(const article of liveTurns.values())if(!article.isConnected)feed.append(article);
   feed.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>send(b.dataset.p));
   const add=$('#emptyadd');if(add)add.onclick=openSettings;
@@ -544,20 +572,18 @@ function liveMessage(mode,modelLabel){
   const feed=$('#feed');
   const a=document.createElement('article');a.className='message assistant live';
   a.innerHTML='<div class="byline">Form</div>';
-  const think=document.createElement('div');think.className='think';
-  const tl=document.createElement('small');tl.className='thinklabel';tl.textContent='Denkt nach …';
-  think.append(tl);
   // Phase 2 „Schreiben": the streamed text IS the movement; caret pulses.
-  const p=document.createElement('p');p.className='prose';p.setAttribute('aria-live','polite');
+  const p=document.createElement('div');p.className='prose';p.setAttribute('aria-live','polite');
   const slot=document.createElement('div');slot.className='artslot';
   const note=document.createElement('div');note.className='small';
-  a.append(think,p,slot,note);feed.append(a);
+  const thinking=document.createElement('p');thinking.className='notice planning';thinking.textContent='Form denkt mit …';slot.append(thinking);
+  a.append(p,slot,note);feed.append(a);
   return {el:a,
     prose:t=>{
-      if(!p.textContent&&t){think.remove();p.classList.add('writing')}
-      p.textContent=t; // no viewport movement while streaming
+      if(!p.textContent&&t)p.classList.add('writing');
+      renderMarkdown(p,t); // no forced viewport movement while streaming
     },
-    site:job=>{think.remove();slot.replaceChildren(siteEl(job))},
+    site:job=>{slot.replaceChildren(siteEl(job))},
     note:t=>{note.textContent=t;note.className='notice'},
     error:t=>{note.textContent=t;note.className='notice error'}
   };
@@ -582,7 +608,7 @@ async function readSSE(response,onEvent){
   }
 }
 
-async function send(text){
+async function send(text,mode='chat'){
   text=text.trim().slice(0,2000);
   if(!text||pending.size>=3)return toast('Bitte kurz warten — drei Antworten laufen schon.');
   if(!me)return showLogin('Bitte zuerst anmelden.');
@@ -593,7 +619,7 @@ async function send(text){
   const target=markInfo();
   const um={role:'user',id:uid(),text};
   s.messages.push(um);
-  if(s.messages.length===1){s.title=text.slice(0,45);const btn=$('#sessions').firstElementChild;if(btn)btn.textContent=s.title}
+  if(s.messages.length===1){s.title=text.slice(0,45);const btn=$('#sessions .session-open');if(btn)btn.textContent=s.title}
   $('#prompt').value='';save();
   // scroll anchor preserved across composer reset + feed re-render: neither a
   // jump to the top nor an automatic jump to the end
@@ -601,13 +627,13 @@ async function send(text){
   render();
   const live=liveMessage(target?'refine':'new',models.find(m=>m.id===modelId)?.label);
   restoreScroll(st);
-  const request={id:uid(),controller:new AbortController(),jobId:null};
+  const request={id:uid(),controller:new AbortController(),jobId:null,conversationId:s.id};
   pending.add(request);busy(true);
   liveTurns.set(request,live.el);
   let prose='',artifact=null,errorMsg=null,doneUser=null,doneAssist=null,jobStarted=null,transportLost=false;
   try{
     if(!csrf)throw Error('Sitzung abgelaufen — bitte neu anmelden.');
-    const body={version:1,sessionId:s.id,requestId:request.id,text,model:modelId||undefined};
+    const body={version:1,sessionId:s.id,requestId:request.id,text,mode,model:modelId||undefined};
     if(target)body.refineTarget={id:target.id,name:sanitizeName(elementName(target)),html:target.render.html,css:target.render.css,js:target.render.js,state:target.render.state};
     const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},signal:request.controller.signal,body:JSON.stringify(body)});
     if(!r.ok){const t=await r.json().catch(()=>({}));throw Error(t.error||('Serverfehler '+r.status))}
@@ -615,8 +641,8 @@ async function send(text){
       if(!pending.has(request))return;
       if(event==='prose-chunk'&&typeof data.text==='string'){prose+=data.text.slice(0,4000);live.prose(prose)}
       else if(event==='artifact-start'){live.site(jobStarted)} // Phase 3 beginnt mit dem Artefakt
-      else if(event==='retry')live.note('Ungültiges Artefakt — ein Korrekturversuch läuft …');
-      else if(event==='element-job'&&data.job&&data.job.id){jobStarted=data.job;request.jobId=data.job.id;applyJob(data.job)}
+      else if(event==='retry')live.note(data.code==='transport'?data.reason:'Ungültiges Artefakt — ein Korrekturversuch läuft …');
+      else if(event==='element-job'&&data.job&&data.job.id){jobStarted=data.job;request.jobId=data.job.id;live.site(data.job);applyJob(data.job)}
       else if(event==='render'){try{artifact=validateRender(data.render)}catch{errorMsg='Ungültige Antwort der Gegenseite.'}}
       else if(event==='error'){errorMsg=String(data.message||'Antwort fehlgeschlagen.');}
       else if(event==='done'){doneUser=data.userMessageId||null;doneAssist=data.assistantMessageId||null}
@@ -639,7 +665,7 @@ async function send(text){
     errorMsg='Live-Verbindung unterbrochen. Der Auftrag wurde angenommen; beim Wiederverbinden wird sein Status geladen.';
     doneAssist=jobStarted.messageId||null;
   }
-  if(target){
+  if(target&&!['plan','chat'].includes(jobStarted?.kind)){
     // In-place refinement: the marked element is replaced only when the
     // background job completes (atomic swap server-side); original stays until then.
     if(jobStarted){marked=null;reconcileReadyJobs();save();render()}
@@ -667,6 +693,7 @@ async function send(text){
   else if(errorMsg){if(prose)live.error(errorMsg);s.messages.push({role:'assistant',id:doneAssist||uid(),prose,error:errorMsg})}
   else if(prose)s.messages.push({role:'assistant',id:doneAssist||uid(),prose});
   else await syncFromServer(); // nothing usable arrived: server holds the truth
+  if(jobStarted?.kind==='plan'){marked=null;const jr=jobs.get(jobStarted.id);if(jr?.blueprint)s.blueprint=jr.blueprint;}
   reconcileReadyJobs(); // AFTER the local push: fast jobs attach here, one single render
   save();render();
   restoreScroll(st2);
@@ -836,24 +863,52 @@ async function refreshModels(){
 function openSettings(){if(!me)return;$('#settings').showModal?.();renderModelList()}
 function renderModelList(){
   const box=$('#modellist');if(!box)return;box.replaceChildren();
-  if(!models.length){const p=document.createElement('p');p.className='small';p.textContent='Noch keine Modelle. Der Owner kann unten eines hinzufügen.';box.append(p);return}
+  $('#addmodel')?.classList.toggle('hidden',!me);
+  if(!models.length){const p=document.createElement('p');p.className='small';p.textContent='Noch keine Modelle. Füge deinen eigenen Provider hinzu oder nutze ein freigegebenes Modell.';box.append(p);}
   for(const m of models){
-    const row=document.createElement('div');row.className='mrow';
-    const info=document.createElement('div');
-    const strong=document.createElement('strong');strong.textContent=m.label+' · '+m.model;
-    const span=document.createElement('span');span.className='small';
-    span.textContent=m.keyMasked?('Key '+m.keyMasked+''):'Modell vom Owner eingerichtet';
-    info.append(strong,span);
-    if(me&&me.role==='owner'){
-      const del=document.createElement('button');del.textContent='Löschen';del.setAttribute('aria-label','Modell '+m.label+' löschen');
-      del.onclick=async()=>{try{const r=await fetch('/api/models/'+m.id,{method:'DELETE',headers:{'X-Form-CSRF':csrf}});if(!r.ok)throw 0;await refreshModels();toast('Modell gelöscht.')}catch{toast('Löschen fehlgeschlagen.')}};
-      row.append(info,del);
-    }else row.append(info);
+    const row=document.createElement('div');row.className='mrow';row.dataset.modelid=m.id;
+    const info=document.createElement('div');const strong=document.createElement('strong');strong.textContent=m.label+' · '+m.model;
+    const span=document.createElement('span');span.className='small';span.textContent=m.owned?('Eigener Provider · '+(m.shared?'für alle freigegeben':'privat')+' · Key '+m.keyMasked):'Geteilter Provider · nutzbar, API-Key bleibt verborgen';
+    info.append(strong,span);row.append(info);
+    if(m.owned){
+      const actions=document.createElement('div');actions.className='model-actions';
+      if(m.canShare){const share=document.createElement('button');share.textContent=m.shared?'Freigabe beenden':'Für alle teilen';share.setAttribute('aria-label',(m.shared?'Freigabe beenden: ':'Provider teilen: ')+m.label);share.onclick=async()=>{try{const r=await fetch('/api/models/share',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify({id:m.id,shared:!m.shared})});if(!r.ok)throw Error((await r.json()).error);await refreshModels();toast(m.shared?'Freigabe beendet.':'Provider freigegeben.');}catch(e){toast(e.message||'Freigabe fehlgeschlagen.');}};actions.append(share);}
+      const del=document.createElement('button');del.textContent='Löschen';del.setAttribute('aria-label','Modell '+m.label+' löschen');del.onclick=async()=>{if(!confirm('Provider „'+m.label+'“ löschen?'))return;try{const r=await fetch('/api/models/'+m.id,{method:'DELETE',headers:{'X-Form-CSRF':csrf}});if(!r.ok)throw Error((await r.json()).error);await refreshModels();toast('Modell gelöscht.');}catch(e){toast(e.message||'Löschen fehlgeschlagen.');}};actions.append(del);row.append(actions);
+    }
     box.append(row);
   }
-  const addBox=$('#addmodel');
-  if(addBox)addBox.classList.toggle('hidden',!(me&&me.role==='owner'));
 }
+async function renderUsers(){
+ const r=await fetch('/api/admin/users');if(!r.ok)throw Error('Benutzerverwaltung nicht erlaubt.');const data=await r.json();const list=$('#userslist');list.replaceChildren();
+ for(const user of data.users){
+ const row=document.createElement('section');row.className='user-row';row.dataset.userId=user.id;const p=document.createElement('p');p.textContent=user.username+' · '+user.role+(user.disabled?' · deaktiviert':'');row.append(p);
+ if(user.id!==me.id&&user.role!=='owner'&&(me.role==='owner'||user.role==='user')){
+ const actions=document.createElement('div');actions.className='row-actions';
+ for(const [action,label]of [['reset','Passwort zurücksetzen'],['disable',user.disabled?'Aktivieren':'Deaktivieren'],['delete','Benutzer löschen']]){const b=document.createElement('button');b.textContent=label;if(action==='delete')b.className='danger';b.onclick=()=>openUserAction(user,action);actions.append(b);}
+ if(me.role==='owner'){const role=document.createElement('button');role.textContent=user.role==='admin'?'Zu Benutzer ändern':'Zum Admin machen';role.onclick=()=>openUserAction(user,'role');actions.append(role);}row.append(actions);
+ }list.append(row);}
+
+ $('#useradd [value=admin]').disabled=me?.role!=='owner';
+}
+$('#usersbtn').onclick=async()=>{try{await renderUsers();$('#usersdialog').showModal();}catch(e){toast(e.message);}};
+$('#usersclose').onclick=()=>$('#usersdialog').close();
+let userActionTarget=null;
+function openUserAction(user,action){
+ userActionTarget={user,action};const f=$('#useractionform');f.reset();$('#useractionstatus').textContent='';$('#useractiontitle').textContent=user.username;
+ $('#userpasswordlabel').classList.toggle('hidden',action!=='reset');f.elements.password.required=action==='reset';f.elements.password.disabled=action!=='reset';
+ $('#userconfirmlabel').classList.toggle('hidden',action!=='delete');f.elements.confirm.required=action==='delete';f.elements.confirm.disabled=action!=='delete';
+ $('#useractionhint').textContent=action==='delete'?'Konto, Chats, Elemente, Formen und eigene Provider endgültig löschen. Geteilte Provider dieses Kontos stehen danach niemandem mehr zur Verfügung.':action==='reset'?'Neues Passwort setzen. Alle bisherigen Anmeldungen dieses Benutzers werden ungültig.':action==='disable'?(user.disabled?'Konto wieder aktivieren.':'Konto sperren, Anmeldungen beenden und laufende Aufträge abbrechen.'):'Rolle ändern. Bisherige Anmeldungen werden beendet.';
+ $('#useraction').showModal();
+}
+$('#useractionclose').onclick=()=>{$('#useractionform').reset();$('#useraction').close();};
+$('#useractionform').onsubmit=async e=>{e.preventDefault();const {user,action}=userActionTarget,f=e.target;const b=$('#useractionsubmit');b.disabled=true;
+ try{await uiRequest('/api/admin/users/action',{id:user.id,action,...(action==='reset'?{password:f.elements.password.value}:{}),...(action==='delete'?{confirm:f.elements.confirm.value}:{}),...(action==='disable'?{disabled:!user.disabled}:{}),...(action==='role'?{role:user.role==='admin'?'user':'admin'}:{})});f.reset();$('#useraction').close();await renderUsers();toast('Benutzer aktualisiert.');}catch(err){$('#useractionstatus').textContent=err.message;}finally{b.disabled=false;}};
+
+$('#useradd').onsubmit=async e=>{
+ e.preventDefault();const f=e.target,status=$('#useraddstatus');const button=f.querySelector('button');button.disabled=true;status.textContent='';
+ try{const r=await fetch('/api/admin/users',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify({username:f.username.value.trim(),password:f.password.value,role:f.role.value})});const d=await r.json();if(!r.ok)throw Error(d.error);f.reset();await renderUsers();status.textContent='Benutzer „'+d.user.username+'“ erstellt.';}
+ catch(e){status.textContent=e.message||'Benutzer konnte nicht erstellt werden.';}finally{button.disabled=false;}
+};
 $('#settingsbtn').onclick=openSettings;$('#settingsbtn2').onclick=openSettings;
 $('#closesettings').onclick=()=>$('#settings').close();
 $('#addmodel').onsubmit=async e=>{
@@ -866,6 +921,7 @@ $('#addmodel').onsubmit=async e=>{
     f.reset();await refreshModels();toast('Modell gespeichert: '+d.label);
   }catch(err){toast('Hinzufügen fehlgeschlagen: '+err.message)}
 };
+$('#planbtn').onclick=()=>send($('#prompt').value.trim()||'Erstelle einen Blueprint aus unserer bisherigen Besprechung.','plan');
 $('#composer').onsubmit=e=>{e.preventDefault();send($('#prompt').value)};
 $('#prompt').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();send(e.target.value)}};
 $('#stop').onclick=stop;$('#new').onclick=()=>newSession();
@@ -931,4 +987,56 @@ $('#memorybtn').onclick=showMemory;$('#memoryclose').onclick=()=>$('#memorydialo
 $('#memoryenabled').onchange=async e=>{try{await memoryRequest('/enabled',{enabled:e.target.checked})}catch(err){e.target.checked=!e.target.checked;toast(err.message)}};
 $('#memorysearch').onchange=renderMemories;
 $('#memoryadd').onsubmit=async e=>{e.preventDefault();const f=e.target;try{await memoryRequest('/save',{content:f.content.value,project:f.project.value});f.reset();await renderMemories()}catch(err){toast(err.message)}};
+async function uiRequest(path,data){const r=await fetch(path,data===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify(data)});const t=await r.json();if(!r.ok)throw Error(t.error||'Anfrage fehlgeschlagen.');return t;}
+function fillSuggestion(text){$('#prompt').value=text;$('#prompt').focus();toast('Vorschlag eingefügt – du entscheidest, ob du ihn sendest.');}
+const formsUI=initFormsUI({request:uiRequest,toast,suggest:fillSuggestion});
+$('#preferencesbtn').onclick=()=>$('#preferences').showModal();$('#preferencesclose').onclick=()=>$('#preferences').close();
+async function refreshBugs(){const data=await uiRequest('/api/bugs');const list=$('#buglist');list.replaceChildren();if(!data.reports.length)list.textContent='Noch keine Meldungen.';for(const b of data.reports){const row=document.createElement('section');row.className='library-row';const title=document.createElement('strong');title.textContent=b.title;const meta=document.createElement('p');meta.className='small';meta.textContent=b.username+' · '+new Date(b.created_at).toLocaleString()+' · #'+b.id.slice(0,8);const body=document.createElement('p');body.style.whiteSpace='pre-wrap';body.textContent=b.description+'\nErwartet: '+b.expected+(b.conversation_id?'\nChat-ID: '+b.conversation_id:'');const status=document.createElement('select');status.setAttribute('aria-label','Bugstatus');for(const [v,l]of [['open','Offen'],['working','In Arbeit'],['resolved','Behoben']]){const o=document.createElement('option');o.value=v;o.textContent=l;status.append(o)}status.value=b.status;status.disabled=!data.canManage;const note=document.createElement('textarea');note.setAttribute('aria-label','Bearbeitungsnotiz');note.maxLength=2000;note.value=b.resolution;note.readOnly=!data.canManage;row.append(title,meta,body,status,note);if(data.canManage){const save=document.createElement('button');save.textContent='Status speichern';save.onclick=async()=>{try{await uiRequest('/api/bugs/status',{id:b.id,status:status.value,resolution:note.value});toast('Status gespeichert.')}catch(e){toast(e.message)}};row.append(save)}list.append(row)}}
+$('#bugbtn').onclick=()=>{$('#bugdialog').showModal();refreshBugs().catch(e=>toast(e.message));};$('#bugclose').onclick=()=>$('#bugdialog').close();$('#bugrefresh').onclick=()=>refreshBugs().catch(e=>toast(e.message));
+$('#bugform').onsubmit=async e=>{e.preventDefault();const f=e.target;$('#bugsubmit').disabled=true;try{const out=await uiRequest('/api/bugs',{title:f.elements.title.value,description:f.elements.description.value,expected:f.elements.expected.value,conversationId:f.elements.context.checked?db.current:null});f.reset();$('#bugfeedback').textContent='Gesendet · #'+out.id.slice(0,8);await refreshBugs()}catch(err){$('#bugfeedback').textContent=err.message}finally{$('#bugsubmit').disabled=false}};
 boot();
+
+function blueprintEl(s){
+  const bp=s.blueprint,box=document.createElement('section');let fold;box.className='blueprint';box.dataset.blueprintId=bp.id;
+  const head=document.createElement('div');head.className='blueprint-head';
+  const title=document.createElement('strong');title.textContent='Blueprint · '+bp.title;
+  const rev=document.createElement('span');rev.textContent='Version '+bp.revision;head.append(title,rev);
+  const summary=document.createElement('p');summary.className='blueprint-summary';summary.textContent=bp.summary;
+  const summaryLabel=document.createElement('h3');summaryLabel.className='blueprint-section';summaryLabel.textContent='Zusammenfassung';
+  const questions=Array.isArray(bp.questions)?bp.questions:[];
+  const form=document.createElement('form');form.className='blueprint-questions';
+  if(questions.length){
+    const label=document.createElement('h3');label.className='blueprint-section';label.textContent='Zuerst klären · '+questions.length;form.append(label);
+    const fields=questions.map((q,i)=>{
+      const block=document.createElement('label');block.className='blueprint-question';const title=document.createElement('span');title.textContent=q;
+      const input=document.createElement('textarea');input.rows=2;input.maxLength=300;input.required=true;input.placeholder='Deine Antwort …';input.dataset.question=String(i);
+      const key='form-blueprint-answer:'+me.id+':'+bp.id+':'+i;
+      try{input.value=sessionStorage.getItem(key)||'';}catch{}
+      input.oninput=()=>{try{sessionStorage.setItem(key,input.value)}catch{}};
+      block.append(title,input);form.append(block);return input;
+    });
+    const answer=document.createElement('button');answer.type='submit';answer.textContent='Antworten mit Form klären';form.append(answer);
+    form.onsubmit=async e=>{
+      e.preventDefault();
+      if(db.current!==s.id||current()?.blueprint?.id!==bp.id)return toast('Bitte den aktuellen Blueprint verwenden.');
+      if([...jobs.values()].some(j=>j.conversationId===s.id&&j.kind==='plan'&&ACTIVE_JOB.includes(j.state)))return toast('Bitte Form zuerst antworten lassen.');
+      const text='Antworten zu Blueprint Version '+bp.revision+':\n'+questions.map((q,i)=>q+'\nAntwort: '+fields[i].value.trim()).join('\n\n');
+      if(fields.some(f=>!f.value.trim()))return toast('Bitte alle offenen Fragen beantworten.');
+      if(text.length>2000)return toast('Bitte die Antworten etwas kürzen (zusammen maximal 2000 Zeichen).');
+      answer.disabled=true;fold.close();try{await send(text,'plan')}finally{answer.disabled=false;}
+    };
+  }
+  const note=document.createElement('p');note.className='small';note.textContent=bp.executedJobId?'Diese Planversion wurde gestartet. Neue Wünsche kannst du weiter im Chat besprechen.':bp.ready?'Noch kein Bau gestartet. Besprich Änderungen im Chat oder bestätige genau diese Version.':'Offene Fragen zuerst im Chat klären. Es wird noch nichts gebaut.';
+  const modelLabel=document.createElement('label');modelLabel.className='build-model';modelLabel.textContent='Modell für den Bau ';const buildModel=document.createElement('select');buildModel.setAttribute('aria-label','Baumodell');for(const m of models){const o=document.createElement('option');o.value=m.id;o.textContent=m.label;buildModel.append(o);}buildModel.value=models.some(m=>m.id===bp.modelId)?bp.modelId:(models[0]?.id||'');modelLabel.append(buildModel);
+  const start=document.createElement('button');start.className='blueprint-execute';start.type='button';start.textContent=bp.executedJobId?'Plan gestartet':'Plan starten';
+  start.disabled=!!bp.executedJobId||!bp.ready||questions.length>0||[...jobs.values()].some(j=>j.conversationId===s.id&&j.kind==='plan'&&ACTIVE_JOB.includes(j.state));
+  start.onclick=async()=>{
+    start.disabled=true;
+    try{
+      const r=await fetch('/api/blueprints/execute',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify({sessionId:s.id,blueprintId:bp.id,revision:bp.revision,model:buildModel.value})});const t=await r.json();if(!r.ok)throw Error(t.error);
+      s.blueprint=t.blueprint;if(t.job)applyJob(t.job);const currentId=db.current;await loadFromServer();if(db.sessions.some(c=>c.id===currentId))db.current=currentId;renderPreservingScroll();
+    }catch(e){start.disabled=false;toast(e.message)}
+  };
+  const update=document.createElement('button');update.type='button';update.textContent='Gespräch in Plan übernehmen';update.onclick=()=>send('Aktualisiere den Blueprint anhand unserer bisherigen Besprechung.','plan');
+  const body=document.createElement('div');body.className='blueprint-body';const inner=document.createElement('div');inner.className='blueprint-inner';inner.append(update,summaryLabel,summary);if(questions.length)inner.append(form);inner.append(note,modelLabel,start);body.append(inner);fold=planFold({box,head,body,key:me.id+'-'+bp.id,revision:bp.revision,questions:questions.length});return box;
+}

@@ -306,9 +306,9 @@ async function registerUI(p, username, password) {
     await p.waitForFunction(() => !document.querySelector('.live') && document.querySelector('#stop').classList.contains('hidden'), undefined, { timeout: 15000 });
     await p.locator('#prompt').fill('halten und stoppen holdprose bitte');
     await p.locator('#prompt').press('Enter');
-    await p.locator('.live .think').waitFor({ timeout: 10000 }); // provider holds: honest thinking phase
+    await p.locator('.live .site').waitFor({ timeout: 10000 }); // provider holds: honest thinking phase
     const thinkAnim = await p.evaluate(() => {
-      const el = document.querySelector('.live .think .wire line') || document.querySelector('.live .think');
+      const el = document.querySelector('.live .site .load');
       return el ? getComputedStyle(el).animationName : 'none';
     });
     assert.equal(thinkAnim, 'none', 'prefers-reduced-motion: no movement while thinking');
@@ -333,8 +333,16 @@ async function registerUI(p, username, password) {
     // (a) provider holds with NOTHING sent: the thinking phase is honest and long
     await p2.locator('#prompt').fill('holda nachdenken bitte');
     await p2.locator('#prompt').press('Enter');
-    await p2.locator('.live .think').waitFor({ timeout: 8000 });
-    assert.equal(await p2.locator('.live .think svg,.live .think .wire').count(),0,'no abstract line animation');
+    await p2.locator('.live .site').waitFor({ timeout: 8000 });
+    assert.equal(await p2.locator('.live .site svg.crane').count(),1,'construction visible before any provider content');
+    const restored = await ctx2.newPage();
+    await restored.goto(BASE);
+    await restored.locator('.site[data-jobid]').first().waitFor({timeout:10000});
+    assert.equal(await restored.locator('.site .crane').count(),1,'restored reasoning job has crane');
+    await restored.locator('.site').first().screenshot({path:path.join(shots,'site-reasoning-desktop.png')});
+    await restored.setViewportSize({width:390,height:844});
+    await restored.locator('.site').first().screenshot({path:path.join(shots,'site-reasoning-mobile.png')});
+    await restored.close();
 
     await release('holda');
     await p2.locator('.live .prose').filter({ hasText: 'Hintergrund' }).waitFor({ timeout: 20000 });
@@ -516,7 +524,7 @@ async function registerUI(p, username, password) {
     });
     assert.equal(impLong, 200, 'long conversation seeded server-side');
     await p3.reload();
-    await p3.locator('#sessions button').filter({ hasText: 'Lang' }).first().click();
+    await p3.locator('#sessions .session-open').filter({ hasText: 'Lang' }).first().click();
     await p3.locator('.message[data-mid]').nth(5).waitFor({ timeout: 10000 });
     const topVisible = () => p3.evaluate(() => {
       const f = document.querySelector('#feed'); const fr = f.getBoundingClientRect();
@@ -562,7 +570,7 @@ async function registerUI(p, username, password) {
     const topAfterBottom = await p3.evaluate(() => Math.round(document.querySelector('#feed').scrollTop));
     assert.ok(Math.abs(topAfterBottom - topBeforeBottom) < 40, `viewport does not move on submit, even at the bottom (${topBeforeBottom} -> ${topAfterBottom})`);
     // mobile 390px: mid-anchor preserved + construction site screenshot
-    await p3.locator('#sessions button').filter({ hasText: 'Lang' }).first().click();
+    await p3.locator('#sessions .session-open').filter({ hasText: 'Lang' }).first().click();
     await p3.locator('.message[data-mid]').nth(5).waitFor({ timeout: 10000 });
     // switch to mobile width live (sidebar collapses via media query, no reload needed)
     await p3.setViewportSize({ width: 390, height: 844 });
@@ -603,7 +611,7 @@ async function registerUI(p, username, password) {
     }, boundaryRender);
     assert.equal(impStatus, 200, 'boundary element imported server-side');
     await p.reload();
-    await p.locator('#sessions button').filter({ hasText: 'Boundary' }).first().click();
+    await p.locator('#sessions .session-open').filter({ hasText: 'Boundary' }).first().click();
     await p.locator('.elname').first().waitFor({ timeout: 10000 });
     assert.match(await p.locator('.elname').first().textContent(), /Boundary check/, 'imported element rendered');
     let bf = p.frameLocator('iframe.render').first();
@@ -638,7 +646,7 @@ async function registerUI(p, username, password) {
     assert.match(await p.locator('#overlay .ovhead strong').textContent(),/Spar-Rechner/);
     await p.locator('#overlay button[aria-label="Element schliessen"]').click();
     await p.locator('#chats-tab').click();
-    await p.locator('#sessions button').filter({hasText:'Boundary'}).first().click();
+    await p.locator('#sessions .session-open').filter({hasText:'Boundary'}).first().click();
     await p.locator('#elements-tab').click();
     await p.locator('#elements-list button').first().click();
     await p.locator('#overlay[open]').waitFor();
@@ -653,7 +661,7 @@ async function registerUI(p, username, password) {
     assert.ok(menu.x>settings.x&&menu.x+menu.width<=390,'mobile menu sits at right edge');
     await p.setViewportSize({width:1440,height:1000});
     await p.locator('#chats-tab').click();
-    await p.locator('#sessions button').filter({hasText:'Boundary'}).first().click();
+    await p.locator('#sessions .session-open').filter({hasText:'Boundary'}).first().click();
     ok('Elements tab opens saved items; seamless surface; mobile menu right');
     const statuses = await p.evaluate(async () => [
       await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).then(r => r.status),
@@ -672,11 +680,11 @@ async function registerUI(p, username, password) {
     await pFresh.goto(BASE);
     await pFresh.locator('#login[open]').waitFor({ timeout: 10000 });
     await loginUI(pFresh, OWNER, PASS);
-    await pFresh.locator('#sessions button').first().waitFor({ timeout: 10000 });
-    const freshTitles = await pFresh.locator('#sessions button').allInnerTexts();
+    await pFresh.locator('#sessions .session-open').first().waitFor({ timeout: 10000 });
+    const freshTitles = await pFresh.locator('#sessions .session-open').allInnerTexts();
     assert.ok(freshTitles.some(t => t.includes('Spar')), 'first conversation present on fresh device: ' + freshTitles.join('|'));
     assert.ok(freshTitles.some(t => t.includes('Boundary')), 'imported conversation present on fresh device');
-    await pFresh.locator('#sessions button').filter({ hasText: 'Boundary' }).first().click();
+    await pFresh.locator('#sessions .session-open').filter({ hasText: 'Boundary' }).first().click();
     await pFresh.locator('iframe.render').first().waitFor({ timeout: 15000 });
     const ff = pFresh.frameLocator('iframe.render').first();
     await ff.locator('#amount').waitForFunction(el => el.value === '7', { timeout: 10000 });
@@ -691,9 +699,9 @@ async function registerUI(p, username, password) {
     await pB.reload();
     await pB.locator('#login[open]').waitFor({ timeout: 10000 });
     await registerUI(pB, 'bobmobile', 'password456');
-    await pB.locator('#sessions button').first().waitFor();
+    await pB.locator('#sessions .session-open').first().waitFor();
     assert.equal(await pB.locator('#importbar').count(),0);
-    const bobsTitles = await pB.locator('#sessions button').allInnerTexts();
+    const bobsTitles = await pB.locator('#sessions .session-open').allInnerTexts();
     assert.ok(bobsTitles.every(t => !t.includes('Spar') && !t.includes('Boundary')), 'user B sees only his own data: ' + bobsTitles.join('|'));
     ok('user B isolated; no archive UI');
     await ctxB.close();
@@ -702,9 +710,9 @@ async function registerUI(p, username, password) {
     await p.locator('#logout').click();
     await p.locator('#login[open]').waitFor({ timeout: 10000 });
     await loginUI(p, OWNER, PASS);
-    await p.locator('#sessions button').first().waitFor({ timeout: 10000 });
-    assert.ok((await p.locator('#sessions button').allInnerTexts()).some(t => t.includes('Spar')), 'owner conversations intact after logout/login');
-    await p.locator('#sessions button').filter({ hasText: 'Boundary' }).first().click();
+    await p.locator('#sessions .session-open').first().waitFor({ timeout: 10000 });
+    assert.ok((await p.locator('#sessions .session-open').allInnerTexts()).some(t => t.includes('Spar')), 'owner conversations intact after logout/login');
+    await p.locator('#sessions .session-open').filter({ hasText: 'Boundary' }).first().click();
     await p.locator('iframe.render').first().waitFor({ timeout: 15000 });
     ok('logout clears the session; re-login restores everything');
 

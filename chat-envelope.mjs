@@ -1,0 +1,5 @@
+export function splitChat(raw){
+ const fence=/```(?:json)?\s*(?=\{)/i.exec(raw);const bare=/\{\s*"(?:forms|formEdits)"\s*:/.exec(raw);const at=Math.min(fence?fence.index:Infinity,bare?bare.index:Infinity);if(!Number.isFinite(at))return {prose:raw,meta:{},invalid:false};const body=raw.slice(at).replace(/^```(?:json)?\s*/i,'').replace(/\s*```\s*$/,'').trim();try{const meta=JSON.parse(body);if(!meta||Array.isArray(meta)||typeof meta!=='object'||(!Array.isArray(meta.forms)&&!Array.isArray(meta.formEdits)))throw Error();return {prose:raw.slice(0,at).trimEnd(),meta,invalid:false};}catch{return {prose:raw.slice(0,at).trimEnd(),meta:{},invalid:true};}
+}
+// Hold ambiguous JSON/code prefixes before they can reach the prose stream.
+export function createChatStream(onProse){let raw='',sent=0;return {feed(t){raw+=t;const i=raw.search(/[\{`]/);const end=i<0?raw.length:i;if(end>sent){onProse(raw.slice(sent,end));sent=end;}},finish(){const p=splitChat(raw).prose;if(p.length>sent){onProse(p.slice(sent));sent=p.length;}}};}

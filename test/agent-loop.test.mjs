@@ -17,3 +17,19 @@ test('ambiguous external failure is not retried',async()=>{
  let calls=0;
  await fixture(()=>({delta:{tool_calls:[{index:0,id:'x',function:{name:'read_items',arguments:'{}'}}]},finish_reason:'tool_calls'}),async model=>{await assert.rejects(runToolLoop(model,[],{catalog,execute:()=>{calls++;throw Error('unknown outcome')},deadlineMs:Date.now()+5000}),/unknown outcome/);assert.equal(calls,1)});
 });
+
+test('transport retry after a tool result never re-executes that tool',async()=>{
+ const original=globalThis.fetch;let attempts=0,executions=0,retries=0;
+ const response=choice=>new Response('data: '+JSON.stringify({choices:[choice]})+'\n\n');
+ try{
+  globalThis.fetch=async(_,opts)=>{
+   attempts++;const req=JSON.parse(opts.body);
+   if(attempts===1)return response({delta:{tool_calls:[{index:0,id:'once',function:{name:'read_items',arguments:'{}'}}]},finish_reason:'tool_calls'});
+   assert.equal(req.messages.at(-1).role,'tool');
+   if(attempts===2)throw new TypeError('terminated',{cause:Object.assign(Error('reset'),{code:'ECONNRESET'})});
+   return response({delta:{content:'Done.'},finish_reason:'stop'});
+  };
+  const r=await runToolLoop({baseUrl:'http://fixture',apiKey:'fixture',model:'fixture'},[{role:'user',content:'Do once'}],{catalog,execute:async()=>{executions++;return {count:3}},onTransportRetry:()=>retries++});
+  assert.equal(executions,1);assert.equal(attempts,3);assert.equal(retries,1);assert.equal(r.result.contentText,'Done.');
+ }finally{globalThis.fetch=original;}
+});

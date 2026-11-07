@@ -1,0 +1,7 @@
+http://127.0.0.1:5177/ 200 verified
+http://127.0.0.1:5177/api/auth/status 200 verified
+http://127.0.0.1:5177/app.js 200 c7acf11a5c189dc815aa4b6de1b286ab936d00966a2884ed331029add4b76412
+https://fhisling.tail11036c.ts.net:9444/ 200 verified
+https://fhisling.tail11036c.ts.net:9444/api/auth/status 200 verified
+https://fhisling.tail11036c.ts.net:9444/app.js 200 c7acf11a5c189dc815aa4b6de1b286ab936d00966a2884ed331029add4b76412
+deployed sources match tested sources

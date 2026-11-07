@@ -24,6 +24,10 @@
 // discard stale events and reconcile gaplessly via snapshot + event stream.
 
 import crypto from 'node:crypto';
+import {parsePlan} from './blueprints.mjs';
+import {parseChat} from './forms.mjs';
+import {createStreamParser} from './stream.mjs';
+import {createChatStream} from './chat-envelope.mjs';
 import {runToolLoop} from './agent-loop.mjs';
 import { runRound, ProviderError, SizeError } from './provider.mjs';
 
@@ -33,13 +37,13 @@ import { runRound, ProviderError, SizeError } from './provider.mjs';
 // content; invalid artifact => one corrected retry. Returns
 // { render, prose, failure, failureCode }.
 export async function executeTurn(model, messages, opts, emit) {
-  const { signal = null, deadlineMs = Date.now() + 300000 } = opts || {};
+  const { signal = null, deadlineMs = Infinity } = opts || {};
   const onProse = t => emit({ type: 'prose-chunk', text: t });
   const onArtifactStart = () => emit({ type: 'artifact-start' });
   let liveProse = '';
   const wrapProse = t => { liveProse += t; onProse(t); };
 
-  const roundOpts = { signal, deadlineMs };
+  const roundOpts = { signal, deadlineMs, onTransportRetry: ({code}) => emit({type:'retry',code:'transport',reason:'Verbindung zum Modellanbieter unterbrochen ('+code+') — erneuter Verbindungsversuch …'}) };
   let round1;
   if(opts?.toolContext?.catalog.length){
     const out=await runToolLoop(model,messages,{...roundOpts,...opts.toolContext},ev=>{if(ev.type==='prose-chunk')wrapProse(ev.text);else emit(ev)});
@@ -91,13 +95,13 @@ export async function executeTurn(model, messages, opts, emit) {
 }
 
 export class JobRunner {
-  constructor(store, { concurrency = 2, perUser = 2, getModel = () => null, totalMs = 300000, getToolContext = () => null, hasToolCalls = () => false } = {}) {
-    this.store = store;
+  constructor(store, { concurrency = 2, perUser = 2, getModel = () => null, totalMs = 0, getToolContext = () => null, hasToolCalls = () => false, getForms = () => [] } = {}) {
+    this.store = store;this.getForms=getForms;
     this.getToolContext=getToolContext;this.hasToolCalls=hasToolCalls;
     this.concurrency = Math.max(1, Math.min(Number(concurrency) || 2, 4));
     this.perUser = Math.max(1, Math.min(Number(perUser) || 2, 4));
     this.getModel = getModel; // (modelId) -> {baseUrl, apiKey, model} | null (keys never persisted)
-    this.totalMs = Math.max(10000, Number(totalMs) || 300000);
+    this.totalMs = Number(totalMs) > 0 ? Math.max(10000, Number(totalMs)) : Infinity;
     this.queue = [];             // job ids, FIFO
     this.active = new Map();     // jobId -> { ctrl, userId }
     this.subs = new Map();       // userId -> Set<fn(event)>
@@ -107,11 +111,12 @@ export class JobRunner {
     const o = {
       id: job.id, conversationId: job.conversationId,
       messageId: job.messageId || null, targetMessageId: job.targetMessageId || null,
-      kind: job.kind, state: job.state, phase: job.phase || 'prose', rev: job.rev,
+      kind: job.kind, blueprintRevision:job.request?.blueprintRevision||job.blueprintRevision||null, state: job.state, phase: job.phase || 'prose', rev: job.rev,
       error: job.error || null, createdAt: job.createdAt
     };
+    if(job.kind==='plan'&&job.state==='ready')o.blueprint=this.store.latestBlueprint(job.conversationId);
     o.prose = typeof job.prose === 'string' ? job.prose.slice(0, 8000) : null; // partial prose survives reload
-    if (withResult) { o.render = job.render || null; }
+    if (withResult) { o.render = job.render || null; if(job.forms)o.forms=job.forms; }
     return o;
   }
 
@@ -153,12 +158,13 @@ export class JobRunner {
   }
 
   pump() {
-    while (this.active.size < this.concurrency && this.queue.length) {
+    while (this.queue.length) {
       const idx = this.queue.findIndex(id => {
         if (this.active.has(id)) return false;
         const j = this.store.getJob(id);
         if (!j) return true; // vanished (conversation deleted): drop below
-        return this.activeCount(j.userId) < this.perUser;
+        const group=[...this.active.values()].filter(a=>a.planning===(['plan','chat'].includes(j.kind)?j.kind:'build'));
+        return group.length<(['plan','chat'].includes(j.kind)?2:this.concurrency)&&group.filter(a=>a.userId===j.userId).length<this.perUser;
       });
       if (idx === -1) break;
       const [id] = this.queue.splice(idx, 1);
@@ -175,13 +181,43 @@ export class JobRunner {
       let job = this.store.getJob(jobId);
       if (!job || job.state !== 'queued') return;
       this.active.get(jobId).userId = job.userId;
+      this.active.get(jobId).planning = ['plan','chat'].includes(job.kind)?job.kind:'build';
       job = this.store.transitionJob(jobId, ['queued'], 'building');
       if (!job) return;
       this.emitJob(job);
 
-      const model = this.getModel(job.modelId);
+      const model = this.getModel(job.modelId, job.userId);
       if (!model) throw Error('Modell nicht mehr konfiguriert.');
 
+      if(job.kind==='chat'){
+        const parser=createChatStream(text=>this.emitStream(jobId,job.userId,{type:'prose-chunk',text}));
+        const out=await runRound(model,job.request.messages,{signal:ctrl.signal,textOnly:true,maxTokens:3200,deadlineMs:Date.now()+60000},t=>parser.feed(t),()=>{});parser.finish();
+        const library=this.getForms(job.userId).filter(f=>(job.request.forms||[]).some(old=>old.id===f.id&&old.revision===f.revision));
+        const result=parseChat(out.contentText,library);
+        if(!result.prose&&!result.forms.length)throw Error('Keine Chatantwort erhalten.');
+        this.store.setJobProse(jobId,result.prose);
+        const done=this.store.completeJob(jobId,j=>{
+          this.store.finishMessage(j.conversationId,j.messageId,{prose:result.prose,error:result.metadataError?'Formdaten konnten nicht vollständig verarbeitet werden. Bitte erneut versuchen.':out.truncated?'Antwort wurde gekürzt.':null});
+          this.store.db.prepare('UPDATE messages SET forms=? WHERE id=?').run(JSON.stringify({items:result.forms,edits:result.formEdits}),j.messageId);
+        });if(done){done.forms={items:result.forms,edits:result.formEdits};this.emitJob(done,true);}return;
+      }
+      if(job.kind==='plan'){
+        let raw='',sent=0;
+        const result=await runRound(model,job.request.messages,{signal:ctrl.signal,textOnly:true,maxTokens:2600,deadlineMs:Date.now()+60000},t=>{
+          raw+=t;const m=raw.match(/^\s*<reply>([\s\S]*)/);if(!m)return;
+          const text=m[1].split('</reply>')[0].split('<')[0].slice(0,1800);
+          if(text.length>sent){this.emitStream(jobId,job.userId,{type:'prose-chunk',text:text.slice(sent)});sent=text.length;this.store.setJobProse(jobId,text);}
+        },()=>{});
+        if(result.truncated)throw Error('Blueprint-Antwort zu lang. Bitte erneut versuchen.');
+        const plan=parsePlan(result.contentText);
+        this.store.setJobProse(jobId,plan.reply);
+        const done=this.store.completeJob(jobId,j=>{
+          this.store.saveBlueprint(j,plan);
+          this.store.finishMessage(j.conversationId,j.messageId,{prose:plan.reply});
+        });
+        if(done){if(plan.reply.length>sent)this.emitStream(jobId,job.userId,{type:'prose-chunk',text:plan.reply.slice(sent)});this.emitJob(done,true);}
+        return;
+      }
       let artifactSeen = false;
       let liveProse = '', lastProsePersist = 0;
       const emit = ev => {
@@ -246,7 +282,8 @@ export class JobRunner {
         if (j.kind === 'refine') {
           // original element stays untouched on failure — the job's failed
           // state (with retry) carries the error; no error onto the element
-          if (result.render) this.store.replaceRender(j.conversationId, j.targetMessageId, result.render, result.prose || undefined);
+          if (result.render) this.store.replaceRender(j.conversationId, j.targetMessageId, result.render);
+          if(j.messageId)this.store.finishMessage(j.conversationId,j.messageId,{prose:result.prose||null,error:null});
         } else {
           if (result.render) this.store.attachRender(j.conversationId, j.messageId, result.render);
           this.store.finishMessage(j.conversationId, j.messageId, { prose: result.prose || null, error: result.failure || null });
@@ -317,6 +354,8 @@ export class JobRunner {
   // explicit retry of a FAILED job: re-runs the generation from the STORED
   // snapshot — this MAY call the provider again (disclosed, never silent).
   retry(jobId) {
+    const original=this.store.getJob(jobId);
+    if(original&&!['plan','chat'].includes(original.kind)&&!original.request?.blueprintId)return {ok:false,status:409,error:'Bitte zuerst einen Blueprint besprechen und mit Plan starten bestätigen.'};
     if(this.hasToolCalls(jobId))return {ok:false,status:409,error:"Auftrag enthält Tool-Aufrufe. Kein automatischer Neustart; bitte Ergebnis prüfen und neuen Auftrag senden."};
     const job = this.store.getJob(jobId);
     if (!job) return { ok: false, status: 404, error: 'Job nicht gefunden' };

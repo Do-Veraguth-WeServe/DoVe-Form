@@ -6,6 +6,21 @@
 
 Ausgerollt und geprüft: `npm run test:blueprints` exit 0; separate Units 24 bestanden / 1 optional übersprungen; Touch-Suite zusätzlich gegen `/opt/form/server.mjs` und dessen Bundles mit isoliertem Data-Dir bestanden (Test-Harness aus Source wegen dort installierter Playwright-Devdependency). Live-Homepage und Auth-Status über Loopback und Tailnet HTTPS 200; ausgelieferter Bundle-SHA256 `03095191b934bdc25260f0aa684cb4edc931863c85a11f03d74774bac8eda4ae`, CSP-Bridgehash passend. Neustart nur nach Prüfung auf null aktive Jobs. Rollback: `/opt/form/.rollback/20261107-element-touch/files.tar` plus pm2-Dump; ausschliesslich enthaltene Code-/Dokumentationsdateien wiederherstellen, dann bei inaktiven Jobs im form-User-Scope neu starten; keine DB-Rücksicherung. Vollständiges historisches `npm test` nicht als grün behauptet (siehe Legacy-Hinweis unten).
 
+## Blueprint-Release (2026-11-07)
+
+Aktueller fokussierter Release-Gate: `npm run test:blueprints`. Enthält Build; Vertrags-/Provider-/ACL-/Tool-/Memory-/Sandbox-Units; neuen Blueprint-API/Browserpfad; angepasste Mehrbenutzertests; Sidebar-Layout; explizit bestätigte MCP-Ausführung; API-Elemente; gespeicherte Kalender; Spielrenderer. Log: `docs/test-results/2026-11-07-blueprint-release.log`.
+
+`test/blueprints.test.mjs` beweist: keine Render/Tool-Ausführung aus Chat (auch bei „baue sofort“ oder Artefakt-Antwort); kumulierte Revisionen; Start nur aktuell/eigen/CSRF-geschützt; Doppelklick-Deduplizierung; bei Baukapazität 1 offener Upstream und gleichzeitig erfolgreiche Besprechung im selben Chat; unveränderter bestätigter Snapshot; Reload mit genau einer Baustelle; interaktiver Zustand nach Reload; Änderungen bestehender Elemente erst nach Bestätigung; fehlerhafte Planung baut nichts.
+
+Die älteren `api.test.mjs`, `jobs.test.mjs` und `browser.test.cjs` enthalten noch Assertions für den abgelösten automatischen Build-aus-Chat-Vertrag. Sie sind nicht als grüner aktueller Gesamt-Gate ausgewiesen und brauchen weitere Migration auf explizite Freigabe; `npm test` enthält sie weiterhin. Keine Behauptung, diese Legacy-Suiten seien beim Blueprint-Release grün. Die neuen aktiven Tests ersetzen gezielt diesen Ablauf, nicht die unveränderten Sandbox-/Transport-Units.
+
+Migrationsprobe: echte SQLite-Sicherung in isoliertem temporärem Verzeichnis geöffnet; Hashes aller Zeilen in users/sessions/conversations/messages/versions unverändert, neue Tabelle vorhanden, integrity_check=ok. Probe danach entfernt. Rollback `/opt/form/.rollback/20261107-blueprints/` enthält Quellcode/Bundles, beide SQLite-Datenbanken, Providerdatei und pm2-Dump. Bei Code-Rollback kann die additive Tabelle bestehen bleiben; Datenbanken nicht blind über zwischenzeitliche Nutzerdaten zurückkopieren.
+
+Echtes Modell separat getestet: GLM-5.3-Flash, XML-artige Textabschnitte statt fehleranfälliger Plan-JSON-Quotes. Erster Inhalt 22276 ms, vollständiger valider Blueprint 35871 ms; kein Build gestartet, keine Unterhaltung des Benutzers verändert. Anbieterlatenz ist nicht durch die UI garantiert. Z.ai dokumentiert bei GLM-5.3(-Flash) erzwungenes Thinking; kein wirkungsloses „Thinking deaktiviert“ versprechen.
+
+## Historischer Gesamt-Gate vor Blueprint-Umstellung
+
+
 Testlauf: `npm test` (orchestriert alles: build → unit → mock+server → api → browser).
 
 ```
@@ -28,8 +43,8 @@ Die Browser-Suite bekommt von `run-all.mjs` einen **eigenen Server mit frischem 
 ### Retry-Politik (v3.2.1)
 
 - Genau EIN Korrektur-Round, nur bei unvollständigem/ungültigem Artefakt oder `finish_reason=length`. Das Replay an den Provider ist der tatsächliche Assistant-Inhalt (bounded), nie rohe SSE-Hüllen.
-- Transport-/Auth-Fehler (401/403/429, Netzwerk, Grössenlimits) werden NICHT wiederholt — permanent sichtbar als `error`-Event mit `code: provider|size`, genau ein Upstream-Aufruf.
-- Gesamt-Budget beider Rounds: `FORM3_CHAT_TIMEOUT_MS` (Default 300000); ein Round-Timeout (`code: timeout`) ist von Stopp/Disconnect (`code: stopped`) getrennt.
+- Verbindungsabbrüche (z. B. ECONNRESET/UND_ERR_SOCKET) werden genau einmal automatisch wiederholt, aber nur bevor sichtbarer Antworttext oder ein Artefakt begonnen hat. Bereits ausgeführte Tools werden nicht wiederholt. Wiederholung wird als `retry` mit `code: transport` angezeigt. Auth-/HTTP-Fehler (401/403/429), Grössenlimits und Abbrüche nach sichtbarer Ausgabe werden NICHT wiederholt.
+- Gesamt-Budget beider Rounds: `FORM3_CHAT_TIMEOUT_MS` (Default 0 = kein Zeitlimit); ein Round-Timeout (`code: timeout`) ist von Stopp/Disconnect (`code: stopped`) getrennt.
 - Server + Mock laufen auf Test-Ports (4598/4599) mit **eigener temporärer Models-Datei** — die echte `form.models.json` wird nie angerührt.
 
 ## Abgedeckte Akzeptanzkriterien
@@ -103,3 +118,52 @@ Benötigen ein Chrome/Chromium (Headless). Erkannt wird CHROME_PATH, dann bekann
 ## Real-Deployment-Smoke (manuell, mit echtem Modell)
 
 `SMOKE_URL=https://host:9444 SMOKE_USER=... SMOKE_PASS=... node test/smoke.deployed.cjs` — fährt die live App mit dem konfigurierten Modell: Login-Flow als erster Benutzer, datengetriebenes Todo-Element mit `ui.db` (überlebt Reload), In-Place-Verfeinerung (Assistant-Anzahl unverändert), Lab-Shell-Element mit `ui.ping` (echtes `/bin/ping`, Ergebnis im Element), Pin → Quick-Access, Overlay, Logout/Login mit intakten Daten, 390px. Screenshots: `docs/screenshots/smoke-{desktop,mobile}.png`. Teil des Deployments, nicht von `npm test`.
+
+### Sidebar overflow regression (2026-11-07)
+
+`node test/sidebar-layout.test.mjs` seeds 36 chats with pinned elements in an isolated database and checks both sidebar tabs at 1280×800, 390×844 and 390×568. Each row retains at least 40px height, wheel scrolling moves the actual list, and the list stays above the fixed footer. Baseline: desktop list grew to 1774px with zero scrolling; mobile rows shrank to 22px. Fixed: 44px rows in bounded scroll containers on all six cases. Screenshots: `docs/screenshots/sidebar-*-after.png`. Frontend-only deployment requires no restart or interruption of running jobs.
+
+### Accounts/providers/chat deletion (2026-11-07)
+
+Included in `npm test`: `test/accounts.test.mjs`, `test/model-access.test.mjs`, `test/sidebar-layout.test.mjs`. Covers closed public registration after owner setup; owner/admin create-user UI/API and privilege escalation denial; private provider defaults and migration; selected shared provider generating an interactive persisted artifact in another account; cross-user conversation/state/provider/delete denial; hidden keys and password hashes; confirmed chat deletion/reload; cancelling deleted chats; queued model access revoked before execution; normal-provider SSRF DNS pinning and redirect rejection. Mock-provider accounts are isolated and removed after tests. `FORM3_ALLOW_LOCAL_MODELS=1` is set only inside the local fixture, never in production.
+
+Rollback snapshot: `/opt/form/.rollback/20261107-accounts/` contains backend/frontend source, bundle, pm2 dump, coherent pre-release SQLite backup and protected model registry. Restore code and registry together if reverting provider ownership; do not blindly overwrite newer conversation data with the database backup. No SQLite schema change is required by this release.
+
+### Blueprint questions (2026-11-07)
+
+`test/blueprint-questions.test.mjs` validates question schema/caps and overrides optimistic readiness while questions exist. The blueprint browser suite now also verifies two distinct question fields, disabled execute/API rejection, draft after reload, 390px layout, answer submission into a new cumulative revision, removed resolved blocks, and no build before the separate execute action. Screenshots: `docs/screenshots/blueprint-questions-{desktop,mobile}.png`. Real GLM planning smoke (isolated, no account content created): 5 questions, valid bounded format, build blocked, 11865 ms. Migration rehearsed on a fresh production SQLite snapshot with all rows in users/sessions/conversations/messages/versions/blueprints unchanged (excluding additive column questions); integrity_check=ok. Rollback: `/opt/form/.rollback/20261107-blueprint-questions/`.
+
+## Forms/chat/admin release (2026-11-07)
+
+Gate: npm run test:blueprints now includes test/forms.test.mjs and test/forms-flow.test.mjs. Existing blueprint/account/MCP fixtures explicitly opt into mode=plan or click Plan, rather than testing the superseded auto-plan behavior.
+
+New browser/API coverage: normal chat and reusable comparison card with zero blueprints/builds; persisted card after reload; personal library CRUD, version restore and cross-user denials; AI proposal confirmation; explicit plan/build with independent chat during a held build; custom template saved from an owned element and reused with new data without another build; admin reset with old-session invalidation, disable/enable and blocked login, role changes, typed delete confirmation, protected owner/self and admin boundaries. Desktop/mobile screenshots inspected.
+
+Production rehearsal: fresh coherent SQLite copy, unchanged hashes of all old columns in users/sessions/conversations/messages/versions/blueprints, integrity_check=ok; temporary data removed. Rollback /opt/form/.rollback/20261107-forms-chat-admin contains prior code, bundle, both databases, provider registry and pm2 dump. Migrations additive.
+
+Real-provider isolated fixture: first attempt did not meet the prose-plus-card contract; subsequent run with max_tokens=3200 succeeded with GLM-5.3-Flash, first content 11188 ms and complete answer 16311 ms. Chat uses this bounded output budget; latency is not guaranteed. No real user conversation was created by the smoke test. Custom sample id=title was sanitized by the existing DOM-clobbering protection; the browser regression checks the allowed id=value and its actual updated output instead.
+
+## Bugreport acceptance (2026-11-07)
+Integrated into forms-flow: submit via browser, own-chat reference validation, persistence across reload, admin status and note updates, foreign reports absent from user list, foreign chat references rejected, unauthenticated and missing-CSRF requests rejected, non-admin status updates denied, HTML displayed as literal text, desktop/mobile screenshots. Migration rehearsal on a fresh production copy preserved all existing users/conversations/messages/versions/blueprints fields and passed integrity_check. Reports do not auto-trigger an agent or forward data externally; admins review in the same dialog.
+
+## Plan accordion (2026-11-07)
+node test/plan-fold.test.mjs covers auto-open for questions, collapse on answer submission, per-user/blueprint/revision session persistence, collapsed resolved plans, keyboard reopening, new revision questions reopening, reduced motion and mobile bounds. Existing blueprint integration verifies actual answer submission and explicit build after opening the bar. Presentation-only release; no database or server restart required.
+
+## Element evidence (2026-11-07)
+Read-only request-time snapshot, timestamped: up to three rendered elements in the current owned conversation, explicit selected element first, otherwise newest elements; max 100 newest rows/table and 18000 content characters total. Counts, omissions, truncation and unavailable state explicit. No model SQL, writes or other-account queries. Tests cover current DB mutations reflected, isolation, forged selected IDs, count/truncation, selected old element and no database mutation. Forms browser integration sends the reported flame question after inserting a done=true row, and the mock provider asserts that exact stored value arrives. Separate real-model smoke uses synthetic data, not another user account. Snapshot is not continuous screen visibility, and complex computed streak/CSS logic is not automatically evaluated.
+
+Real GLM smoke: correctly reads the synthetic done=true row and no longer asserts zero check-offs. Residual limitation: even with explicit evidence instructions the model still speculates about flame/streak thresholds. No guarantee of hallucination-free rendering explanations; actual screen and computation rules are not evaluated by this read-context feature. Do not describe this as a verified repair of the specific user tracker.
+
+## Forms envelope recovery (2026-11-07)
+chat-envelope separates bare or fenced JSON metadata from prose, holds ambiguous streaming prefixes, and keeps library ownership/revision validation in parseChat. Unit tests cover chunk boundaries, uppercase fences, malformed/truncated payloads, foreign IDs and ordinary JSON prose. Original reported saved response tested read-only: three forms recovered and no metadata streamed. Browser suite runs with TEST_BARE_FORMS=1 as well as normal fences. Historical database rows are not rewritten.
+
+## Markdown prose (2026-11-07)
+Marked 18.1.3 + DOMPurify allowlist render assistant prose in streaming, restored in-flight and stored-history paths. Browser test covers headings, bold/emphasis/strike, ordered/unordered/task lists, quotes, links, tables, code and partial streams. Raw HTML escaped, images disabled (no tracking fetch), unsafe links removed; no model-controlled styles/IDs/events. Desktop/mobile screenshots inspected. Forms-flow asserts bold markup survives actual chat reload. User messages and generated sandbox artifacts unchanged.
+
+## Build placement — #e56484b7 (2026-11-07)
+The blueprint browser fixture pushes the old element outside the last-12 history window, confirms refinement, holds the provider, and verifies one construction site and one element at the new anchor on desktop/mobile and after reload. Completion preserves the stable ID, original prose, version history and interactive state. The extended fixture additionally checks failed build/retry/cancel, pin/element DB retention and foreign DB denial. element-timeline units cover repeated anchors, absent/foreign anchors and presentation without source mutation.
+Baseline against pre-release /opt/form with isolated fixture data failed at the missing construction site (placement-before.log); the first corrected placement assertions passed. Release evidence is recorded in docs/test-results/2026-11-07-placement-*.log; deployment and final extended-test result are recorded separately below. The historical npm test gate is still not claimed green.
+
+Final placement release: npm run test:blueprints exit 0 (62 unit tests passed, 1 optional skipped; all browser/integration stages passed), plus standalone Markdown browser suite exit 0. Extended blueprint test passed against deployed /opt/form source and bundle with isolated data, including failed/retried/cancelled builds, stable pin/state/DB and foreign DB denial. Live loopback and Tailnet homepage/auth/bundle 200; CSP verified; bundle SHA256 c7acf11a5c189dc815aa4b6de1b286ab936d00966a2884ed331029add4b76412. Restart performed as form user only after two zero-active-job checks. Rollback /opt/form/.rollback/20261107-build-placement/files.tar plus protected pm2 dump; restore code only, do not revert DB/user data. New src/element-timeline.js can remain inert on rollback.
+
+Version-control consolidation includes reviewed, already-deployed Form runtime changes and corresponding tests/docs that predated this placement run. Unrelated screenshots and live-provider replay evidence remain outside the commit. Push remains blocked by the absent remote; no destination was guessed.

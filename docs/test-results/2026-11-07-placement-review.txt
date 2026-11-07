@@ -1,0 +1,14 @@
+Scope e56484b7: stable per-build timeline anchor; no generated user product edited.
+Reviewed current server/jobs/store/app delta against deployed /opt/form: only placement and retry-display changes. Existing renderer/sanitizer/worker/blueprints/forms/bugs/provider runtime matches production byte-for-byte.
+Explicitly staged reviewed preexisting completed Form platform runtime, matching tests and docs per user requirement, together with placement dependencies. No blanket git add; user data, model credentials, live replay output and unrelated screenshots excluded.
+Baseline isolated production-runtime browser fixture: missing construction site after refining element outside last12. Source corrected desktop/mobile/reload/state/identity pass.
+Initial test failures: missing fixture created_at; hidden sidebar after mobile; stale built bundle caused retry visibility failure. Fixture/bundle reconciled, tests not weakened.
+No schema migration. New anchor messages are created only on explicit confirmed build. No old product rows rewritten.
+Push unavailable: repository has no configured remote. Existing blocker already notified, no guessed destination.
+a81a6d5f4808aa47dd0ebefed14beaa717db376cae2b3228079458e0bb30dae3  server.mjs
+e2e1d0bdbae67fa1a5ae9409c548d2beab88f67a20f612c6458193bad18e0928  jobs.mjs
+4a795b1412783f9947bbbcdcbe44fe62ca6e6de1a7ae0cfd074b43401f8fcdbd  store.mjs
+b566700f8c73dde37d325927f05f10a02cba1e71cda75c3454f7f4562acdcc24  src/app.js
+d8fb364354bf81edf2498358119a96a7db5cc7b4af4b67e2eb73083a182c5f10  src/element-timeline.js
+c7acf11a5c189dc815aa4b6de1b286ab936d00966a2884ed331029add4b76412  dist/app.js
+9ab3e300119faacd138cbfff07860cb1e79bedbb8d63d085dcdda9a5b03fc5eb  dist/bridge-hash.txt

@@ -1,12 +1,12 @@
 import {runRound} from './provider.mjs';
 // The app owns this loop. MCP only supplies tools, never agent orchestration.
-export async function runToolLoop(model,messages,{catalog,execute,signal,deadlineMs,maxRounds=6},emit=()=>{}){
+export async function runToolLoop(model,messages,{catalog,execute,signal,deadlineMs,onTransportRetry,maxRounds=6},emit=()=>{}){
   const history=structuredClone(messages);
   const tools=catalog.map(t=>({type:'function',function:{name:t.name,description:t.description,parameters:t.parameters}}));
   let calls=0;
   for(let round=0;round<maxRounds;round++){
     if(signal?.aborted)throw signal.reason||Error('Abgebrochen');
-    const result=await runRound(model,history,{signal,deadlineMs,tools},text=>emit({type:'prose-chunk',text}),()=>emit({type:'artifact-start'}));
+    const result=await runRound(model,history,{signal,deadlineMs,tools,onTransportRetry},text=>emit({type:'prose-chunk',text}),()=>emit({type:'artifact-start'}));
     if(!result.toolCalls.length)return {result,messages:history,calls};
     if(result.finishReason==='length')throw Error('Tool-Aufruf wurde abgeschnitten.');
     if(result.render||result.hadArtifact)throw Error('Element und Tool-Aufruf dürfen nicht gleichzeitig ausgeführt werden.');
