@@ -1,0 +1,28 @@
+
+> form3@3.3.0 test:form-sharing
+> node build.mjs && node --test test/element-sharing.test.mjs test/form-sharing.test.mjs test/forms.test.mjs && node test/form-sharing-browser.mjs
+
+build ok: dist/
+✔ opt-in acceptance and uniform foreign denial, no copied chats or capability transfer (349.595683ms)
+✔ actual shared rows update one namespace; forged namespace and schema operations cannot escape (258.905594ms)
+✔ revocation rechecks every read/write; new grant never reactivates old token (246.630954ms)
+✔ state updates remain visible, code changes fail closed until fresh acceptance (274.299327ms)
+✔ disabled accounts and deleted source are unavailable; additive table survives reopening (330.956682ms)
+✔ pending offers cannot read and quotas do not auto-share other elements (560.698513ms)
+✔ explicit recipient acceptance, immutable independent state, disabled copy, no capability transfer (290.853402ms)
+✔ revoked/declined offers cannot be accepted; stale revision and disabled sender rejected (260.289668ms)
+✔ actual persisted custom Form state is snapshotted, not template defaults or later edits (246.83473ms)
+✔ failed acceptance rolls back and pending offers are bounded (415.383305ms)
+✔ standard cards snapshot text and checkboxes into independent owned chats, atomically and once (452.564297ms)
+✔ Element templates: owned revision, independent fresh identity, no actions, withdrawal and quota rollback (360.491993ms)
+✔ private forms, versions, deletion without resurrection, safe rendering contract (266.556311ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2433.742075
+PASS Element copy: actual UI acceptance; independent state/reload; empty DB, owner/copy writes isolated, third-party denied; editable desktop/mobile.
+PASS: opt-in library/state copies; desktop/mobile/reload; CSRF/auth; three-account ACL; immutable snapshot37; revoked offer rejected; recipient-owned disabled copies.
