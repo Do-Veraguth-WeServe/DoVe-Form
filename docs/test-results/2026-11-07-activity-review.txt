@@ -1,0 +1,9 @@
+Report #74c9b87d; platform activity/reload continuity only.
+Baseline: activity-before.log fails at missing thinking indicator (existing plain notice).
+Final npm run test:blueprints exit 0: 62 initial unit passes, 1 optional skip; all browser/integration stages including new activity fixture passed. Historical npm test not claimed green.
+activity-final.log: updated foreign subscription handshake, desktop/mobile, live and restored chat/plan, partial Markdown, reduced motion including pseudo cursor, completion/cancel/error cleanup; separate Markdown suite passes.
+activity-deployed.log: same activity suite using /opt/form source + bundle with isolated temporary account/model/data, exit 0. No real provider invocation or user product changed.
+Live loopback + Tailnet home/auth/app status 200; bundle SHA256 59051ab8a608e9b983094c7e9ed12b6e41cd0d1cbf81560b7a947c730496e082; CSP present, registration remains closed.
+Restart as form only after zero-active-job checks immediately before copying and before restart. Existing environment preserved. Code rollback /opt/form/.rollback/20261107-activity/files.tar and protected pm2-dump.json. No database or model registry rollback needed.
+Only task-owned source/docs/test/activity screenshots and non-sensitive synthetic logs staged; prior screenshots and live replay artifacts not included.
+Push blocked: main has no configured remote (git remote -v empty). No repository destination guessed and no repeated attempt at the unchanged blocker. Report remains working pending push.

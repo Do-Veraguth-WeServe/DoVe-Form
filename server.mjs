@@ -283,7 +283,11 @@ const server = http.createServer(async (req, res) => {
     sse(res, 'snapshot', runner.snapshot(user.id)); // reconcile first, then live events
     const unsub = runner.subscribe(user.id, msg => {
       if (res.destroyed || !store.getSession(cookieToken(req))) { unsub();res.end(); return; }
-      if (msg.kind === 'job') sse(res, 'job', msg.job); // state changes only; prose streams ride the chat relay
+      if (msg.kind === 'job') sse(res, 'job', msg.job);
+      if(msg.kind==='stream'&&msg.event.type==='prose-chunk'){
+        const job=store.getJob(msg.jobId);
+        if(job&&job.userId===user.id&&['chat','plan'].includes(job.kind))sse(res,'prose',{jobId:job.id,prose:(job.prose||'').slice(0,8000)});
+      } // absolute snapshots avoid duplicate chunks after reconnect
     });
     const hb = setInterval(() => { if(!store.getSession(cookieToken(req))){res.end();return;}if (!res.destroyed) res.write(':hb\n\n'); }, 15000);
     res.on('close', () => { clearInterval(hb); unsub(); });

@@ -190,7 +190,8 @@ export class JobRunner {
       if (!model) throw Error('Modell nicht mehr konfiguriert.');
 
       if(job.kind==='chat'){
-        const parser=createChatStream(text=>this.emitStream(jobId,job.userId,{type:'prose-chunk',text}));
+        let partial='';
+        const parser=createChatStream(text=>{partial=(partial+text).slice(0,8000);this.store.setJobProse(jobId,partial);this.emitStream(jobId,job.userId,{type:'prose-chunk',text});});
         const out=await runRound(model,job.request.messages,{signal:ctrl.signal,textOnly:true,maxTokens:3200,deadlineMs:Date.now()+60000},t=>parser.feed(t),()=>{});parser.finish();
         const library=this.getForms(job.userId).filter(f=>(job.request.forms||[]).some(old=>old.id===f.id&&old.revision===f.revision));
         const result=parseChat(out.contentText,library);
@@ -206,7 +207,7 @@ export class JobRunner {
         const result=await runRound(model,job.request.messages,{signal:ctrl.signal,textOnly:true,maxTokens:2600,deadlineMs:Date.now()+60000},t=>{
           raw+=t;const m=raw.match(/^\s*<reply>([\s\S]*)/);if(!m)return;
           const text=m[1].split('</reply>')[0].split('<')[0].slice(0,1800);
-          if(text.length>sent){this.emitStream(jobId,job.userId,{type:'prose-chunk',text:text.slice(sent)});sent=text.length;this.store.setJobProse(jobId,text);}
+          if(text.length>sent){this.store.setJobProse(jobId,text);this.emitStream(jobId,job.userId,{type:'prose-chunk',text:text.slice(sent)});sent=text.length;}
         },()=>{});
         if(result.truncated)throw Error('Blueprint-Antwort zu lang. Bitte erneut versuchen.');
         const plan=parsePlan(result.contentText);

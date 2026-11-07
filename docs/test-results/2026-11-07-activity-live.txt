@@ -1,0 +1,9 @@
+http://127.0.0.1:5177/ 200
+http://127.0.0.1:5177/api/auth/status 200
+http://127.0.0.1:5177/app.js 200
+bundle sha256 59051ab8a608e9b983094c7e9ed12b6e41cd0d1cbf81560b7a947c730496e082
+https://fhisling.tail11036c.ts.net:9444/ 200
+https://fhisling.tail11036c.ts.net:9444/api/auth/status 200
+https://fhisling.tail11036c.ts.net:9444/app.js 200
+bundle sha256 59051ab8a608e9b983094c7e9ed12b6e41cd0d1cbf81560b7a947c730496e082
+source/deployed files identical; CSP present; production registration unchanged

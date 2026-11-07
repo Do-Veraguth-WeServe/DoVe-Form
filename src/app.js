@@ -232,7 +232,15 @@ function clearMark(){if(marked){marked=null;render()}}
 // --- background element jobs: construction site + event stream ---
 const CRANE='<rect x="6" y="88" width="208" height="5" rx="2" fill="#495153"/><g class="scaffold"><rect x="141" y="46" width="4" height="42" fill="#687374"/><rect x="195" y="46" width="4" height="42" fill="#687374"/><rect x="138" y="60" width="64" height="4" fill="#687374"/></g><rect class="block b1" x="148" y="74" width="43" height="13" rx="2"/><rect class="block b2" x="148" y="59" width="43" height="13" rx="2"/><rect class="block b3" x="148" y="44" width="43" height="13" rx="2"/><g class="craneg"><rect x="36" y="19" width="12" height="69" rx="2" fill="#d4ad54"/><rect x="24" y="83" width="36" height="6" rx="2" fill="#b58a36"/><rect x="17" y="13" width="176" height="9" rx="2" fill="#e4be63"/><rect x="12" y="21" width="22" height="16" rx="2" fill="#778385"/><rect x="48" y="23" width="18" height="16" rx="3" fill="#d4ad54"/><rect x="51" y="26" width="12" height="8" rx="1" fill="#344b57"/><g class="trolley"><rect x="113" y="22" width="10" height="6" rx="2" fill="#8c6c2e"/><path class="cable" d="M118 28V50" stroke="#bbc4c3" stroke-width="2"/><rect class="load" x="103" y="50" width="30" height="13" rx="2"/></g></g>';
 const SITE_PHASE={queued:'in Warteschlange …',building:'baut …',validating:'prüft das Ergebnis …'};
+function activityEl(writing=false,jobId){
+  const d=document.createElement('div');d.className='activity planning';d.dataset.phase=writing?'writing':'thinking';if(jobId)d.dataset.jobid=jobId;d.setAttribute('role','status');
+  const dots=document.createElement('span');dots.className='activity-dots';dots.setAttribute('aria-hidden','true');
+  for(let i=0;i<3;i++){const dot=document.createElement('i');dot.className='activity-dot';dots.append(dot)}
+  const label=document.createElement('span');label.className='activity-label';label.textContent=writing?'Form antwortet …':'Form denkt mit …';d.append(dots,label);return d;
+}
+function setActivityWriting(d){if(!d||d.dataset.phase==='writing')return;d.dataset.phase='writing';d.querySelector('.activity-label').textContent='Form antwortet …';}
 function siteEl(job){
+  if(['plan','chat'].includes(job?.kind)&&['queued','building','validating'].includes(job.state))return activityEl(!!job.prose,job.id);
   if(['plan','chat'].includes(job?.kind)){const p=document.createElement('p');p.className='notice planning';p.textContent=job.state==='failed'?(job.error||'Planung fehlgeschlagen.'):'Form denkt mit …';if(job.state==='failed'){const b=document.createElement('button');b.textContent='Erneut besprechen';b.onclick=()=>jobAction('retry',job.id);p.append(b)}return p;}
   const d=document.createElement('div');d.className='site'+(job&&job.state==='failed'?' failed':job&&job.state==='cancelled'?' cancelled':'');
   if(job)d.dataset.jobid=job.id;
@@ -272,6 +280,7 @@ function applyJob(job,opts){
   if(job.kind==='plan'&&ACTIVE_JOB.includes(job.state)){const b=document.querySelector('.blueprint-execute');if(b)b.disabled=true;}
   const rerender=opts?opts.rerender!==false:true;
   const prev=jobs.get(job.id);
+  if(prev&&Number(prev.rev)===Number(job.rev)&&typeof job.prose==='string')prev.prose=job.prose; // prose checkpoints do not increment the state revision
   if(prev&&Number(prev.rev)>=Number(job.rev)&&prev.state!=='queued'&&job.state!=='ready')return; // stale event
   const wasActive=prev&&ACTIVE_JOB.includes(prev.state);
   jobs.set(job.id,job);
@@ -372,6 +381,15 @@ function connectJobs(){
       if(!ACTIVE_JOB.includes(j.state)&&[...pending].some(r=>r.jobId===j.id)){
         void recoverCompletedTurns(new Set([j.id]));
       }else applyJob(j);
+    }catch{}});
+    jobStream.addEventListener('prose',e=>{try{
+      const data=JSON.parse(e.data),job=jobs.get(data.jobId);
+      if(!job||!['chat','plan'].includes(job.kind)||!ACTIVE_JOB.includes(job.state)||typeof data.prose!=='string')return;
+      job.prose=data.prose.slice(0,8000);
+      if([...pending].some(r=>r.jobId===job.id))return; // live POST relay owns this turn
+      const indicator=document.querySelector('.activity[data-jobid="'+job.id+'"]');if(!indicator)return;
+      const article=indicator.closest('.message'),st=scrollState();let p=article.querySelector('.prose');
+      if(!p){p=document.createElement('div');article.insertBefore(p,indicator)}p.className='prose writing';renderMarkdown(p,job.prose);if(job.prose)setActivityWriting(indicator);restoreScroll(st);
     }catch{}});
     jobStream.onerror=()=>{ // auth lost or stream failed: reconnect with fresh snapshot
       try{jobStream.close()}catch{}
@@ -505,7 +523,8 @@ function render(){  views.forEach(v=>v.destroy());views=[];
         article.innerHTML='<div class="byline">Form</div>';
         if(m.error&&!['queued','building','validating'].includes(pendingJobFor(m.id)?.state)){const n=document.createElement('div');n.className='notice error';n.textContent=m.error;article.append(n);const failed=pendingJobFor(m.id);if(failed?.messageId===m.id&&failed.state==='failed')article.append(siteEl(failed));}
         else{
-          if(m.prose){const p=document.createElement('div');p.className='prose';renderMarkdown(p,m.prose);article.append(p)}
+          const turnJob=pendingJobFor(m.id);const answering=['plan','chat'].includes(turnJob?.kind)&&ACTIVE_JOB.includes(turnJob.state);const turnProse=answering?(turnJob.prose||m.prose):m.prose;
+          if(turnProse){const p=document.createElement('div');p.className='prose'+(answering?' writing':'');renderMarkdown(p,turnProse);article.append(p)}
           if(m.forms){for(const f of m.forms.items||[]){if(f.layout==='custom'&&f.template){const view=renderUI({...f.template,state:{...f.template.state,...f.data}},{onSuggest:fillSuggestion,onError:toast,onState:state=>{f.data=state;save();uiRequest('/api/forms/state',{messageId:m.id,index:m.forms.items.indexOf(f),state}).catch(e=>toast(e.message));}});views.push(view);article.append(view.element);}else article.append(formCard(f,{suggest:fillSuggestion}));}for(const e of m.forms.edits||[])article.append(formsUI.proposal(e,m.id,m.forms.edits.indexOf(e)));}
           const job=pendingJobFor(entry.element?.id||m.id);
           if(job&&job.kind==='create'&&!m.render&&!m.error){
@@ -576,14 +595,15 @@ function liveMessage(mode,modelLabel){
   const p=document.createElement('div');p.className='prose';p.setAttribute('aria-live','polite');
   const slot=document.createElement('div');slot.className='artslot';
   const note=document.createElement('div');note.className='small';
-  const thinking=document.createElement('p');thinking.className='notice planning';thinking.textContent='Form denkt mit …';slot.append(thinking);
+  slot.append(activityEl());
   a.append(p,slot,note);feed.append(a);
   return {el:a,
     prose:t=>{
       if(!p.textContent&&t)p.classList.add('writing');
       renderMarkdown(p,t); // no forced viewport movement while streaming
+      if(t)setActivityWriting(slot.querySelector('.activity'));
     },
-    site:job=>{slot.replaceChildren(siteEl(job))},
+    site:job=>{slot.replaceChildren(siteEl(job));if(p.textContent)setActivityWriting(slot.querySelector('.activity'))},
     note:t=>{note.textContent=t;note.className='notice'},
     error:t=>{note.textContent=t;note.className='notice error'}
   };

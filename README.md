@@ -10,7 +10,7 @@ Planung hat serverseitig keine Tools und keine Render-Persistenz. Bestätigte Ba
 
 **v3.3 «Echte Hintergrund-Baustelle & Scroll-Anker»**:
 - Element-Erstellung ist ein **servereigener Hintergrundjob** (SQLite-Tabelle `jobs`): Der Chat endet, während das Element weiterbaut — weitere Nachrichten werden sofort beantwortet. Jobs überleben Reload und Tab-Schliessen (Snapshot + Event-Stream, keine Duplikate, kein zweiter Provider-Aufruf), Abbrechen/Wiederholen pro Baustellen-Container, Restart markiert unterbrochene Jobs ehrlich als fehlgeschlagen.
-- Jedes künftige Element hat seinen **Baustellen-Container** (Kran, Gerüst, Blöcke — reduced-motion statisch) mit ehrlichen Phasentexten (in Warteschlange/baut/prüft) statt Fake-Prozenten; davor «Denken» (wachsendes ⌑-Drahtgitter) und «Schreiben» (Cursor-Puls) live am Stream.
+- Jedes künftige Element hat seinen **Baustellen-Container** (Kran, Gerüst, Blöcke — reduced-motion statisch) mit ehrlichen Phasentexten (in Warteschlange/baut/prüft) statt Fake-Prozenten; davor «Denken» (pulsierende Punkte) und «Schreiben» (Antwortanzeige und Cursor-Puls) live am Stream.
 - **Scroll-Anker**: Absenden (Enter/Button), Streaming und Element-Fertigstellung springen den Viewport weder an den Anfang noch automatisch ans Ende; 390px inklusive.
 
 **v3.2 «Accounts & Daten»**:
@@ -153,3 +153,6 @@ Chat und Planung erhalten einen begrenzten, datierten Lesestand der Elementdaten
 
 ### Bauposition im Verlauf (#e56484b7)
 Jeder bestätigte Bau bekommt eine neue Position am aktuellen Ende des Chats. Auch ein älteres Element wird dort genau einmal angezeigt, während es aktualisiert wird, und bleibt nach erfolgreichem Bau dort. Frühere Texte und Formen bleiben an ihrer ursprünglichen Position. Identität, Pins, Versionen und Elementdatenbank ändern sich nicht. Fehler oder Abbruch erhalten den letzten erfolgreichen Stand; Wiederholen bleibt ausdrücklich. Bestehende Benutzerprodukte werden nicht automatisch repariert oder neu gebaut.
+
+### Denk- und Antwortanimationen (#74c9b87d)
+Chat und Planung zeigen sofort drei ruhig pulsierende Punkte. Sobald sichtbarer Text eintrifft, wechselt die Anzeige zu «Form antwortet …» mit Schreibcursor. Der Zustand und begrenzte Teiltext bleiben nach Reload erhalten; Abschluss, Fehler und Abbruch beenden die Animation. Reduzierte Bewegung deaktiviert auch den Cursor. Der Baukran bleibt ausschliesslich beim ausdrücklich gestarteten Bau. Die Anzeige beschreibt die Antwortphase, nicht interne Modellgedanken oder einen gemessenen Fertigstellungsgrad.
