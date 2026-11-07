@@ -5,10 +5,27 @@ const HOST_OK=/^[a-z0-9.-]{1,253}$/i;
 export function bridge(){
   const channel=document.currentScript.dataset.channel;
   const send=(type,data={})=>parent.postMessage({channel,type,...data},'*');
-  let port;
+  let port,scrollParent=false,touch=null;
+  // Only app-owned bootstrap sees real touch events; guest JS has no scrolling API.
+  addEventListener('touchstart',e=>{
+    if(!scrollParent||!e.isTrusted||e.touches.length!==1){touch=null;return;}
+    const t=e.touches[0];touch={x:t.screenX,y:t.screenY,lastY:t.screenY,vertical:false};
+  },{passive:true});
+  addEventListener('touchmove',e=>{
+    if(!touch||!e.isTrusted||e.touches.length!==1)return;
+    const t=e.touches[0],dy=touch.lastY-t.screenY;
+    if(!touch.vertical){
+      if(Math.abs(t.screenY-touch.y)<8)return;
+      if(Math.abs(t.screenX-touch.x)>Math.abs(t.screenY-touch.y)){touch=null;return;}
+      touch.vertical=true;
+    }
+    e.preventDefault();touch.lastY=t.screenY;
+    port?.postMessage({type:'scroll-parent',delta:Math.max(-160,Math.min(160,dy))});
+  },{passive:false});
+  for(const type of ['touchend','touchcancel'])addEventListener(type,()=>{touch=null;},{passive:true});
   addEventListener('message',e=>{
     if(e.source!==parent||e.data?.channel!==channel||!e.ports[0]||port)return;
-    port=e.ports[0];
+    port=e.ports[0];scrollParent=e.data.scrollParent===true;
     port.onmessage=({data:ops})=>{
       if(!Array.isArray(ops)||ops.length>250)return;
       for(const o of ops){
@@ -63,7 +80,7 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction}={
     if(e.data.type!=='ready'||worker)return;
     const ch=new MessageChannel();
     port=ch.port1;
-    f.contentWindow.postMessage({channel},'*',[ch.port2]);
+    f.contentWindow.postMessage({channel,scrollParent:!!f.closest('#feed')},'*',[ch.port2]);
     worker=new Worker('/worker.js',{type:'module'});
     const dispatch=d=>{
       if(!worker||stopped)return;
@@ -88,6 +105,9 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction}={
     };
     port.onmessage=({data:d})=>{
       if(d?.type==='applied'){f.style.visibility='';f.removeAttribute('aria-busy');f.dataset.ready='true';}
+      if(d?.type==='scroll-parent'&&Number.isFinite(d.delta)&&Math.abs(d.delta)<=160){
+        const feed=f.closest('#feed');if(feed&&f.isConnected)feed.scrollTop+=d.delta;
+      }
       if(d?.type==='event')dispatch(d);
       if(d?.type==='misuse')onError('Hinweis: ui.value gilt nur für Eingabefelder — dynamische Inhalte gehören in ui.html.');
     };

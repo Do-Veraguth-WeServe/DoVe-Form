@@ -1,5 +1,11 @@
 # Testing
 
+## Mobile Element-Gesten — #8271aa99 (2026-11-07)
+
+`node test/element-scroll.test.mjs` nutzt isolierte Konten und Chromium-CDP-Touchgesten bei 390×844. Vorher-Nachweis: Chat scrollTop=0, innerer Element-Scroller=207. Korrektur: Chat=144, innerer Scroller=0 bei 144 px Fingergeste. Zusätzlich: Button-Tap, gefälschte globale Scrollnachricht und unabhängiges internes Scrollen im Vollbild-Overlay. Logs: `docs/test-results/2026-11-07-element-touch-*.log`. Keine Prüfung auf physischem iOS/Safari; kein künstlicher Nachlauf/Momentum. Keine Benutzerartefakte verändert.
+
+Ausgerollt und geprüft: `npm run test:blueprints` exit 0; separate Units 24 bestanden / 1 optional übersprungen; Touch-Suite zusätzlich gegen `/opt/form/server.mjs` und dessen Bundles mit isoliertem Data-Dir bestanden (Test-Harness aus Source wegen dort installierter Playwright-Devdependency). Live-Homepage und Auth-Status über Loopback und Tailnet HTTPS 200; ausgelieferter Bundle-SHA256 `03095191b934bdc25260f0aa684cb4edc931863c85a11f03d74774bac8eda4ae`, CSP-Bridgehash passend. Neustart nur nach Prüfung auf null aktive Jobs. Rollback: `/opt/form/.rollback/20261107-element-touch/files.tar` plus pm2-Dump; ausschliesslich enthaltene Code-/Dokumentationsdateien wiederherstellen, dann bei inaktiven Jobs im form-User-Scope neu starten; keine DB-Rücksicherung. Vollständiges historisches `npm test` nicht als grün behauptet (siehe Legacy-Hinweis unten).
+
 Testlauf: `npm test` (orchestriert alles: build → unit → mock+server → api → browser).
 
 ```

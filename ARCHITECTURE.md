@@ -85,6 +85,10 @@ Stop = Client bricht den fetch ab → Server sieht `res.close` → `AbortControl
 - Sandbox-API `ui.ping(host, callback)`: Bridge schickt `{op:"ping"}` an die App; die App ruft `POST /api/ping` (CSRF/Origin/JSON wie Chat) auf; das Ergebnis wird als synthetisches Event an den Worker zurückgeliefert (Callback bekommt `{host, ok, ip, ms}` bzw. `{ok:false, error}`). Queue-Max 8, Ungültige Hosts sofort `ok:false`.
 - Server (`ping.mjs`): strikter Hostname (≥2 Labels, keine IP-Literale/URLs/Ports, keine rein numerischen TLDs), DNS-Auflösung aller A/AAAA, jede Adresse gegen private/reservierte Bereiche (net.BlockList, v4+v6 inkl. IPv4-mapped per Fallback — `::ffff:0:0/96` darf NICHT in die BlockList, sonst sperrt es alles IPv4), dann `execFile('/bin/ping',['-c','1','-W','2',ip])` mit Timeout. Antwort `{ok,ip,ms}` / `{ok:false,error}`; 403 bei blockierten Ranges, 400 bei invalidem Host, 429 bei >10 Pings/Minute/Session; jeder Ping geloggt (`[ping] session host ip ok`). Kein fetch, keine Sockets, kein exec aus Elementen — die Sandbox bleibt netzfrei.
 
+## Mobile Touch-Weiterleitung
+
+Der vertrauenswürdige iframe-Bootstrap leitet vertikale Einfinger-Gesten nur bei Inline-Elementen im Chat über den privaten MessageChannel an den app-eigenen Feed weiter. screen-Koordinaten verhindern Rückkopplung durch das mitbewegte iframe. Ein Delta ist auf 160 px begrenzt; nur echte Browser-Touchereignisse werden verarbeitet. Horizontale Gesten, Taps und das Vollbild-Overlay behalten ihr natives Verhalten. Weder generiertes JS noch globale postMessage-Aufrufe erhalten eine Scroll-API.
+
 ## Renderer-Pipeline (portiert aus v2, unveränderte Security-Eigenschaften)
 
 - **QuickJS-Worker** (`src/worker.js`): 16 MB Heap, 256 KB Stack, Interrupt-Deadline pro Evaluation, Op-Budget 250, Grössenlimits pro Op. Generiertes JS bekommt *nur* `state` + `ui.*` (text/value/html/attr/on/persist/suggest/ping/db) — keine Browser-Objekte; `ping`/`db` laufen als op über die App (authentifizierter Server-Call), nicht im Sandbox-Netz.

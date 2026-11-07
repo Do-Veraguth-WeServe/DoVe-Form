@@ -80,6 +80,7 @@ Alles Persistente liegt in **einem** Verzeichnis: `data/` — `form.db` (Benutze
 - **Stoppen** bricht die Modell-Antwort sofort ab (auch upstream).
 - Gespräche liegen **serverseitig** (max. 40 pro Benutzer); localStorage ist Cache. Export/Import als JSON — ohne Modelle und Keys. Beim ersten Login gibt es ein Import-Angebot für alte lokale Gespräche.
 - Pro Anfrage gehen die letzten ~12 Nachrichten + die 3 letzten Artefakt-Zustände upstream (beides lädt der Server aus seinem Store, nicht aus dem Client).
+- Auf dem Handy scrollen vertikale Wischgesten über Inline-Elementen den Chat statt einen inneren Elementbereich; zum separaten Scrollen eines Elements die Vollbildansicht öffnen.
 - Mobil ab 390px nutzbar; `prefers-reduced-motion` schaltet die Zeichen-Animation still.
 
 ## Sicherheit (auch im Local Dev)
