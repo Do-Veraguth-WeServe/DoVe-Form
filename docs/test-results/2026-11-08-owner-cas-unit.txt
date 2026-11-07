@@ -1,0 +1,31 @@
+✔ opt-in acceptance and uniform foreign denial, no copied chats or capability transfer (294.848377ms)
+✔ actual shared rows update one namespace; forged namespace and schema operations cannot escape (294.447745ms)
+✔ revocation rechecks every read/write; new grant never reactivates old token (291.875577ms)
+✔ state updates remain visible, code changes fail closed until fresh acceptance (281.540927ms)
+✔ disabled accounts and deleted source are unavailable; additive table survives reopening (267.127546ms)
+✔ pending offers cannot read and quotas do not auto-share other elements (489.332103ms)
+✔ grant listing is paginated and account scoped without pending source data (280.919519ms)
+✔ state compare-and-set detects stale snapshots without editing code (261.674924ms)
+✔ state errors roll back and unavailable grants cannot disclose conflict state (265.194249ms)
+✔ recipient create compatibility never changes schema and matches owner response (277.919619ms)
+✔ separate recipients share conflict token and failed persistence is atomic (345.886445ms)
+✔ cross-process revocation cannot interleave shared row authorization and use (528.955623ms)
+✔ cross-process disable cannot interleave offer or acceptance checks (592.29173ms)
+✔ shared snapshots are coherent against cross-process revocation (502.856232ms)
+✔ owner persistence preserves legacy saves but requires CAS for active shared code (320.790332ms)
+✔ owner code replacement is atomic, versioned and invalidates accepted code (340.781276ms)
+✔ owner CAS holds writer lock through snapshot and persistence (451.053773ms)
+✔ explicit recipient acceptance, immutable independent state, disabled copy, no capability transfer (332.316464ms)
+✔ revoked/declined offers cannot be accepted; stale revision and disabled sender rejected (316.611695ms)
+✔ actual persisted custom Form state is snapshotted, not template defaults or later edits (321.674104ms)
+✔ failed acceptance rolls back and pending offers are bounded (397.450985ms)
+✔ standard cards snapshot text and checkboxes into independent owned chats, atomically and once (358.905768ms)
+✔ Element templates: owned revision, independent fresh identity, no actions, withdrawal and quota rollback (312.635949ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6446.901197

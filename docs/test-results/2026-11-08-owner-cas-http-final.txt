@@ -1,0 +1,1 @@
+PASS grant HTTP: three-account ACL, auth/CSRF/Origin/type/method/size/rate, opt-in, owner/recipient CAS, stale editor denial, row identity, disabled users, revocation, private legacy persistence, logout-during-upload at both write routes, lock recovery.

@@ -37,6 +37,17 @@ try{
  const changed=await call(1,'/state',{id,state:{n:2},expectedRevision:view.data.stateRevision,messageId:'forged'});assert.equal(changed.status,200);
  assert.equal((await call(0,'/state',{id,state:{n:3},expectedRevision:view.data.stateRevision})).status,409);
  assert.equal(s.getRender(mid).state.n,2);
+ const ownerSave=async(body,who=0)=>{const r=await fetch(base+'/api/state',{method:'POST',headers:{cookie:'form3sess='+sessions[who].token,'content-type':'application/json','x-form-csrf':sessions[who].csrf,origin:base},body:JSON.stringify({messageId:mid,...body})});return {status:r.status,data:await r.json()};};
+ assert.equal((await ownerSave({state:{n:50}})).status,409,'legacy owner must not overwrite shared state without a revision');
+ const staleOwner=await ownerSave({state:{n:50},expectedRevision:view.data.stateRevision});
+ assert.equal(staleOwner.status,409);assert.equal(staleOwner.data.state.n,2);assert.equal(s.getRender(mid).state.n,2);
+ const ownerWrite=await ownerSave({state:{n:3},expectedRevision:changed.data.stateRevision});assert.equal(ownerWrite.status,200);
+ assert.equal((await call(1,'/state',{id,state:{n:4},expectedRevision:changed.data.stateRevision})).status,409);
+ assert.equal((await ownerSave({render:{...render,html:'stale replacement'},expectedRevision:changed.data.stateRevision})).status,409);
+ assert.equal(s.getRender(mid).html,render.html);
+ assert.equal((await ownerSave({state:{n:100}},2)).status,403);
+ assert.equal((await ownerSave({state:{n:2},expectedRevision:ownerWrite.data.stateRevision})).status,200);
+
  assert.equal((await call(0,'/db',{id,op:'create',table:'counter'})).status,200);
  assert.equal((await call(1,'/db',{id,op:'create',table:'counter'})).status,409);
  assert.equal((await call(1,'/db',{id,op:'insert',table:'counter',row:{n:7}})).status,200);
@@ -55,24 +66,29 @@ try{
  assert.equal((await call(0,'/close',{id})).status,200);
  for(const route of ['/state','/db','/accept'])assert.equal((await call(1,route,{id,state:{n:9},op:'select',table:'counter'})).status,404);
  assert.equal((await call(1,'/view?id='+id)).status,404);
+ assert.equal((await ownerSave({state:{n:6}})).status,200,'closed grants restore legacy private save compatibility');
  // Hold the request body open, prove initial session lookup happened via sliding
  // expiry, then log out before the final byte. No stale session may offer a grant.
+ for(const target of [prefix+'/offer','/api/state']){
+ const payload=target==='/api/state'?{messageId:mid,state:{n:999}}:offer;
  const tokenHash=crypto.createHash('sha256').update(sessions[0].token).digest('hex');
  const initialExpiry=Date.now()+60000;
  s.db.prepare('UPDATE sessions SET expires_at=? WHERE token_hash=?').run(initialExpiry,tokenHash);
  let req;
  const response=new Promise((resolve,reject)=>{
-   req=http.request(base+prefix+'/offer',{method:'POST',headers:{cookie:'form3sess='+sessions[0].token,'content-type':'application/json','x-form-csrf':sessions[0].csrf,origin:base}},res=>{res.resume();res.on('end',()=>resolve(res.statusCode));});req.on('error',reject);
+   req=http.request(base+target,{method:'POST',headers:{cookie:'form3sess='+sessions[0].token,'content-type':'application/json','x-form-csrf':sessions[0].csrf,origin:base}},res=>{res.resume();res.on('end',()=>resolve(res.statusCode));});req.on('error',reject);
  });
- req.write(JSON.stringify(offer).slice(0,-1));
+ req.write(JSON.stringify(payload).slice(0,-1));
  await new Promise(r=>setTimeout(r,100));
  assert.ok(s.db.prepare('SELECT expires_at FROM sessions WHERE token_hash=?').get(tokenHash).expires_at>initialExpiry,'initial auth completed before logout');
  s.deleteSession(sessions[0].token);req.end('}');assert.equal(await response,401);
  sessions[0]=s.createSession(users[0].id);
+ assert.equal(s.getRender(mid).state.n,6,'logout during upload must not write owner state');
+ }
  assert.equal((await call(0)).data.grants.filter(g=>g.status==='pending').length,0);
  // Contention is recoverable and never leaks SQL internals.
  s.db.exec('BEGIN IMMEDIATE');try{const locked=await call(0);assert.equal(locked.status,503);assert.equal(locked.data.error,'Dienst beschäftigt. Bitte neu laden.');}finally{s.db.exec('ROLLBACK');}
  assert.equal((await call(0)).status,200);
  let limited=false;for(let i=0;i<65;i++){if((await call(2)).status===429){limited=true;break;}}assert.ok(limited);
- console.log('PASS grant HTTP: three-account ACL, auth/CSRF/Origin/type/method/size/rate, opt-in, state conflict, row identity, disabled users, revocation, lock recovery.');
+ console.log('PASS grant HTTP: three-account ACL, auth/CSRF/Origin/type/method/size/rate, opt-in, owner/recipient CAS, stale editor denial, row identity, disabled users, revocation, private legacy persistence, logout-during-upload at both write routes, lock recovery.');
 }finally{if(app&&app.exitCode===null){app.kill('SIGTERM');await once(app,'exit');}s.close();fs.rmSync(dir,{recursive:true,force:true});}

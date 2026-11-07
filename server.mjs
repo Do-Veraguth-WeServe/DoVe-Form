@@ -487,24 +487,20 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'POST' && pathname === '/api/state') {
     let d;
     try { d = JSON.parse(await readBody(req, 100000)); } catch { return reply(res, 400, { error: 'Ungültige Anfrage' }); }
-    if (!UUID.test(d.messageId || '')) return reply(res, 400, { error: 'Ungültige Anfrage' });
+    if (!d || typeof d!=='object' || Array.isArray(d) || !UUID.test(d.messageId || '')) return reply(res,400,{error:'Ungültige Anfrage'});
+    res.setHeader('Cache-Control','no-store');
+    // The upload may outlive logout/disable. Recheck before touching an Element.
+    let fresh;
+    try { fresh=store.getSession(cookieToken(req)); }
+    catch { res.setHeader('Retry-After','1');return reply(res,503,{error:'Dienst beschäftigt. Bitte neu laden.'}); }
+    if(!fresh||fresh.user.id!==user.id||fresh.csrf!==sess.csrf)return reply(res,401,{error:'Anmeldung erforderlich.'});
     try {
-      const mo = store.messageOwner(d.messageId);
-      if (!mo || mo.userId !== user.id || !mo.hasRender) throw Error('Element nicht gefunden');
-      if (d.render != null) {
-        let render;
-        try { render = validateRender(d.render); } catch { throw Error('Ungültiges Element'); }
-        store.replaceRender(mo.conversationId, d.messageId, render);
-        return reply(res, 200, { ok: true });
-      }
-      if (!d.state || typeof d.state !== 'object' || Array.isArray(d.state) || JSON.stringify(d.state).length > 4096)
-        return reply(res, 400, { error: 'Ungültiger Zustand' });
-      const render = store.getRender(d.messageId);
-      if (!render) throw Error('Element nicht gefunden');
-      render.state = d.state;
-      store.updateMessageRender(user.id, d.messageId, render);
-      return reply(res, 200, { ok: true });
-    } catch (e) { return reply(res, 403, { error: String(e.message || e).slice(0, 120) }); }
+      const result=elementSharing.ownerSave(user.id,d.messageId,d);
+      return reply(res,result.status,result.result);
+    } catch(e) {
+      if([5,6].includes(e.errcode)){res.setHeader('Retry-After','1');return reply(res,503,{error:'Dienst beschäftigt. Bitte neu laden.'});}
+      return reply(res,403,{error:'Element nicht verfügbar oder Zustand ungültig.'});
+    }
   }
 
   if (req.method === 'POST' && pathname === '/api/pin') {

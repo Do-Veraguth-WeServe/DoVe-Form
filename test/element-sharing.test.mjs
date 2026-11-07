@@ -196,3 +196,45 @@ test('shared snapshots are coherent against cross-process revocation',()=>fixtur
  assert.throws(()=>x.view(b.id,g.id));
  assert.deepEqual(x.list(b.id).grants,[{id:g.id,direction:'incoming',status:'revoked'}]);
 }));
+
+
+test('owner persistence preserves legacy saves but requires CAS for active shared code',()=>fixture(({s,a,b,c,mid,render,x,input})=>{
+ const first=x.ownerSave(a.id,mid,{state:{n:5}});assert.equal(first.status,200);
+ const g=x.offer(a.id,input);assert.equal(x.ownerSave(a.id,mid,{state:{n:6}}).status,200); // pending is not shared
+ x.accept(b.id,g.id);const token=x.view(b.id,g.id).stateRevision;
+ assert.equal(x.ownerSave(a.id,mid,{state:{n:7}}).status,409);
+ assert.throws(()=>x.ownerSave(b.id,mid,{state:{n:7}}));assert.throws(()=>x.ownerSave(c.id,mid,{state:{n:7}}));
+ assert.equal(x.state(b.id,g.id,{state:{n:8},expectedRevision:token}).status,200);
+ assert.equal(x.ownerSave(a.id,mid,{state:{n:9},expectedRevision:token}).status,409);
+ const latest=x.view(b.id,g.id).stateRevision;
+ for(const state of [null,[],false,{x:'ö'.repeat(2200)}])assert.throws(()=>x.ownerSave(a.id,mid,{state,expectedRevision:latest}));
+ assert.equal(s.getRender(mid).state.n,8);assert.deepEqual(s.getRender(mid).actions,render.actions);
+ assert.equal(x.ownerSave(a.id,mid,{state:{n:10},expectedRevision:latest}).status,200);
+ assert.equal(x.state(b.id,g.id,{state:{n:11},expectedRevision:latest}).status,409);
+ x.close(a.id,g.id);assert.equal(x.ownerSave(a.id,mid,{state:{n:12}}).status,200);
+ // Even unshared clients opting into CAS must not overwrite stale snapshots.
+ assert.equal(x.ownerSave(a.id,mid,{state:{n:13},expectedRevision:latest}).status,409);
+}));
+test('owner code replacement is atomic, versioned and invalidates accepted code',()=>fixture(({s,a,b,mid,render,x,input})=>{
+ const g=x.offer(a.id,input);x.accept(b.id,g.id);const token=x.view(b.id,g.id).stateRevision;
+ const versionCount=()=>s.db.prepare('SELECT count(*) n FROM versions WHERE message_id=?').get(mid).n;
+ const before=versionCount(),original=s.replaceRender;
+ try{s.replaceRender=function(...args){original.apply(this,args);throw Error('fixture write failure');};
+ assert.throws(()=>x.ownerSave(a.id,mid,{render:{...render,html:'new'},expectedRevision:token}),/fixture write failure/);
+ }finally{s.replaceRender=original;}
+ assert.equal(versionCount(),before);assert.equal(s.getRender(mid).html,render.html);
+ assert.equal(x.ownerSave(a.id,mid,{render:{...render,html:'new'},expectedRevision:token}).status,200);
+ assert.equal(versionCount(),before+1);assert.throws(()=>x.view(b.id,g.id));
+ assert.equal(x.ownerSave(a.id,mid,{state:{n:14}}).status,200,'old code grant cannot block current private code');
+ s.db.prepare('UPDATE users SET disabled=1 WHERE id=?').run(a.id);assert.throws(()=>x.ownerSave(a.id,mid,{state:{n:15}}));
+}));
+test('owner CAS holds writer lock through snapshot and persistence',()=>fixture(({s,a,b,mid,render,x,input})=>{
+ const g=x.offer(a.id,input);x.accept(b.id,g.id);const token=x.view(b.id,g.id).stateRevision;
+ const original=s.updateMessageRender;let observed;
+ try{s.updateMessageRender=function(...args){observed=competingWrite(s,'UPDATE messages SET render=? WHERE id=?',[JSON.stringify({...render,state:{n:99}}),mid]);return original.apply(this,args);};
+ assert.equal(x.ownerSave(a.id,mid,{state:{n:20},expectedRevision:token}).status,200);
+ }finally{s.updateMessageRender=original;}
+ assert.equal(observed,'locked');assert.equal(s.getRender(mid).state.n,20);
+ assert.equal(competingWrite(s,'UPDATE messages SET render=? WHERE id=?',[JSON.stringify({...render,state:{n:21}}),mid]),'written');
+ assert.equal(x.ownerSave(a.id,mid,{state:{n:22},expectedRevision:token}).status,409);assert.equal(s.getRender(mid).state.n,21);
+}));

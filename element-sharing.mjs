@@ -109,6 +109,27 @@ export class ElementSharing {
       return {id,render:safe,codeRevision:elementCodeRevision(render),stateRevision:elementStateRevision(safe.state),canEdit:false};
     });
   }
+  // Owner saves use the same state token as recipients. Legacy unshared saves
+  // remain compatible; once a current-code grant is active, a token is mandatory.
+  // Full code replacements also participate, so stale editor snapshots cannot
+  // silently discard another participant's state. No client grant ID is trusted.
+  ownerSave(uid,messageId,{state,render:replacement,expectedRevision}={}) {
+    return this.locked(() => {
+      this.activeUser(uid);
+      const owner=this.store.messageOwner(messageId);
+      if(!owner||owner.userId!==uid||!owner.hasRender)unavailable();
+      const render=this.store.getRender(messageId);
+      const shared=this.db.prepare("SELECT 1 FROM element_grants WHERE owner_id=? AND message_id=? AND code_revision=? AND status='active' LIMIT 1").get(uid,messageId,elementCodeRevision(render));
+      const revision=elementStateRevision(render.state);
+      if((shared||expectedRevision!==undefined)&&expectedRevision!==revision)
+        return {status:409,result:{ok:false,error:'Zustand wurde geändert. Neu laden.',state:render.state,stateRevision:revision}};
+      if(replacement==null&&(!state||typeof state!=='object'||Array.isArray(state)||Buffer.byteLength(JSON.stringify(state))>4096))throw Error('Ungültiger Zustand.');
+      const next=validateRender(replacement??{...render,state});
+      if(replacement!=null)this.store.replaceRender(owner.conversationId,messageId,next);
+      else this.store.updateMessageRender(uid,messageId,next);
+      return {status:200,result:{ok:true,state:next.state,stateRevision:elementStateRevision(next.state)}};
+    });
+  }
   state(uid,id,{state,expectedRevision}={}) {
     // Acquire write lock BEFORE authorization so revocation/disable/code replacement
     // from another SQLite connection cannot race the check and mutation.
