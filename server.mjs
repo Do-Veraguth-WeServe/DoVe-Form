@@ -2,6 +2,7 @@ import {Bugs} from './bugs.mjs';
 import {elementEvidence,ELEMENT_EVIDENCE_POLICY} from './element-context.mjs';
 import {Forms,chatPrompt} from './forms.mjs';
 import {FormSharing} from './form-sharing.mjs';
+import {ElementSharing} from './element-sharing.mjs';
 import {planningPrompt} from './blueprints.mjs';
 import {HTTPConnections,httpRegistry} from './http-tools.mjs';
 import http from 'node:http';
@@ -70,6 +71,7 @@ claimLegacy();
 // Physical tables are derived from (sessionId:elementId) hashes — guests never
 // see or choose them; the /api/db handler additionally enforces user ownership.
 const elementDB = new ElementDB(path.join(DATA_DIR, 'elements.sqlite'));
+const elementSharing = new ElementSharing(store, elementDB);
 const DB_RATE = Number(process.env.FORM3_DB_RATE || 120);
 let bridgeHash = '';
 try { bridgeHash = fs.readFileSync(path.join(DIST, 'bridge-hash.txt'), 'utf8').trim(); }
@@ -176,7 +178,9 @@ const server = http.createServer(async (req, res) => {
   }
 
   // --- everything below requires a session ---
-  const sess = store.getSession(cookieToken(req));
+  let sess;
+  try { sess = store.getSession(cookieToken(req)); }
+  catch { res.setHeader('Retry-After','1'); return reply(res,503,{error:'Dienst beschäftigt. Bitte neu laden.'}); }
   if (!sess) return reply(res, 401, { error: 'Anmeldung erforderlich.' });
   const user = sess.user;
   const isMutating = req.method === 'POST' || (req.method === 'DELETE' && pathname.startsWith('/api/'));
@@ -184,6 +188,47 @@ const server = http.createServer(async (req, res) => {
     if (req.headers.origin !== undefined && !ORIGINS.includes(req.headers.origin)) return reply(res, 403, { error: 'Ungültiger Ursprung.' });
     if (req.method !== 'DELETE' && req.headers['content-type'] !== 'application/json') return reply(res, 415, { error: 'JSON erwartet.' });
     if (req.headers['x-form-csrf'] !== sess.csrf) return reply(res, 403, { error: 'CSRF-Schutz fehlgeschlagen.' });
+  }
+
+  // Shared-data identity always comes from the authenticated session and grant.
+  // This source integration must not deploy before UI/live-sync acceptance.
+  if(pathname==='/api/elements/grants'||pathname.startsWith('/api/elements/grants/')){
+    res.setHeader('Cache-Control','no-store');
+    if(!['GET','POST'].includes(req.method))return reply(res,405,{error:'Methode nicht erlaubt.'});
+    const suffix=pathname.slice('/api/elements/grants'.length);
+    if(!(req.method==='GET'?['','/view']:['/offer','/accept','/close','/state','/db']).includes(suffix))return reply(res,404,{error:'Nicht gefunden.'});
+    const dbCall=suffix==='/db';
+    if(!rate((dbCall?'db:':'element-grants:')+user.id,dbCall?DB_RATE:60,60000)){
+      res.setHeader('Retry-After','5');return reply(res,429,{error:'Bitte kurz warten.'});
+    }
+    let d;
+    if(req.method==='POST'){
+      try{d=JSON.parse(await readBody(req,dbCall?40000:10000));if(!d||typeof d!=='object'||Array.isArray(d))throw Error();}
+      catch{return reply(res,400,{error:'Ungültige Anfrage.'});}
+      // Body streaming is an await boundary: logout/disable may have occurred.
+      let fresh;
+      try { fresh=store.getSession(cookieToken(req)); }
+      catch { res.setHeader('Retry-After','1');return reply(res,503,{error:'Dienst beschäftigt. Bitte neu laden.'}); }
+      if(!fresh||fresh.user.id!==user.id||fresh.csrf!==sess.csrf)return reply(res,401,{error:'Anmeldung erforderlich.'});
+    }
+    try{
+      if(req.method==='GET')return reply(res,200,suffix==='/view'
+        ?elementSharing.view(user.id,url.searchParams.get('id'))
+        :elementSharing.list(user.id,{after:url.searchParams.get('after')||'',limit:Number(url.searchParams.get('limit')||20)}));
+      if(suffix==='/offer')return reply(res,200,elementSharing.offer(user.id,d));
+      if(suffix==='/accept')return reply(res,200,elementSharing.accept(user.id,d.id));
+      if(suffix==='/close'){elementSharing.close(user.id,d.id);return reply(res,200,{ok:true});}
+      // Never confuse the grant token with an ElementDB row id.
+      const result=suffix==='/state'?elementSharing.state(user.id,d.id,d)
+        :elementSharing.data(user.id,d.id,{...d,id:d.rowId});
+      return reply(res,result.status,result.result);
+    }catch(e){
+      if([5,6].includes(e.errcode)){
+        res.setHeader('Retry-After','1');return reply(res,503,{error:'Freigabe beschäftigt. Bitte neu laden.'});
+      }
+      // No SQL/schema/source or account-existence details in failures.
+      return reply(res,404,{error:'Freigabe nicht verfügbar.'});
+    }
   }
 
   if(pathname==='/api/http'||pathname.startsWith('/api/http/')){

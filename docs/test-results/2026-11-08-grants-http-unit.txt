@@ -1,0 +1,28 @@
+✔ opt-in acceptance and uniform foreign denial, no copied chats or capability transfer (383.643075ms)
+✔ actual shared rows update one namespace; forged namespace and schema operations cannot escape (349.447946ms)
+✔ revocation rechecks every read/write; new grant never reactivates old token (336.569335ms)
+✔ state updates remain visible, code changes fail closed until fresh acceptance (380.235935ms)
+✔ disabled accounts and deleted source are unavailable; additive table survives reopening (330.022386ms)
+✔ pending offers cannot read and quotas do not auto-share other elements (580.80061ms)
+✔ grant listing is paginated and account scoped without pending source data (378.065523ms)
+✔ state compare-and-set detects stale snapshots without editing code (304.508301ms)
+✔ state errors roll back and unavailable grants cannot disclose conflict state (346.075792ms)
+✔ recipient create compatibility never changes schema and matches owner response (325.850613ms)
+✔ separate recipients share conflict token and failed persistence is atomic (371.126834ms)
+✔ cross-process revocation cannot interleave shared row authorization and use (600.87436ms)
+✔ cross-process disable cannot interleave offer or acceptance checks (667.890523ms)
+✔ shared snapshots are coherent against cross-process revocation (542.158853ms)
+✔ explicit recipient acceptance, immutable independent state, disabled copy, no capability transfer (352.861354ms)
+✔ revoked/declined offers cannot be accepted; stale revision and disabled sender rejected (334.728243ms)
+✔ actual persisted custom Form state is snapshotted, not template defaults or later edits (300.89625ms)
+✔ failed acceptance rolls back and pending offers are bounded (583.025626ms)
+✔ standard cards snapshot text and checkboxes into independent owned chats, atomically and once (525.58531ms)
+✔ Element templates: owned revision, independent fresh identity, no actions, withdrawal and quota rollback (413.356828ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6299.727713

@@ -1,4 +1,5 @@
-// Deliberately not wired to HTTP yet. Identity must come from authenticated session.
+// Source HTTP integration uses authenticated session identity. Production rollout
+// remains gated on shared UI/live synchronization acceptance (see ELEMENT-GRANTS.md).
 // No copied messages, namespace aliases, provider credentials or tool grants.
 import crypto from 'node:crypto';
 import {validateRender} from './contract.mjs';

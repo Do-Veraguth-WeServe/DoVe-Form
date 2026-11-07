@@ -1,0 +1,10 @@
+a468e98550d0902a817fbec7435231328191c35dfc2bd12b4414838b03c58204  server.mjs
+b83b5af6f85d60bfa74189497d08c30bb555db7fb1b0fd8c7849b2fbf50f82da  element-sharing.mjs
+0206833bd646408f4437b95abdd7282187e47aece450dd4519bbd0ab448794e5  test/element-grants-http.mjs
+ab4e4505ab9fa37665de6dd84121594196bfdfaba8d5fe30397ae2f3e0ea05c0  package.json
+6ba6b6c8b4b2177db4d582ea263179affdb627621585d5684fb4f5202d74d58d  dist/app.js
+f84d259c45d4f02afb6e0b3c523a25911c1499e2f70531a4426e40345b0ef7c6  docs/test-results/2026-11-08-grants-http-before.txt
+f9a57e70fb52ea5dd5d37f68de4c6af0d562e2366b7aa77b1bda29f252d8a65c  docs/test-results/2026-11-08-grants-http-after.txt
+dedea3a79d7bb2cfa729198f1c5c328a3c2f087bcb8c287a18fe3ac6e7cb98ef  docs/test-results/2026-11-08-grants-http-final.txt
+d5cc2a48833fd0df2eb51d4944584bccf7ddba2f5c3fd7cac52e88f06754d01a  docs/test-results/2026-11-08-grants-http-unit.txt
+e07c02037ace8367707a1240251dcf7003c7984eaae59b952ad39f3b42cfb4b7  docs/test-results/2026-11-08-grants-http-release.txt
