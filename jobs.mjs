@@ -24,6 +24,7 @@
 // discard stale events and reconcile gaplessly via snapshot + event stream.
 
 import crypto from 'node:crypto';
+import {cssCapabilityPrompt} from './css-policy.mjs';
 import {parsePlan} from './blueprints.mjs';
 import {parseChat} from './forms.mjs';
 import {createStreamParser} from './stream.mjs';
@@ -69,9 +70,11 @@ export async function executeTurn(model, messages, opts, emit) {
         : (round1.error || 'ungültiges JSON')
     });
     const prev = round1.contentText.slice(0, 4000); // ACTUAL content, never raw SSE envelopes
-    const corrective = failureCode === 'truncated'
+    let corrective = failureCode === 'truncated'
       ? 'Your previous answer was cut off by the output token limit before it completed (the JSON artifact is truncated). Answer again, much more compact: FIRST a short prose answer, THEN exactly ONE fenced ```json artifact {"version":1,"html","css","js","state"} — valid JSON, well under 10KB, minimal HTML/CSS/JS, no truncation, ids matching between html and js.'
       : 'Your previous answer contained an invalid JSON artifact (' + (round1.error || 'parse error') + '). Answer again in the same language: FIRST a short prose answer, THEN exactly ONE corrected fenced ```json artifact {"version":1,"html","css","js","state"}. The JSON must be valid (no trailing commas, no comments, no truncation), under 20KB total, with ids matching between html and js.';
+    // Provider diagnostics are capped; attach the trusted policy separately, not source CSS.
+    corrective += '\n' + cssCapabilityPrompt;
     round2 = await runRound(model,
       [...messages, { role: 'assistant', content: prev }, { role: 'user', content: corrective }],
       roundOpts, wrapProse, onArtifactStart);

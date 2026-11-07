@@ -1,0 +1,163 @@
+
+> form3@3.3.0 test:blueprints
+> node build.mjs && node --test test/css-preflight.test.mjs test/css-policy.test.mjs test/element-timeline.test.mjs test/chat-envelope.test.mjs test/element-context.test.mjs test/forms.test.mjs test/form-sharing.test.mjs test/blueprint-questions.test.mjs test/unit.test.mjs test/provider.test.mjs test/model-access.test.mjs test/agent-loop.test.mjs test/tool-execution.test.mjs test/mcp.test.mjs test/memory.test.mjs test/http-tools.test.mjs test/element-actions.test.mjs && node test/css-policy-browser.mjs && node test/activity.test.mjs && node test/plan-fold.test.mjs && node test/blueprints.test.mjs && node test/forms-flow.test.mjs && node test/checklist-state.test.mjs && node test/accounts.test.mjs && node test/sidebar-layout.test.mjs && node --test test/mcp-e2e.test.mjs test/auto-api.test.mjs && node test/calendar.test.mjs && node test/flappy.test.mjs
+
+build ok: dist/
+✔ standalone loop supplies tools, executes once and returns tool result to model (127.2905ms)
+✔ unknown tool is rejected without executing (50.295444ms)
+[provider] retry empty interrupted stream code=ECONNRESET
+✔ ambiguous external failure is not retried (19.433504ms)
+✔ transport retry after a tool result never re-executes that tool (8.05331ms)
+✔ unanswered questions override optimistic model readiness (4.942376ms)
+✔ resolved questions allow an otherwise ready plan (0.750136ms)
+✔ question count, length, schema and nonempty text are bounded (1.140822ms)
+✔ stored pre-questions format remains readable (3.373812ms)
+✔ bare, fenced, chunks, malformed, foreign and ordinary JSON (11.672283ms)
+✔ pseudo-element failure explains removed features without inventing data causes (16.306224ms)
+✔ prompt and sanitizer consume one immutable capability policy (4.395021ms)
+✔ unsafe syntax remains blocked and reports stay bounded without source values (11.136458ms)
+✔ ordinary responsive layout and colors survive unchanged (2.259733ms)
+✔ new output rejects every reported unsupported variation, existing artifacts remain readable and unchanged (25.452781ms)
+✔ real SSE generation corrects unsupported CSS exactly once with policy evidence (190.726573ms)
+✔ second unsupported output fails honestly with no render and no third attempt (21.8203ms)
+✔ supported output stays one round (12.880095ms)
+✔ element actions bind owner, tool revision and reject concurrent clicks (285.22155ms)
+✔ stored element evidence: isolation, fresh values, truncation and read-only (322.096998ms)
+✔ one element follows newest build anchor; prose/forms and identity stay unchanged (3.905684ms)
+✔ explicit recipient acceptance, immutable independent state, disabled copy, no capability transfer (351.700176ms)
+✔ revoked/declined offers cannot be accepted; stale revision and disabled sender rejected (410.400574ms)
+✔ actual persisted custom Form state is snapshotted, not template defaults or later edits (367.523245ms)
+✔ failed acceptance rolls back and pending offers are bounded (410.468544ms)
+✔ standard cards snapshot text and checkboxes into independent owned chats, atomically and once (379.530724ms)
+✔ Element templates: owned revision, independent fresh identity, no actions, withdrawal and quota rollback (397.007556ms)
+✔ private forms, versions, deletion without resurrection, safe rendering contract (326.565041ms)
+✔ HTTP rejects local, metadata, encoded IPs and unsafe configuration (15.097384ms)
+✔ HTTP permission, hidden credentials, DNS pinning, redirect and size limits (17.077363ms)
+✔ MCP endpoint rejects insecure remote URLs and embedded credentials (2.855731ms)
+✔ connections are disabled by default, tokens stay private, permissions persist (117.819218ms)
+✔ HTTP MCP initialize, discover and call use official client (230.664251ms)
+✔ standalone memories isolate owners and support search edit delete (301.94856ms)
+✔ private by default, explicit sharing, foreign key never exposed, stable legacy ownership (2.319853ms)
+✔ nonadmin provider transport denies private DNS, pins public DNS, denies redirects (77.715013ms)
+✔ clean round: prose parsed, finish_reason stop, actual content captured (no SSE envelopes) (106.792625ms)
+✔ finish_reason=length sets truncated; unterminated artifact reported as invalid (21.393425ms)
+✔ malformed SSE frames are ignored, valid frames still parsed (10.544745ms)
+✔ explicit provider error frame throws ProviderError (distinct from malformed frames) (10.580011ms)
+✔ final unterminated SSE line is parsed (10.395556ms)
+✔ UTF-8 multibyte char split across reads is reassembled (7.636279ms)
+✔ upstream 401 becomes ProviderError with status (permanent, caller must not retry) (8.135509ms)
+✔ content cap (accumulated deltas) throws SizeError (7.159894ms)
+✔ transport cap (raw SSE bytes) throws SizeError even with tiny visible content (8.33616ms)
+✔ round deadline expiry maps to abortKind timeout (308.568442ms)
+[provider] retry empty interrupted stream code=ECONNRESET
+[provider] retry empty interrupted stream code=ECONNRESET
+✔ external abort maps to abortKind external, not timeout (157.242476ms)
+✔ already-expired deadline fails fast with timeout kind (0.899866ms)
+✔ job generation has no default or zero-configured deadline (8.654628ms)
+✔ empty ECONNRESET retries once and completes, permanent reset stays bounded (3.44156ms)
+✔ connection reset after visible prose is not replayed (22.203249ms)
+✔ tool requires owner approval, persists outcome, isolates other users (253.964387ms)
+✔ default tools execute immediately without pending approval, retaining owner isolation and unknown outcomes (199.043718ms)
+[ping] session=s1 host=good.example ip=93.184.216.34 ok=true ms=23
+[ping] session= host=good.example ip=93.184.216.34 ok=false
+[ping] session= host=private.example blocked (resolved: 10.0.0.5)
+[ping] session= host=dual.example blocked (resolved: 93.184.216.34,fe80::1)
+[ping] session= host=nope.example error=dns
+[ping] session= host=good.example ip=93.184.216.34 ok=false
+config unreadable: Unexpected token 'o', "not json" is not valid JSON
+✔ render contract rejects malformed and oversized output (4.389264ms)
+✔ system prompt carries the v3 two-phase + SVG visual rules (0.470278ms)
+✔ render contract: optional name is sanitized as text (0.528428ms)
+✔ deriveName: heading, then prose snippet, then fallback (1.751544ms)
+✔ refine instruction demands a full in-place update (0.456271ms)
+✔ validHost: strict hostnames only, no literals/URLs/private forms (1.118872ms)
+✔ ipBlocked: every private/reserved range is caught, public passes (9.671398ms)
+✔ runPing: ok / blocked / dual-stack / dns-fail / timeout with injected backend (5.779731ms)
+﹣ optional: real /bin/ping binary probe (skip when absent or offline) (0.236308ms) # SKIP
+✔ element db: lifecycle, where semantics, scoping, persistence, quotas (26.7271ms)
+✔ element db: hard quotas — 10 tables, 5000 rows, 2 MB element (1998.25428ms)
+✔ stream parser: prose-only answer relays everything (1.935804ms)
+✔ stream parser: marker split across chunks is not emitted as prose (2.037869ms)
+✔ stream parser: artifact in same chunk as marker, unterminated fence (1.841216ms)
+✔ stream parser: partial-marker suffix is held back, not lost (0.458841ms)
+✔ model registry: validation, masking, persistence, ENOENT safety (5.070676ms)
+✔ store: passwords scrypt-hashed, salted, timing-safe verify (442.314389ms)
+✔ store: first user is owner, second is user; sessions bound to users (677.382734ms)
+✔ store: conversations, messages, elements are user-scoped (268.202192ms)
+✔ store: import validation rejects malformed archives, regenerates ids (141.748783ms)
+✔ config: defaults to registration off, env forces on, ENOENT safe (2.599937ms)
+✔ system prompt documents ui.db for data-driven elements (0.390335ms)
+✔ QuickJS has no browser capabilities or host Function escape (84.51377ms)
+✔ QuickJS interrupts CPU exhaustion (53.19445ms)
+✔ generated interaction validation catches DOM event and value getter mistakes without hiding stored elements (2.632307ms)
+ℹ tests 77
+ℹ suites 0
+ℹ pass 76
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 5241.555123
+PASS real renderer sanitizer: desktop/mobile, zero/positive counts, real-span replacement, blocked network; isolated DOM fixture, not user content
+CASE chat
+released prose chat
+RELOAD writing [
+  {
+    kind: 'chat',
+    state: 'building',
+    prose: 'Eine **Antwort** wächst. '
+  }
+]
+finish chat
+CASE plan
+released prose plan
+RELOAD writing [
+  {
+    kind: 'plan',
+    state: 'building',
+    prose: 'Eine **Antwort** wächst. '
+  }
+]
+finish plan
+CASE chat-live
+released prose chat-live
+RELOAD writing [
+  {
+    kind: 'chat',
+    state: 'building',
+    prose: 'Eine **Antwort** wächst. '
+  }
+]
+finish chat-live
+[job] failed: 842320a9 Modell-Endpunkt antwortete 400
+PASS chat+plan: animated thinking immediately; reload then prose transition; persisted writing/reload; desktop/mobile; reduced motion; completion/cancel/error cleanup; foreign prose isolation; no duplicate provider call or implicit construction
+PASS auto-open questions; submit collapse; persisted collapse; resolved revision collapsed; keyboard reopen; new questions reopen; reduced motion; mobile
+PASS placement: old target outside history, newest build anchor, mobile/reload, exactly one element, stable ID/state/versions and original prose
+[job] failed: 1a89df3c Modellaufruf fehlgeschlagen: Ungültiger Blueprint. Bitte erneut besprechen.
+[job] failed: e56942f8 Modell-Endpunkt antwortete 500
+PASS failed/retried/cancelled refinement preserves last successful placement, pin, state and element DB; foreign DB denied
+PASS blueprint-only chat; cumulative summaries; no text-triggered build; stale/foreign/forged starts rejected; explicit start; double-click dedup; held build + simultaneous same-chat discussion at capacity 1; immutable approved snapshot; reload/crane; interactive state persistence; confirmed in-place refinement; malformed planner blocked; deletion isolation. Planning calls=8 build calls=4
+PASS normal streaming chat without blueprint; reusable forms and snapshots; library CRUD/version restore/isolation; confirmed AI edits; explicit Plan and build; chat during build; custom template reuse without build; admin reset invalidates sessions; disable/enable; roles; delete confirmation and owner protection; desktop/mobile.
+PASS checklist desktop/mobile/reload, failed-write rollback, shape limits, custom state compatibility, CSRF and cross-account mutation rejection.
+PASS shared artifact built
+persisted [{"value":8}]
+[job] failed: 8b162abc Modellaufruf fehlgeschlagen: Modell nicht mehr konfiguriert.
+PASS owner/admin user creation; private/shared providers; real model dropdown and artifact interaction/reload; isolation; deletion confirmation/persistence; revocation; key secrecy; private legacy migration
+[{"count":36,"height":383,"scrollHeight":1864,"minRow":44,"bottom":606,"footerTop":630,"wheelScroll":1481,"viewport":{"width":1280,"height":800},"tab":"chats"},{"count":36,"height":383,"scrollHeight":1864,"minRow":44,"bottom":606,"footerTop":630,"wheelScroll":1481,"viewport":{"width":1280,"height":800},"tab":"elements"},{"count":36,"height":372,"scrollHeight":1864,"minRow":44,"bottom":655,"footerTop":679,"wheelScroll":1492,"viewport":{"width":390,"height":844},"tab":"chats"},{"count":36,"height":372,"scrollHeight":1864,"minRow":44,"bottom":655,"footerTop":679,"wheelScroll":1492,"viewport":{"width":390,"height":844},"tab":"elements"},{"count":36,"height":96,"scrollHeight":1864,"minRow":44,"bottom":379,"footerTop":403,"wheelScroll":1768,"viewport":{"width":390,"height":568},"tab":"chats"},{"count":36,"height":96,"scrollHeight":1864,"minRow":44,"bottom":379,"footerTop":403,"wheelScroll":1768,"viewport":{"width":390,"height":568},"tab":"elements"}]
+PASS sidebar rows retain size; chat and element lists wheel-scroll on desktop and mobile
+✔ public API element links automatically, executes without confirmation, restart preserves behavior (8629.808707ms)
+✔ Form UI configures MCP, plans without tools, explicitly executes blueprint and receives final answer (10422.381285ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11255.572805
+{"version":1,"delay":0,"dayCount":30,"errors":[]}
+{"version":1,"delay":150,"dayCount":30,"errors":[]}
+{"version":2,"delay":0,"dayCount":30,"errors":[]}
+{"version":2,"delay":150,"dayCount":30,"errors":[]}
+PASS saved calendar versions render days, navigation and notes with delayed DB
+PASS realtime movement, pause, reset, playfield, keyboard, collision, restart, destroy

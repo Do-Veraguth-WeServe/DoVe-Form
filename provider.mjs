@@ -11,7 +11,7 @@
 //   (prose + fenced artifact), bounded, for corrective retries — never raw
 //   SSE envelopes.
 // - the final unterminated SSE line when the stream ends without a newline.
-import { parseArtifact } from './contract.mjs';
+import { parseArtifact, validateGeneratedCSS } from './contract.mjs';
 import { createStreamParser } from './stream.mjs';
 import {publicProviderFetch} from './provider-network.mjs';
 
@@ -144,7 +144,7 @@ async function runRoundAttempt(cfg, messages, opts, onProse, onArtifactStart) {
 
     const fin = parser.finish();
     let render = null, error = null;
-    if (fin.hadArtifact) { try { render = parseArtifact(fin.artifactRaw); } catch (e) { error = String(e.message || e).slice(0, 160); } }
+    if (fin.hadArtifact) { try { render = validateGeneratedCSS(parseArtifact(fin.artifactRaw)); } catch (e) { error = String(e.message || e).slice(0, 160); } }
     return {
       render, error, hadArtifact: fin.hadArtifact,
       truncated: finishReason === 'length', finishReason,

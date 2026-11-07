@@ -1,0 +1,15 @@
+✔ new output rejects every reported unsupported variation, existing artifacts remain readable and unchanged (24.411086ms)
+✔ real SSE generation corrects unsupported CSS exactly once with policy evidence (137.903626ms)
+✔ second unsupported output fails honestly with no render and no third attempt (19.555918ms)
+[job] id=f2c07889 failed after 2 round(s): invalid-artifact
+[job] id=35a40bc4 user=245efa06 kind=refine dur=23ms rounds=2 finish=stop/stop chars=323 render=yes fail=invalid-artifact
+✔ persisted failed refinement preserves original; corrected build becomes ready (327.216779ms)
+✔ supported output stays one round (10.319766ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 929.52612

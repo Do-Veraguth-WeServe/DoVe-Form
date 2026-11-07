@@ -1,0 +1,2 @@
+BEFORE: generated unsupported pseudo-element accepted: true
+BEFORE deployed executeTurn: incompatible CSS accepted, calls=1, rounds=1, failure=null

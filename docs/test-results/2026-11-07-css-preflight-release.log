@@ -1,0 +1,114 @@
+
+> form3@3.3.0 test:blueprints
+> node build.mjs && node --test test/css-preflight.test.mjs test/css-policy.test.mjs test/element-timeline.test.mjs test/chat-envelope.test.mjs test/element-context.test.mjs test/forms.test.mjs test/form-sharing.test.mjs test/blueprint-questions.test.mjs test/unit.test.mjs test/provider.test.mjs test/model-access.test.mjs test/agent-loop.test.mjs test/tool-execution.test.mjs test/mcp.test.mjs test/memory.test.mjs test/http-tools.test.mjs test/element-actions.test.mjs && node test/css-policy-browser.mjs && node test/activity.test.mjs && node test/plan-fold.test.mjs && node test/blueprints.test.mjs && node test/forms-flow.test.mjs && node test/checklist-state.test.mjs && node test/accounts.test.mjs && node test/sidebar-layout.test.mjs && node --test test/mcp-e2e.test.mjs test/auto-api.test.mjs && node test/calendar.test.mjs && node test/flappy.test.mjs
+
+build ok: dist/
+✔ standalone loop supplies tools, executes once and returns tool result to model (108.598472ms)
+✔ unknown tool is rejected without executing (47.02078ms)
+[provider] retry empty interrupted stream code=ECONNRESET
+✔ ambiguous external failure is not retried (17.502934ms)
+✔ transport retry after a tool result never re-executes that tool (6.56196ms)
+✔ unanswered questions override optimistic model readiness (5.422212ms)
+✔ resolved questions allow an otherwise ready plan (0.822937ms)
+✔ question count, length, schema and nonempty text are bounded (1.230883ms)
+✔ stored pre-questions format remains readable (3.436087ms)
+✔ bare, fenced, chunks, malformed, foreign and ordinary JSON (10.416349ms)
+✔ pseudo-element failure explains removed features without inventing data causes (14.530131ms)
+✔ prompt and sanitizer consume one immutable capability policy (2.289648ms)
+✔ unsafe syntax remains blocked and reports stay bounded without source values (11.144752ms)
+✔ ordinary responsive layout and colors survive unchanged (1.987652ms)
+✔ new output rejects every reported unsupported variation, existing artifacts remain readable and unchanged (28.636239ms)
+✔ real SSE generation corrects unsupported CSS exactly once with policy evidence (193.746247ms)
+✔ second unsupported output fails honestly with no render and no third attempt (25.937998ms)
+✔ supported output stays one round (15.589532ms)
+✔ element actions bind owner, tool revision and reject concurrent clicks (284.766276ms)
+✔ stored element evidence: isolation, fresh values, truncation and read-only (307.060874ms)
+✔ one element follows newest build anchor; prose/forms and identity stay unchanged (2.917834ms)
+✔ explicit recipient acceptance, immutable independent state, disabled copy, no capability transfer (388.165322ms)
+✔ revoked/declined offers cannot be accepted; stale revision and disabled sender rejected (309.480266ms)
+✔ actual persisted custom Form state is snapshotted, not template defaults or later edits (299.398136ms)
+✔ failed acceptance rolls back and pending offers are bounded (433.175666ms)
+✔ standard cards snapshot text and checkboxes into independent owned chats, atomically and once (354.362586ms)
+✔ Element templates: owned revision, independent fresh identity, no actions, withdrawal and quota rollback (326.367509ms)
+✔ private forms, versions, deletion without resurrection, safe rendering contract (320.871012ms)
+✔ HTTP rejects local, metadata, encoded IPs and unsafe configuration (12.555ms)
+✔ HTTP permission, hidden credentials, DNS pinning, redirect and size limits (13.161182ms)
+✔ MCP endpoint rejects insecure remote URLs and embedded credentials (3.046043ms)
+✔ connections are disabled by default, tokens stay private, permissions persist (76.790639ms)
+✔ HTTP MCP initialize, discover and call use official client (195.727841ms)
+✔ standalone memories isolate owners and support search edit delete (237.830463ms)
+✔ private by default, explicit sharing, foreign key never exposed, stable legacy ownership (2.735108ms)
+✔ nonadmin provider transport denies private DNS, pins public DNS, denies redirects (75.875825ms)
+✔ clean round: prose parsed, finish_reason stop, actual content captured (no SSE envelopes) (88.118512ms)
+✔ finish_reason=length sets truncated; unterminated artifact reported as invalid (10.58563ms)
+✔ malformed SSE frames are ignored, valid frames still parsed (17.336429ms)
+✔ explicit provider error frame throws ProviderError (distinct from malformed frames) (15.463062ms)
+✔ final unterminated SSE line is parsed (22.938583ms)
+✔ UTF-8 multibyte char split across reads is reassembled (7.742126ms)
+✔ upstream 401 becomes ProviderError with status (permanent, caller must not retry) (8.896981ms)
+✔ content cap (accumulated deltas) throws SizeError (5.589572ms)
+✔ transport cap (raw SSE bytes) throws SizeError even with tiny visible content (14.519139ms)
+✔ round deadline expiry maps to abortKind timeout (307.390445ms)
+[provider] retry empty interrupted stream code=ECONNRESET
+[provider] retry empty interrupted stream code=ECONNRESET
+✔ external abort maps to abortKind external, not timeout (155.043809ms)
+✔ already-expired deadline fails fast with timeout kind (1.290531ms)
+✔ job generation has no default or zero-configured deadline (6.743981ms)
+✔ empty ECONNRESET retries once and completes, permanent reset stays bounded (3.512779ms)
+✔ connection reset after visible prose is not replayed (21.661346ms)
+✔ tool requires owner approval, persists outcome, isolates other users (224.891088ms)
+✔ default tools execute immediately without pending approval, retaining owner isolation and unknown outcomes (235.513085ms)
+[ping] session=s1 host=good.example ip=93.184.216.34 ok=true ms=23
+[ping] session= host=good.example ip=93.184.216.34 ok=false
+[ping] session= host=private.example blocked (resolved: 10.0.0.5)
+[ping] session= host=dual.example blocked (resolved: 93.184.216.34,fe80::1)
+[ping] session= host=nope.example error=dns
+[ping] session= host=good.example ip=93.184.216.34 ok=false
+config unreadable: Unexpected token 'o', "not json" is not valid JSON
+✔ render contract rejects malformed and oversized output (6.981986ms)
+✔ system prompt carries the v3 two-phase + SVG visual rules (0.456617ms)
+✔ render contract: optional name is sanitized as text (0.605037ms)
+✔ deriveName: heading, then prose snippet, then fallback (1.749624ms)
+✔ refine instruction demands a full in-place update (0.53738ms)
+✔ validHost: strict hostnames only, no literals/URLs/private forms (1.125826ms)
+✔ ipBlocked: every private/reserved range is caught, public passes (10.166455ms)
+✔ runPing: ok / blocked / dual-stack / dns-fail / timeout with injected backend (16.79017ms)
+﹣ optional: real /bin/ping binary probe (skip when absent or offline) (1.439846ms) # SKIP
+✔ element db: lifecycle, where semantics, scoping, persistence, quotas (30.395534ms)
+✔ element db: hard quotas — 10 tables, 5000 rows, 2 MB element (1835.804895ms)
+✔ stream parser: prose-only answer relays everything (1.322455ms)
+✔ stream parser: marker split across chunks is not emitted as prose (1.118353ms)
+✔ stream parser: artifact in same chunk as marker, unterminated fence (0.751221ms)
+✔ stream parser: partial-marker suffix is held back, not lost (0.373218ms)
+✔ model registry: validation, masking, persistence, ENOENT safety (2.515541ms)
+✔ store: passwords scrypt-hashed, salted, timing-safe verify (289.259086ms)
+✔ store: first user is owner, second is user; sessions bound to users (598.516994ms)
+✔ store: conversations, messages, elements are user-scoped (190.305791ms)
+✔ store: import validation rejects malformed archives, regenerates ids (115.178091ms)
+✔ config: defaults to registration off, env forces on, ENOENT safe (1.335513ms)
+✔ system prompt documents ui.db for data-driven elements (0.185722ms)
+✔ QuickJS has no browser capabilities or host Function escape (48.271062ms)
+✔ QuickJS interrupts CPU exhaustion (52.967799ms)
+✖ generated interaction validation catches DOM event and value getter mistakes without hiding stored elements (11.089401ms)
+ℹ tests 77
+ℹ suites 0
+ℹ pass 75
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 4877.489189
+
+✖ failing tests:
+
+test at test/unit.test.mjs:405:1
+✖ generated interaction validation catches DOM event and value getter mistakes without hiding stored elements (11.089401ms)
+  Error: CSS capability preflight v1: 3 unsupported declarations/rules (blocked-property, at-rule).
+      at parseArtifact (file:///root/.openclaw/workspace/projects/form/contract.mjs:88:11)
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/unit.test.mjs:408:135)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

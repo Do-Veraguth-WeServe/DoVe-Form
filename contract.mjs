@@ -1,4 +1,4 @@
-import {cssCapabilityPrompt} from './css-policy.mjs';
+import {cssCapabilityPrompt,inspectCSS} from './css-policy.mjs';
 export const systemPrompt = `You are Form, a private interactive thinking companion running locally on the user's own machine. Reply in the user's language.
 
 ANSWER STRUCTURE — two phases, in this exact order:
@@ -80,4 +80,14 @@ export function parseArtifact(raw){
   if(typeof raw!=='string'||raw.length>128000)throw Error('Invalid artifact');
   const t=raw.trim().replace(/^```(?:json)?\s*/,'').replace(/\s*```$/,'');
   return validateInteractionAPI(validateRender(JSON.parse(t)));
+}
+export function validateGeneratedCSS(render){
+  // New model output only: never hide or rewrite stored/imported user artifacts.
+  const css=inspectCSS(render.css);
+  if(css.removedCount){
+    // Fixed reason codes/properties only. Never echo CSS values into a retry instruction.
+    const reasons=[...new Set(css.diagnostics.map(d=>d.reason))].join(', ');
+    throw Error('CSS capability preflight v'+css.policyVersion+': '+css.removedCount+' unsupported declarations/rules ('+reasons+').');
+  }
+  return render;
 }

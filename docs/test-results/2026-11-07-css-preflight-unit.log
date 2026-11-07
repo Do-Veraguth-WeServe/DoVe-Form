@@ -1,0 +1,34 @@
+✔ new output rejects every reported unsupported variation, existing artifacts remain readable and unchanged (21.481844ms)
+✖ real SSE generation corrects unsupported CSS exactly once with policy evidence (115.395296ms)
+✔ second unsupported output fails honestly with no render and no third attempt (30.48606ms)
+✔ supported output stays one round (13.973459ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 585.917731
+
+✖ failing tests:
+
+test at test/css-preflight.test.mjs:35:1
+✖ real SSE generation corrects unsupported CSS exactly once with policy evidence (115.395296ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /real HTML spans/. Input:
+
+  'Your previous answer contained an invalid JSON artifact (CSS capability preflight v1: 3 unsupported declarations/rules (blocked-property, unsupported-function). CSS policy v1: ordinary rules only, no @rules, URLs, cus). Answer again in the same language: FIRST a short prose answer, THEN exactly ONE corrected fenced ```json artifact {"version":1,"html","css","js","state"}. The JSON must be valid (no trailing commas, no comments, no truncation), under 20KB total, with ids matching between html and js.'
+
+      at file:///root/.openclaw/workspace/projects/form/test/css-preflight.test.mjs:41:10
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async fixture (file:///root/.openclaw/workspace/projects/form/test/css-preflight.test.mjs:33:6)
+      at async TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/css-preflight.test.mjs:36:27)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'Your previous answer contained an invalid JSON artifact (CSS capability preflight v1: 3 unsupported declarations/rules (blocked-property, unsupported-function). CSS policy v1: ordinary rules only, no @rules, URLs, cus). Answer again in the same language: FIRST a short prose answer, THEN exactly ONE corrected fenced ```json artifact {"version":1,"html","css","js","state"}. The JSON must be valid (no trailing commas, no comments, no truncation), under 20KB total, with ids matching between html and js.',
+    expected: /real HTML spans/,
+    operator: 'match',
+    diff: 'simple'
+  }
