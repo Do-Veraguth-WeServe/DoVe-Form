@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {spawnSync} from 'node:child_process';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -141,4 +142,57 @@ test('separate recipients share conflict token and failed persistence is atomic'
  assert.equal(s.getRender(mid).state.n,10);assert.equal(x.view(b.id,gb.id).stateRevision,latest);
  assert.equal(x.state(c.id,gc.id,{state:{n:13},expectedRevision:latest}).status,200);
  x.close(a.id,gb.id);assert.throws(()=>x.view(b.id,gb.id));assert.equal(x.view(c.id,gc.id).render.state.n,13);
+}));
+
+// Real second process at check/use boundary; no timing sleeps.
+function competingWrite(s, sql, params) {
+ const file=s.db.prepare('PRAGMA database_list').all().find(d=>d.name==='main').file;
+ const script="import {DatabaseSync} from 'node:sqlite'; const d=new DatabaseSync(process.argv[1]);d.exec('PRAGMA busy_timeout=0');try{d.prepare(process.argv[2]).run(...JSON.parse(process.argv[3]));console.log('written');}catch(e){if(/locked|busy/i.test(e.message))console.log('locked');else throw e;}finally{d.close();}";
+ const child=spawnSync(process.execPath,['--input-type=module','-e',script,file,sql,JSON.stringify(params)],{encoding:'utf8',timeout:5000});
+ assert.equal(child.status,0,child.stderr);return child.stdout.trim();
+}
+test('cross-process revocation cannot interleave shared row authorization and use',()=>fixture(({s,db,a,b,x,input})=>{
+ const g=x.offer(a.id,input);x.accept(b.id,g.id);
+ const original=db.op;let observed;
+ try{
+  db.op=function(...args){observed=competingWrite(s,"UPDATE element_grants SET status='revoked' WHERE id=?",[g.id]);return original.apply(this,args);};
+  assert.equal(x.data(b.id,g.id,{op:'update',table:'counter',id:1,patch:{n:20}}).status,200);
+ }finally{db.op=original;}
+ assert.equal(observed,'locked','ACL lock must span the separate element database operation');
+ assert.equal(competingWrite(s,"UPDATE element_grants SET status='revoked' WHERE id=?",[g.id]),'written');
+ for(const op of ['select','update','create'])assert.throws(()=>x.data(b.id,g.id,{op,table:'counter',id:1,patch:{n:30}}));
+ assert.equal(competingWrite(s,"UPDATE element_grants SET status='revoked' WHERE id=?",[g.id]),'written');
+}));
+test('cross-process disable cannot interleave offer or acceptance checks',()=>fixture(({s,a,b,x,input})=>{
+ const getRender=s.getRender;let offerRace;
+ try{s.getRender=function(...args){const value=getRender.apply(this,args);offerRace=competingWrite(s,'UPDATE users SET disabled=1 WHERE id=?',[b.id]);return value;};
+  x.offer(a.id,input);
+ }finally{s.getRender=getRender;}
+ assert.equal(offerRace,'locked');
+ const g=x.offer(a.id,input);const source=x.source;let acceptRace;
+ try{x.source=function(...args){const value=source.apply(this,args);acceptRace=competingWrite(s,'UPDATE users SET disabled=1 WHERE id=?',[b.id]);return value;};
+  x.accept(b.id,g.id);
+ }finally{x.source=source;}
+ assert.equal(acceptRace,'locked');
+ assert.equal(competingWrite(s,'UPDATE users SET disabled=1 WHERE id=?',[b.id]),'written');
+ assert.throws(()=>x.view(b.id,g.id));assert.throws(()=>x.accept(b.id,g.id));
+ assert.equal(competingWrite(s,'UPDATE users SET disabled=0 WHERE id=?',[b.id]),'written');
+}));
+
+test('shared snapshots are coherent against cross-process revocation',()=>fixture(({s,a,b,x,input})=>{
+ const g=x.offer(a.id,input);x.accept(b.id,g.id);
+ const original=s.getRender;
+ for(const read of [()=>x.view(b.id,g.id),()=>x.list(b.id)]){
+  let observed;
+  try{s.getRender=function(...args){const value=original.apply(this,args);observed=competingWrite(s,"UPDATE element_grants SET status='revoked' WHERE id=?",[g.id]);return value;};read();}
+  finally{s.getRender=original;}
+  assert.equal(observed,'locked');
+ }
+ // A database-operation throw must not retain the ACL lock.
+ const dbOp=x.elementDB.op;
+ try{x.elementDB.op=()=>{throw Error('fixture failure');};assert.throws(()=>x.data(b.id,g.id,{op:'select',table:'counter'}),/fixture failure/);}
+ finally{x.elementDB.op=dbOp;}
+ assert.equal(competingWrite(s,"UPDATE element_grants SET status='revoked' WHERE id=?",[g.id]),'written');
+ assert.throws(()=>x.view(b.id,g.id));
+ assert.deepEqual(x.list(b.id).grants,[{id:g.id,direction:'incoming',status:'revoked'}]);
 }));

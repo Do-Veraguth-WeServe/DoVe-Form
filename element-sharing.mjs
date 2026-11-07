@@ -20,6 +20,15 @@ export class ElementSharing {
     );
     this.db.exec('CREATE INDEX IF NOT EXISTS element_grants_parties ON element_grants(owner_id,recipient_id,status)');
   }
+  // Hold the ACL database writer lock through each synchronous operation.
+  // Lock order: form.db first, then elements.sqlite. No await/network work here.
+  // This serializes revocation/disable/source edits from other SQLite processes;
+  // it is NOT a distributed transaction across the two database files.
+  locked(fn) {
+    this.db.exec('BEGIN IMMEDIATE');
+    try { const result=fn(); this.db.exec('COMMIT'); return result; }
+    catch(e) { try { this.db.exec('ROLLBACK'); } catch {} throw e; }
+  }
   activeUser(uid) { const u=this.store.getUser(uid); if(!u||u.disabled)unavailable(); return u; }
   source(grant) {
     this.activeUser(grant.owner_id); this.activeUser(grant.recipient_id);
@@ -30,52 +39,60 @@ export class ElementSharing {
     return {owner,render};
   }
   offer(uid, {messageId, revision, recipient}) {
-    this.activeUser(uid);
-    const owner=this.store.messageOwner(messageId);
-    if(!owner||owner.userId!==uid||!owner.hasRender)unavailable();
-    const target=typeof recipient==='string'?this.store.getUserByName(recipient.trim()):null;
-    if(!target||target.disabled||target.id===uid)unavailable();
-    const render=this.store.getRender(messageId);
-    if(elementCodeRevision(render)!==revision)unavailable();
-    const existing=this.db.prepare("SELECT id FROM element_grants WHERE owner_id=? AND recipient_id=? AND message_id=? AND code_revision=? AND status IN ('pending','active')").get(uid,target.id,messageId,revision);
-    if(existing)return {id:existing.id};
-    const count=this.db.prepare("SELECT count(*) n FROM element_grants WHERE (owner_id=? OR recipient_id=?) AND status IN ('pending','active')").get(uid,target.id).n;
-    if(count>=40)throw Error('Zu viele offene Freigaben.');
-    const id=crypto.randomUUID();
-    this.db.prepare("INSERT INTO element_grants VALUES(?,?,?,?,?,'pending',?)").run(id,uid,target.id,messageId,revision,new Date().toISOString());
-    return {id};
+    return this.locked(() => {
+      this.activeUser(uid);
+      const owner=this.store.messageOwner(messageId);
+      if(!owner||owner.userId!==uid||!owner.hasRender)unavailable();
+      const target=typeof recipient==='string'?this.store.getUserByName(recipient.trim()):null;
+      if(!target||target.disabled||target.id===uid)unavailable();
+      const render=this.store.getRender(messageId);
+      if(elementCodeRevision(render)!==revision)unavailable();
+      const existing=this.db.prepare("SELECT id FROM element_grants WHERE owner_id=? AND recipient_id=? AND message_id=? AND code_revision=? AND status IN ('pending','active')").get(uid,target.id,messageId,revision);
+      if(existing)return {id:existing.id};
+      const count=this.db.prepare("SELECT count(*) n FROM element_grants WHERE (owner_id=? OR recipient_id=?) AND status IN ('pending','active')").get(uid,target.id).n;
+      if(count>=40)throw Error('Zu viele offene Freigaben.');
+      const id=crypto.randomUUID();
+      this.db.prepare("INSERT INTO element_grants VALUES(?,?,?,?,?,'pending',?)").run(id,uid,target.id,messageId,revision,new Date().toISOString());
+      return {id};
+    });
   }
   list(uid, {after='',limit=20}={}) {
-    this.activeUser(uid);
-    if(typeof after!=='string'||after.length>36||!Number.isInteger(limit)||limit<1||limit>40)throw Error('Ungültige Seite.');
-    // Cursor pagination bounds both query and response even with long revoked history.
-    const rows=this.db.prepare('SELECT * FROM element_grants WHERE (owner_id=? OR recipient_id=?) AND id>? ORDER BY id LIMIT ?').all(uid,uid,after,limit+1);
-    const page=rows.slice(0,limit);
-    const grants=page.map(g=>{
-      const base={id:g.id,direction:g.owner_id===uid?'outgoing':'incoming',status:g.status};
-      if(!['pending','active'].includes(g.status))return base;
-      try {
-        const {render}=this.source(g);
-        // Pending offers expose only the offered title and counterparty, never code/state.
-        const peer=this.activeUser(g.owner_id===uid?g.recipient_id:g.owner_id);
-        return {...base,name:render.name||'Element',peer:peer.username};
-      } catch {return {...base,status:'unavailable'};}
+    return this.locked(() => {
+      this.activeUser(uid);
+      if(typeof after!=='string'||after.length>36||!Number.isInteger(limit)||limit<1||limit>40)throw Error('Ungültige Seite.');
+      // Cursor pagination bounds both query and response even with long revoked history.
+      const rows=this.db.prepare('SELECT * FROM element_grants WHERE (owner_id=? OR recipient_id=?) AND id>? ORDER BY id LIMIT ?').all(uid,uid,after,limit+1);
+      const page=rows.slice(0,limit);
+      const grants=page.map(g=>{
+        const base={id:g.id,direction:g.owner_id===uid?'outgoing':'incoming',status:g.status};
+        if(!['pending','active'].includes(g.status))return base;
+        try {
+          const {render}=this.source(g);
+          // Pending offers expose only the offered title and counterparty, never code/state.
+          const peer=this.activeUser(g.owner_id===uid?g.recipient_id:g.owner_id);
+          return {...base,name:render.name||'Element',peer:peer.username};
+        } catch {return {...base,status:'unavailable'};}
+      });
+      return {grants,next:rows.length>limit?page.at(-1).id:null};
     });
-    return {grants,next:rows.length>limit?page.at(-1).id:null};
   }
   accept(uid,id) {
-    this.activeUser(uid);
-    const g=this.db.prepare('SELECT * FROM element_grants WHERE id=? AND recipient_id=?').get(id,uid);
-    if(!g||!['pending','active'].includes(g.status))unavailable();
-    this.source(g);
-    this.db.prepare("UPDATE element_grants SET status='active' WHERE id=?").run(id);
-    return {id};
+    return this.locked(() => {
+      this.activeUser(uid);
+      const g=this.db.prepare('SELECT * FROM element_grants WHERE id=? AND recipient_id=?').get(id,uid);
+      if(!g||!['pending','active'].includes(g.status))unavailable();
+      this.source(g);
+      this.db.prepare("UPDATE element_grants SET status='active' WHERE id=?").run(id);
+      return {id};
+    });
   }
   close(uid,id) {
-    this.activeUser(uid);
-    const g=this.db.prepare('SELECT * FROM element_grants WHERE id=? AND (owner_id=? OR recipient_id=?)').get(id,uid,uid);
-    if(!g)unavailable();
-    if(['pending','active'].includes(g.status))this.db.prepare('UPDATE element_grants SET status=? WHERE id=?').run(g.owner_id===uid?'revoked':'declined',id);
+    return this.locked(() => {
+      this.activeUser(uid);
+      const g=this.db.prepare('SELECT * FROM element_grants WHERE id=? AND (owner_id=? OR recipient_id=?)').get(id,uid,uid);
+      if(!g)unavailable();
+      if(['pending','active'].includes(g.status))this.db.prepare('UPDATE element_grants SET status=? WHERE id=?').run(g.owner_id===uid?'revoked':'declined',id);
+    });
   }
   authorize(uid,id) {
     this.activeUser(uid);
@@ -84,10 +101,12 @@ export class ElementSharing {
     return {grant:g,...this.source(g)};
   }
   view(uid,id) {
-    const {render}=this.authorize(uid,id);
-    const {actions,...safe}=validateRender(render);
-    // Explicit projection: no history, conversation ids, DB names or linked actions.
-    return {id,render:safe,codeRevision:elementCodeRevision(render),stateRevision:elementStateRevision(safe.state),canEdit:false};
+    return this.locked(() => {
+      const {render}=this.authorize(uid,id);
+      const {actions,...safe}=validateRender(render);
+      // Explicit projection: no history, conversation ids, DB names or linked actions.
+      return {id,render:safe,codeRevision:elementCodeRevision(render),stateRevision:elementStateRevision(safe.state),canEdit:false};
+    });
   }
   state(uid,id,{state,expectedRevision}={}) {
     // Acquire write lock BEFORE authorization so revocation/disable/code replacement
@@ -109,17 +128,19 @@ export class ElementSharing {
     }catch(e){try{this.db.exec('ROLLBACK');}catch{}throw e;}
   }
   data(uid,id,input) {
-    // Recheck every operation, not only the initial connection or subscription.
-    const {grant,owner}=this.authorize(uid,id);
-    const {op,table,columns,row,query,id:rowId,patch}=input;
-    if(uid!==grant.owner_id&&op==='create'){
-      // Existing generated startup code may call create before select. Emulate the
-      // owner's existing-table response using a read only; NEVER create a table.
-      const existing=this.elementDB.op({sessionId:owner.conversationId,elementId:grant.message_id,op:'select',table,query:{limit:1}});
-      if(existing.status===200)return {status:409,result:{ok:false,error:'Tabelle existiert bereits.'}};
-      unavailable();
-    }
-    if(uid!==grant.owner_id&&!['select','insert','update','delete'].includes(op))unavailable();
-    return this.elementDB.op({sessionId:owner.conversationId,elementId:grant.message_id,op,table,columns,row,query,id:rowId,patch});
+    // Hold the ACL lock until the separate, bounded ElementDB operation returns.
+    return this.locked(() => {
+      const {grant,owner}=this.authorize(uid,id);
+      const {op,table,columns,row,query,id:rowId,patch}=input;
+      if(uid!==grant.owner_id&&op==='create'){
+        // Existing generated startup code may call create before select. Emulate the
+        // owner's existing-table response using a read only; NEVER create a table.
+        const existing=this.elementDB.op({sessionId:owner.conversationId,elementId:grant.message_id,op:'select',table,query:{limit:1}});
+        if(existing.status===200)return {status:409,result:{ok:false,error:'Tabelle existiert bereits.'}};
+        unavailable();
+      }
+      if(uid!==grant.owner_id&&!['select','insert','update','delete'].includes(op))unavailable();
+      return this.elementDB.op({sessionId:owner.conversationId,elementId:grant.message_id,op,table,columns,row,query,id:rowId,patch});
+    });
   }
 }
