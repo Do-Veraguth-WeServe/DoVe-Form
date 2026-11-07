@@ -1,0 +1,25 @@
+✔ opt-in acceptance and uniform foreign denial, no copied chats or capability transfer (326.596023ms)
+✔ actual shared rows update one namespace; forged namespace and schema operations cannot escape (295.80721ms)
+✔ revocation rechecks every read/write; new grant never reactivates old token (307.227175ms)
+✔ state updates remain visible, code changes fail closed until fresh acceptance (258.096656ms)
+✔ disabled accounts and deleted source are unavailable; additive table survives reopening (356.887589ms)
+✔ pending offers cannot read and quotas do not auto-share other elements (479.578482ms)
+✔ grant listing is paginated and account scoped without pending source data (271.563281ms)
+✔ state compare-and-set detects stale snapshots without editing code (262.493716ms)
+✔ state errors roll back and unavailable grants cannot disclose conflict state (249.461022ms)
+✔ recipient create compatibility never changes schema and matches owner response (283.086249ms)
+✔ separate recipients share conflict token and failed persistence is atomic (294.630023ms)
+✔ explicit recipient acceptance, immutable independent state, disabled copy, no capability transfer (283.383845ms)
+✔ revoked/declined offers cannot be accepted; stale revision and disabled sender rejected (316.381634ms)
+✔ actual persisted custom Form state is snapshotted, not template defaults or later edits (304.254511ms)
+✔ failed acceptance rolls back and pending offers are bounded (421.322898ms)
+✔ standard cards snapshot text and checkboxes into independent owned chats, atomically and once (412.449631ms)
+✔ Element templates: owned revision, independent fresh identity, no actions, withdrawal and quota rollback (344.421033ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3711.797528

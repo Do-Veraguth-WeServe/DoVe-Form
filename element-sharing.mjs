@@ -7,6 +7,11 @@ export function elementCodeRevision(render) {
   const {state, actions, ...code} = validateRender(render);
   return crypto.createHash('sha256').update(JSON.stringify(code)).digest('hex');
 }
+// Content token, not a monotonic event cursor. Owner writes through legacy state
+// persistence are also detected; clients must refresh rather than blindly retry.
+export function elementStateRevision(state) {
+  return crypto.createHash('sha256').update(JSON.stringify(state)).digest('hex');
+}
 export class ElementSharing {
   constructor(store, elementDB) {
     this.store=store; this.db=store.db; this.elementDB=elementDB;
@@ -40,6 +45,24 @@ export class ElementSharing {
     this.db.prepare("INSERT INTO element_grants VALUES(?,?,?,?,?,'pending',?)").run(id,uid,target.id,messageId,revision,new Date().toISOString());
     return {id};
   }
+  list(uid, {after='',limit=20}={}) {
+    this.activeUser(uid);
+    if(typeof after!=='string'||after.length>36||!Number.isInteger(limit)||limit<1||limit>40)throw Error('Ungültige Seite.');
+    // Cursor pagination bounds both query and response even with long revoked history.
+    const rows=this.db.prepare('SELECT * FROM element_grants WHERE (owner_id=? OR recipient_id=?) AND id>? ORDER BY id LIMIT ?').all(uid,uid,after,limit+1);
+    const page=rows.slice(0,limit);
+    const grants=page.map(g=>{
+      const base={id:g.id,direction:g.owner_id===uid?'outgoing':'incoming',status:g.status};
+      if(!['pending','active'].includes(g.status))return base;
+      try {
+        const {render}=this.source(g);
+        // Pending offers expose only the offered title and counterparty, never code/state.
+        const peer=this.activeUser(g.owner_id===uid?g.recipient_id:g.owner_id);
+        return {...base,name:render.name||'Element',peer:peer.username};
+      } catch {return {...base,status:'unavailable'};}
+    });
+    return {grants,next:rows.length>limit?page.at(-1).id:null};
+  }
   accept(uid,id) {
     this.activeUser(uid);
     const g=this.db.prepare('SELECT * FROM element_grants WHERE id=? AND recipient_id=?').get(id,uid);
@@ -64,12 +87,38 @@ export class ElementSharing {
     const {render}=this.authorize(uid,id);
     const {actions,...safe}=validateRender(render);
     // Explicit projection: no history, conversation ids, DB names or linked actions.
-    return {id,render:safe,codeRevision:elementCodeRevision(render),canEdit:false};
+    return {id,render:safe,codeRevision:elementCodeRevision(render),stateRevision:elementStateRevision(safe.state),canEdit:false};
+  }
+  state(uid,id,{state,expectedRevision}={}) {
+    // Acquire write lock BEFORE authorization so revocation/disable/code replacement
+    // from another SQLite connection cannot race the check and mutation.
+    this.db.exec('BEGIN IMMEDIATE');
+    try {
+      const {grant,render}=this.authorize(uid,id);
+      if(!state||typeof state!=='object'||Array.isArray(state)||Buffer.byteLength(JSON.stringify(state))>4096)throw Error('Ungültiger Zustand.');
+      const revision=elementStateRevision(render.state);
+      if(typeof expectedRevision!=='string'||expectedRevision!==revision){
+        this.db.exec('COMMIT');
+        return {status:409,result:{ok:false,error:'Zustand wurde geändert. Neu laden.',state:render.state,stateRevision:revision}};
+      }
+      // Only state is writable; never pass client render fields/identity to Store.
+      const next=validateRender({...render,state});
+      this.store.updateMessageRender(grant.owner_id,grant.message_id,next);
+      this.db.exec('COMMIT');
+      return {status:200,result:{ok:true,state:next.state,stateRevision:elementStateRevision(next.state)}};
+    }catch(e){try{this.db.exec('ROLLBACK');}catch{}throw e;}
   }
   data(uid,id,input) {
     // Recheck every operation, not only the initial connection or subscription.
     const {grant,owner}=this.authorize(uid,id);
     const {op,table,columns,row,query,id:rowId,patch}=input;
+    if(uid!==grant.owner_id&&op==='create'){
+      // Existing generated startup code may call create before select. Emulate the
+      // owner's existing-table response using a read only; NEVER create a table.
+      const existing=this.elementDB.op({sessionId:owner.conversationId,elementId:grant.message_id,op:'select',table,query:{limit:1}});
+      if(existing.status===200)return {status:409,result:{ok:false,error:'Tabelle existiert bereits.'}};
+      unavailable();
+    }
     if(uid!==grant.owner_id&&!['select','insert','update','delete'].includes(op))unavailable();
     return this.elementDB.op({sessionId:owner.conversationId,elementId:grant.message_id,op,table,columns,row,query,id:rowId,patch});
   }

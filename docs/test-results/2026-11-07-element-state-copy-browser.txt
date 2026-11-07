@@ -1,0 +1,32 @@
+
+> form3@3.3.0 test:form-sharing
+> node build.mjs && node --test test/element-sharing.test.mjs test/form-sharing.test.mjs test/forms.test.mjs && node test/form-sharing-browser.mjs
+
+build ok: dist/
+✔ opt-in acceptance and uniform foreign denial, no copied chats or capability transfer (387.946154ms)
+✔ actual shared rows update one namespace; forged namespace and schema operations cannot escape (349.092983ms)
+✔ revocation rechecks every read/write; new grant never reactivates old token (287.202284ms)
+✔ state updates remain visible, code changes fail closed until fresh acceptance (298.133538ms)
+✔ disabled accounts and deleted source are unavailable; additive table survives reopening (308.566642ms)
+✔ pending offers cannot read and quotas do not auto-share other elements (450.759125ms)
+✔ grant listing is paginated and account scoped without pending source data (263.637445ms)
+✔ state compare-and-set detects stale snapshots without editing code (244.835113ms)
+✔ state errors roll back and unavailable grants cannot disclose conflict state (278.284766ms)
+✔ recipient create compatibility never changes schema and matches owner response (276.78692ms)
+✔ explicit recipient acceptance, immutable independent state, disabled copy, no capability transfer (386.805514ms)
+✔ revoked/declined offers cannot be accepted; stale revision and disabled sender rejected (319.015325ms)
+✔ actual persisted custom Form state is snapshotted, not template defaults or later edits (280.36901ms)
+✔ failed acceptance rolls back and pending offers are bounded (416.792465ms)
+✔ standard cards snapshot text and checkboxes into independent owned chats, atomically and once (400.606683ms)
+✔ Element templates: owned revision, independent fresh identity, no actions, withdrawal and quota rollback (290.888443ms)
+✔ private forms, versions, deletion without resurrection, safe rendering contract (287.103873ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3614.604199
+PASS Element copy: actual UI acceptance; independent state/reload; empty DB, owner/copy writes isolated, third-party denied; editable desktop/mobile.
+PASS: opt-in library/state copies; desktop/mobile/reload; CSRF/auth; three-account ACL; immutable snapshot37; revoked offer rejected; recipient-owned disabled copies.

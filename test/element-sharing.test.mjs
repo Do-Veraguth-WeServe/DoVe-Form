@@ -28,7 +28,7 @@ test('opt-in acceptance and uniform foreign denial, no copied chats or capabilit
  assert.throws(()=>x.view(b.id,g.id));assert.throws(()=>x.accept(c.id,g.id));assert.throws(()=>x.accept(a.id,g.id));
  assert.deepEqual(x.accept(b.id,g.id),g);assert.deepEqual(x.accept(b.id,g.id),g);
  const view=x.view(b.id,g.id);assert.equal(view.render.state.n,4);assert.equal(view.render.actions,undefined);assert.equal(view.canEdit,false);
- assert.deepEqual(Object.keys(view).sort(),['canEdit','codeRevision','id','render']);
+ assert.deepEqual(Object.keys(view).sort(),['canEdit','codeRevision','id','render','stateRevision']);
  assert.equal(s.messageOwner(mid).userId,a.id);assert.equal(s.listConversations(b.id).conversations.length,0);
  assert.throws(()=>s.updateMessageRender(b.id,mid,view.render));
  const error=fn=>{try{fn();assert.fail('should deny');}catch(e){return e.message;}};
@@ -42,7 +42,8 @@ test('actual shared rows update one namespace; forged namespace and schema opera
  assert.equal(x.data(b.id,g.id,{...payload,op:'update',id:1,patch:{n:7}}).status,200);
  assert.equal(db.op({sessionId:conv.id,elementId:mid,op:'select',table:'counter'}).result.rows[0].n,7);
  assert.equal(db.op({sessionId:other.id,elementId:foreign,op:'select',table:'counter'}).result.rows[0].n,99);
- for(const op of ['create','drop','replaceRender','unknown'])assert.throws(()=>x.data(b.id,g.id,{op,table:'counter'}));
+ assert.equal(x.data(b.id,g.id,{op:'create',table:'counter'}).status,409);
+ for(const op of ['drop','replaceRender','unknown'])assert.throws(()=>x.data(b.id,g.id,{op,table:'counter'}));
  assert.throws(()=>x.data(c.id,g.id,payload));
  assert.equal(x.data(b.id,g.id,{op:'insert',table:'counter',row:{n:8}}).status,200);
  assert.equal(x.data(b.id,g.id,{op:'delete',table:'counter',id:2}).status,200);
@@ -75,4 +76,69 @@ test('pending offers cannot read and quotas do not auto-share other elements',()
  for(let i=0;i<40;i++){const mid=s.appendMessage(conv.id,'assistant',{render});const g=x.offer(a.id,{messageId:mid,revision:elementCodeRevision(render),recipient:'bobby'});first??=g;assert.throws(()=>x.data(b.id,g.id,{op:'select',table:'counter'}));}
  const mid=s.appendMessage(conv.id,'assistant',{render});const input={messageId:mid,revision:elementCodeRevision(render),recipient:'bobby'};
  assert.throws(()=>x.offer(a.id,input),/Zu viele/);x.close(a.id,first.id);assert.ok(x.offer(a.id,input).id);
+}));
+
+
+test('grant listing is paginated and account scoped without pending source data',()=>fixture(({s,a,b,c,mid,render,x,input})=>{
+ const first=x.offer(a.id,input);const conv=s.createConversation(a.id);
+ for(let i=0;i<4;i++)x.offer(a.id,{...input,messageId:s.appendMessage(conv.id,'assistant',{render})});
+ assert.deepEqual(x.list(c.id),{grants:[],next:null});
+ const seen=[];let after='';
+ do{const page=x.list(b.id,{after,limit:2});assert.ok(page.grants.length<=2);for(const g of page.grants){assert.deepEqual(Object.keys(g).sort(),['direction','id','name','peer','status']);assert.equal(g.peer,'alice');assert.equal(g.direction,'incoming');assert.equal(g.status,'pending');seen.push(g.id);}after=page.next;}while(after);
+ assert.equal(seen.length,5);assert.equal(new Set(seen).size,5);
+ assert.equal(x.list(a.id).grants[0].direction,'outgoing');
+ for(const limit of [0,41,1.5,'2'])assert.throws(()=>x.list(b.id,{limit}));
+ assert.throws(()=>x.list(b.id,{after:'x'.repeat(37)}));
+ x.close(a.id,first.id);assert.deepEqual(x.list(b.id).grants.find(g=>g.id===first.id),{id:first.id,direction:'incoming',status:'revoked'});
+ const next=x.offer(a.id,input);s.updateMessageRender(a.id,mid,{...render,js:'ui.text("n",99)'});
+ assert.deepEqual(x.list(b.id).grants.find(g=>g.id===next.id),{id:next.id,direction:'incoming',status:'unavailable'});
+ s.db.prepare('UPDATE users SET disabled=1 WHERE id=?').run(b.id);assert.throws(()=>x.list(b.id));
+}));
+test('state compare-and-set detects stale snapshots without editing code',()=>fixture(({s,a,b,c,mid,foreign,render,x,input})=>{
+ const g=x.offer(a.id,input);x.accept(b.id,g.id);
+ const snapshot=x.view(b.id,g.id),stateRevision=snapshot.stateRevision;
+ const changed=x.state(b.id,g.id,{state:{n:5},expectedRevision:stateRevision,render:{html:'forged'},messageId:foreign});
+ assert.equal(changed.status,200);assert.equal(s.getRender(mid).state.n,5);assert.equal(s.getRender(mid).html,render.html);assert.deepEqual(s.getRender(mid).actions,render.actions);assert.equal(s.getRender(foreign).state.n,4);
+ const stale=x.state(a.id,g.id,{state:{n:6},expectedRevision:stateRevision});
+ assert.equal(stale.status,409);assert.deepEqual(stale.result.state,{n:5});assert.equal(s.getRender(mid).state.n,5);
+ const ownerWrite=x.state(a.id,g.id,{state:{n:7},expectedRevision:changed.result.stateRevision});assert.equal(ownerWrite.status,200);
+ s.updateMessageRender(a.id,mid,{...render,state:{n:8}});
+ assert.equal(x.state(b.id,g.id,{state:{n:9},expectedRevision:ownerWrite.result.stateRevision}).status,409);
+ assert.throws(()=>x.state(c.id,g.id,{state:{n:99},expectedRevision:ownerWrite.result.stateRevision}));
+ x.close(a.id,g.id);assert.throws(()=>x.state(b.id,g.id,{state:{n:99},expectedRevision:ownerWrite.result.stateRevision}));
+ assert.equal(s.getRender(mid).state.n,8);
+}));
+test('state errors roll back and unavailable grants cannot disclose conflict state',()=>fixture(({s,a,b,mid,render,x,input})=>{
+ const g=x.offer(a.id,input);
+ assert.throws(()=>x.state(b.id,g.id,{state:{n:1}}));x.accept(b.id,g.id);
+ const snap=x.view(b.id,g.id);
+ for(const state of [null,[],false,{x:'ö'.repeat(2200)}])assert.throws(()=>x.state(b.id,g.id,{state,expectedRevision:snap.stateRevision}));
+ assert.equal(x.state(b.id,g.id,{state:{n:1}}).status,409);
+ assert.equal(x.state(b.id,g.id,{state:{n:1},expectedRevision:snap.stateRevision}).status,200);
+ s.db.prepare('UPDATE users SET disabled=1 WHERE id=?').run(a.id);assert.throws(()=>x.state(b.id,g.id,{state:{n:2}}));s.db.prepare('UPDATE users SET disabled=0 WHERE id=?').run(a.id);
+ s.updateMessageRender(a.id,mid,{...render,html:'<p>changed</p>'});assert.throws(()=>x.state(b.id,g.id,{state:{n:2}}));
+}));
+test('recipient create compatibility never changes schema and matches owner response',()=>fixture(({db,a,b,conv,mid,x,input})=>{
+ const g=x.offer(a.id,input);x.accept(b.id,g.id);
+ const schema=()=>db.db.prepare("SELECT name,sql FROM sqlite_master ORDER BY name").all();const before=schema();
+ for(const columns of [undefined,['n'],['unrelated'],{bad:true}]){
+  const request={op:'create',table:'counter',columns};
+  assert.deepEqual(x.data(b.id,g.id,request),x.data(a.id,g.id,request));
+ }
+ for(const table of ['missing','COUNTER','counter;DROP TABLE users'])assert.throws(()=>x.data(b.id,g.id,{op:'create',table}));
+ assert.throws(()=>x.data(b.id,g.id,{op:'drop',table:'counter'}));assert.deepEqual(schema(),before);
+ assert.equal(db.op({sessionId:conv.id,elementId:mid,op:'select',table:'counter'}).result.rows[0].n,4);
+ x.close(a.id,g.id);assert.throws(()=>x.data(b.id,g.id,{op:'create',table:'counter'}));
+}));
+
+test('separate recipients share conflict token and failed persistence is atomic',()=>fixture(({s,a,b,c,mid,x,input})=>{
+ const gb=x.offer(a.id,input),gc=x.offer(a.id,{...input,recipient:'carol'});x.accept(b.id,gb.id);x.accept(c.id,gc.id);
+ const bToken=x.view(b.id,gb.id).stateRevision,cToken=x.view(c.id,gc.id).stateRevision;assert.equal(bToken,cToken);
+ assert.equal(x.state(b.id,gb.id,{state:{n:10},expectedRevision:bToken}).status,200);
+ assert.equal(x.state(c.id,gc.id,{state:{n:11},expectedRevision:cToken}).status,409);
+ const original=s.updateMessageRender;const latest=x.view(c.id,gc.id).stateRevision;
+ try{s.updateMessageRender=function(...args){original.apply(this,args);throw Error('fixture disk failure');};assert.throws(()=>x.state(c.id,gc.id,{state:{n:12},expectedRevision:latest}),/fixture disk failure/);}finally{s.updateMessageRender=original;}
+ assert.equal(s.getRender(mid).state.n,10);assert.equal(x.view(b.id,gb.id).stateRevision,latest);
+ assert.equal(x.state(c.id,gc.id,{state:{n:13},expectedRevision:latest}).status,200);
+ x.close(a.id,gb.id);assert.throws(()=>x.view(b.id,gb.id));assert.equal(x.view(c.id,gc.id).render.state.n,13);
 }));
