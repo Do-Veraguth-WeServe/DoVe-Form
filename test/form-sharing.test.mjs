@@ -4,3 +4,24 @@ test('explicit recipient acceptance, immutable independent state, disabled copy,
 test('revoked/declined offers cannot be accepted; stale revision and disabled sender rejected',()=>fixture(({s,a,b,c,f,x,form})=>{assert.throws(()=>x.offer(a.id,{id:form.id,revision:0,recipient:'bobby'}));assert.throws(()=>x.offer(a.id,{id:form.id,revision:1,recipient:'alice'}));const one=x.offer(a.id,{id:form.id,revision:1,recipient:'bobby'});x.close(a.id,one.id);assert.throws(()=>x.accept(b.id,one.id));const two=x.offer(a.id,{id:form.id,revision:1,recipient:'bobby'});x.close(b.id,two.id);assert.throws(()=>x.accept(b.id,two.id));const three=x.offer(a.id,{id:form.id,revision:1,recipient:'bobby'});s.db.prepare('UPDATE users SET disabled=1 WHERE id=?').run(a.id);assert.throws(()=>x.accept(b.id,three.id));assert.equal(f.list(b.id).length,0);}));
 test('actual persisted custom Form state is snapshotted, not template defaults or later edits',()=>fixture(({s,a,b,c,f,x,form,mid})=>{const payload={items:[{formId:form.id,layout:'custom',template:form.template,data:{n:37}}]};s.db.prepare('UPDATE messages SET forms=? WHERE id=?').run(JSON.stringify(payload),mid);f.save(a.id,{...form,layout:'note'});const offer=x.offer(a.id,{id:form.id,revision:2,recipient:'bobby',messageId:mid,index:0});payload.items[0].data.n=99;s.db.prepare('UPDATE messages SET forms=? WHERE id=?').run(JSON.stringify(payload),mid);const copy=x.accept(b.id,offer.id);assert.equal(f.get(b.id,copy.id).template.state.n,37);assert.throws(()=>x.offer(a.id,{id:form.id,revision:1,recipient:'bobby',messageId:mid,index:9}));const foreign=s.createConversation(c.id),fm=s.appendMessage(foreign.id,'assistant',{prose:'private'});assert.throws(()=>x.offer(a.id,{id:form.id,revision:1,recipient:'bobby',messageId:fm,index:0}));}));
 test('failed acceptance rolls back and pending offers are bounded',()=>fixture(({a,b,f,x,form})=>{const offer=x.offer(a.id,{id:form.id,revision:1,recipient:'bobby'});for(let i=0;i<40;i++)f.save(b.id,{name:'Full '+i,layout:'note',instructions:'Test'});assert.throws(()=>x.accept(b.id,offer.id));assert.equal(x.list(b.id)[0].status,'pending');assert.equal(f.list(b.id).length,40);for(let i=1;i<40;i++)x.offer(a.id,{id:form.id,revision:1,recipient:'bobby'});assert.throws(()=>x.offer(a.id,{id:form.id,revision:1,recipient:'bobby'}));}));
+
+test('standard cards snapshot text and checkboxes into independent owned chats, atomically and once',()=>fixture(({s,a,b,c,f,x,mid})=>{
+ for(const layout of ['note','list','steps','compare','metric','choices']){
+ const form=f.save(a.id,{name:layout,layout,instructions:'Fixture'});
+ const item={formId:form.id,layout,title:'Snapshot',text:'Selected text',items:[{label:'One'},{label:'Two'}],data:{checked:[true,false]},secret:'not copied',actions:[{name:'never'}]};
+ s.db.prepare('UPDATE messages SET forms=? WHERE id=?').run(JSON.stringify({items:[item]}),mid);
+ assert.throws(()=>x.offer(b.id,{id:form.id,revision:1,recipient:'carol',messageId:mid,index:0}));
+ assert.throws(()=>x.offer(a.id,{id:form.id,revision:1,recipient:'bobby',messageId:mid,index:2}));
+ const offer=x.offer(a.id,{id:form.id,revision:1,recipient:'bobby',messageId:mid,index:0});
+ item.text='Changed later';s.db.prepare('UPDATE messages SET forms=? WHERE id=?').run(JSON.stringify({items:[item]}),mid);
+ const copy=x.accept(b.id,offer.id);assert.equal(s.conversationOwner(copy.conversationId),b.id);
+ const row=s.db.prepare('SELECT id,forms FROM messages WHERE conversation_id=?').get(copy.conversationId),card=JSON.parse(row.forms).items[0];
+ assert.equal(card.text,'Selected text');assert.equal(card.formId,copy.id);assert.equal(card.secret,undefined);assert.equal(card.actions,undefined);assert.equal(f.get(b.id,copy.id).enabled,false);
+ assert.equal(x.accept(b.id,offer.id).id,copy.id);assert.equal(s.db.prepare('SELECT count(*) n FROM messages WHERE conversation_id=?').get(copy.conversationId).n,1);
+ if(layout==='list'){assert.deepEqual(card.data.checked,[true,false]);assert.throws(()=>f.updateCardState(c.id,row.id,0,{checked:[false,true]}));f.updateCardState(b.id,row.id,0,{checked:[false,true]});assert.deepEqual(JSON.parse(s.db.prepare('SELECT forms FROM messages WHERE id=?').get(mid).forms).items[0].data.checked,[true,false]);}
+ }
+ const form=f.save(a.id,{name:'Full',layout:'note',instructions:'Fixture'});s.db.prepare('UPDATE messages SET forms=? WHERE id=?').run(JSON.stringify({items:[{formId:form.id,layout:'note'}]}),mid);
+ const offer=x.offer(a.id,{id:form.id,revision:1,recipient:'bobby',messageId:mid,index:0});
+ while(s.db.prepare('SELECT count(*) n FROM conversations WHERE user_id=?').get(b.id).n<40)s.createConversation(b.id);
+ const before=f.list(b.id).length;assert.throws(()=>x.accept(b.id,offer.id));assert.equal(f.list(b.id).length,before);assert.equal(x.list(b.id).find(o=>o.id===offer.id).status,'pending');
+}));

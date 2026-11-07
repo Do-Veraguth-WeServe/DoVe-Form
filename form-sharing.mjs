@@ -1,5 +1,6 @@
 // Independent, opt-in snapshots. Never grants access to source conversations or tools.
 import crypto from 'node:crypto';
+import {layouts} from './forms.mjs';
 import {validateRender} from './contract.mjs';
 export class FormSharing {
  constructor(store,forms){this.store=store;this.forms=forms;this.db=store.db;this.db.exec(
@@ -12,15 +13,25 @@ export class FormSharing {
   let source=this.forms.get(uid,d.id);
   if(!source)throw Error('Form nicht gefunden.');
   if(d.revision!==source.revision)throw Error('Form wurde inzwischen geändert. Bitte neu laden.');
-  // Only owned custom card state may override this private library snapshot.
+  let card=null;
+  // Only selected, owned persisted content may be copied.
   if(d.messageId!==undefined){
    if(this.store.messageOwner(d.messageId)?.userId!==uid||!Number.isInteger(d.index)||d.index<0||d.index>2)throw Error('Form-Zustand nicht gefunden.');
    const row=this.db.prepare('SELECT forms FROM messages WHERE id=?').get(d.messageId);
    const item=JSON.parse(row.forms||'{}').items?.[d.index];
-   if(!item||item.formId!==source.id||item.layout!=='custom'||!item.template)throw Error('Form-Zustand nicht gefunden.');
-   source={...source,layout:'custom',template:{...item.template,state:{...item.template.state,...item.data}}};
+   if(!item||item.formId!==source.id||!layouts.includes(item.layout))throw Error('Form-Zustand nicht gefunden.');
+   if(item.layout==='custom'){
+    if(!item.template)throw Error('Form-Zustand nicht gefunden.');
+    source={...source,layout:'custom',template:{...item.template,state:{...item.template.state,...item.data}}};
+   }else{
+    const items=(Array.isArray(item.items)?item.items:[]).slice(0,8).map(i=>({label:String(i?.label||'').slice(0,160),detail:String(i?.detail||'').slice(0,500)}));
+    card={layout:item.layout,title:String(item.title||source.name).slice(0,100),text:String(item.text||'').slice(0,1500),items};
+    if(item.layout==='list')card.data={checked:items.map((_,i)=>item.data?.checked?.[i]===true)};
+    source={...source,layout:item.layout,template:null};
+   }
   }
   const snapshot={name:source.name,layout:source.layout,instructions:source.instructions,enabled:false};
+  if(card)snapshot.card=card;
   if(source.template){const {actions,...template}=validateRender(source.template);snapshot.template=template;}
   if(this.db.prepare("SELECT count(*) n FROM form_copy_offers WHERE (sender_id=? OR recipient_id=?) AND status='pending'").get(uid,recipient.id).n>=40)throw Error('Zu viele offene Kopie-Angebote.');
   const id=crypto.randomUUID();this.db.prepare('INSERT INTO form_copy_offers(id,sender_id,recipient_id,snapshot,created_at) VALUES (?,?,?,?,?)').run(id,uid,recipient.id,JSON.stringify(snapshot),new Date().toISOString());return {id};
@@ -33,8 +44,14 @@ export class FormSharing {
   const snapshot=JSON.parse(offer.snapshot);
   this.db.exec('SAVEPOINT accept_form_copy');try{
    const copy=this.forms.save(uid,snapshot,'accepted-copy',snapshot.template||null);
+   let conversationId;
+   if(snapshot.card){
+    const conversation=this.store.createConversation(uid,'Kopie: '+snapshot.card.title);conversationId=conversation.id;
+    const messageId=this.store.appendMessage(conversationId,'assistant',{prose:'Unabhängige Form-Kopie. Änderungen bleiben in diesem Chat.'});
+    this.db.prepare('UPDATE messages SET forms=? WHERE id=?').run(JSON.stringify({items:[{...snapshot.card,formId:copy.id,revision:copy.revision}]}),messageId);
+   }
    this.db.prepare("UPDATE form_copy_offers SET status='accepted',copy_id=? WHERE id=?").run(copy.id,id);
-   this.db.exec('RELEASE accept_form_copy');return {id:copy.id};
+   this.db.exec('RELEASE accept_form_copy');return {id:copy.id,...(conversationId?{conversationId}:{})};
   }catch(e){this.db.exec('ROLLBACK TO accept_form_copy; RELEASE accept_form_copy');throw e;}
  }
  close(uid,id){const o=this.db.prepare('SELECT * FROM form_copy_offers WHERE id=? AND (sender_id=? OR recipient_id=?)').get(id,uid,uid);if(!o)throw Error('Angebot nicht verfügbar.');if(o.status!=='pending')return;this.db.prepare('UPDATE form_copy_offers SET status=? WHERE id=?').run(o.sender_id===uid?'revoked':'declined',id);}

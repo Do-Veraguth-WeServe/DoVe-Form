@@ -1,0 +1,9 @@
+http://127.0.0.1:5177 homepage200 CSP
+http://127.0.0.1:5177 auth200 registration closed
+http://127.0.0.1:5177 bundle 61469496e72d69240aca8325ea6d55575e1b326297111ca56d1d69ddb74951ba
+http://127.0.0.1:5177 anonymous copies401
+https://fhisling.tail11036c.ts.net:9444 homepage200 CSP
+https://fhisling.tail11036c.ts.net:9444 auth200 registration closed
+https://fhisling.tail11036c.ts.net:9444 bundle 61469496e72d69240aca8325ea6d55575e1b326297111ca56d1d69ddb74951ba
+https://fhisling.tail11036c.ts.net:9444 anonymous copies401
+selected sources and deployed docs identical
