@@ -97,6 +97,10 @@ Artefakte sind **nicht vertrauenswürdige Modell-Ausgabe** und laufen deshalb in
 - `ui.db`: nur strukturierte Operationen, physisch pro Element namespace-isoliert, harte Quotas, Ownership serverseitig geprüft
 - Ausführliche Abdeckung: `TESTING.md`
 
+## Form-Kopien
+
+Unter **Formen → Kopie anbieten** kann eine unabhängige Kopie angeboten werden. Der Empfänger nimmt sie ausdrücklich an; sie startet deaktiviert. Custom-Form-Zustände lassen sich direkt im Chat kopieren. Kein Zugriff auf Quell-Chat, Datenbanken oder Tool-Freigaben. Angenommene Kopien sind nicht zurückrufbar. Geteilte Element-Datenbanken sind noch nicht implementiert. Details: [Form sharing](docs/FORM-SHARING.md).
+
 ## Entwicklung
 
 ```bash

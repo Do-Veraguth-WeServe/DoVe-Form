@@ -1,0 +1,4 @@
+{"base":"http://127.0.0.1:5177","home":200,"registration":false,"app":200,"sha256":"baa8ced3375be4126eae588bd054b2adbf45c8e7d801237efe38fcd24c3c7834","csp":true,"anonymousCopies":401}
+{"base":"https://fhisling.tail11036c.ts.net:9444","home":200,"registration":false,"app":200,"sha256":"baa8ced3375be4126eae588bd054b2adbf45c8e7d801237efe38fcd24c3c7834","csp":true,"anonymousCopies":401}
+Additive table=true
+Active jobs=0

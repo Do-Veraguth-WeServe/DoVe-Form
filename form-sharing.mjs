@@ -1,0 +1,41 @@
+// Independent, opt-in snapshots. Never grants access to source conversations or tools.
+import crypto from 'node:crypto';
+import {validateRender} from './contract.mjs';
+export class FormSharing {
+ constructor(store,forms){this.store=store;this.forms=forms;this.db=store.db;this.db.exec(
+  "CREATE TABLE IF NOT EXISTS form_copy_offers(id TEXT PRIMARY KEY,sender_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,recipient_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,snapshot TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'pending',copy_id TEXT,created_at TEXT NOT NULL)");}
+ list(uid){return this.db.prepare('SELECT o.id,o.sender_id,o.recipient_id,o.snapshot,o.status,o.copy_id,o.created_at,s.username sender,r.username recipient FROM form_copy_offers o JOIN users s ON s.id=o.sender_id JOIN users r ON r.id=o.recipient_id WHERE (o.sender_id=? OR o.recipient_id=?) ORDER BY o.created_at DESC LIMIT 100').all(uid,uid).map(o=>({id:o.id,name:JSON.parse(o.snapshot).name,status:o.status,copyId:o.copy_id,createdAt:o.created_at,sender:o.sender,recipient:o.recipient,direction:o.sender_id===uid?'sent':'received'}));}
+ offer(uid,d){
+  if(typeof d.recipient!=='string')throw Error('Empfänger erforderlich.');
+  const recipient=this.store.getUserByName(d.recipient.trim());
+  if(!recipient||recipient.disabled||recipient.id===uid)throw Error('Empfänger nicht verfügbar.');
+  let source=this.forms.get(uid,d.id);
+  if(!source)throw Error('Form nicht gefunden.');
+  if(d.revision!==source.revision)throw Error('Form wurde inzwischen geändert. Bitte neu laden.');
+  // Only owned custom card state may override this private library snapshot.
+  if(d.messageId!==undefined){
+   if(this.store.messageOwner(d.messageId)?.userId!==uid||!Number.isInteger(d.index)||d.index<0||d.index>2)throw Error('Form-Zustand nicht gefunden.');
+   const row=this.db.prepare('SELECT forms FROM messages WHERE id=?').get(d.messageId);
+   const item=JSON.parse(row.forms||'{}').items?.[d.index];
+   if(!item||item.formId!==source.id||item.layout!=='custom'||!item.template)throw Error('Form-Zustand nicht gefunden.');
+   source={...source,layout:'custom',template:{...item.template,state:{...item.template.state,...item.data}}};
+  }
+  const snapshot={name:source.name,layout:source.layout,instructions:source.instructions,enabled:false};
+  if(source.template){const {actions,...template}=validateRender(source.template);snapshot.template=template;}
+  if(this.db.prepare("SELECT count(*) n FROM form_copy_offers WHERE (sender_id=? OR recipient_id=?) AND status='pending'").get(uid,recipient.id).n>=40)throw Error('Zu viele offene Kopie-Angebote.');
+  const id=crypto.randomUUID();this.db.prepare('INSERT INTO form_copy_offers(id,sender_id,recipient_id,snapshot,created_at) VALUES (?,?,?,?,?)').run(id,uid,recipient.id,JSON.stringify(snapshot),new Date().toISOString());return {id};
+ }
+ accept(uid,id){
+  const offer=this.db.prepare('SELECT * FROM form_copy_offers WHERE id=? AND recipient_id=?').get(id,uid);
+  if(!offer)throw Error('Angebot nicht verfügbar.');
+  if(offer.status==='accepted')return {id:offer.copy_id};
+  if(offer.status!=='pending'||this.store.getUser(offer.sender_id)?.disabled)throw Error('Angebot nicht verfügbar.');
+  const snapshot=JSON.parse(offer.snapshot);
+  this.db.exec('SAVEPOINT accept_form_copy');try{
+   const copy=this.forms.save(uid,snapshot,'accepted-copy',snapshot.template||null);
+   this.db.prepare("UPDATE form_copy_offers SET status='accepted',copy_id=? WHERE id=?").run(copy.id,id);
+   this.db.exec('RELEASE accept_form_copy');return {id:copy.id};
+  }catch(e){this.db.exec('ROLLBACK TO accept_form_copy; RELEASE accept_form_copy');throw e;}
+ }
+ close(uid,id){const o=this.db.prepare('SELECT * FROM form_copy_offers WHERE id=? AND (sender_id=? OR recipient_id=?)').get(id,uid,uid);if(!o)throw Error('Angebot nicht verfügbar.');if(o.status!=='pending')return;this.db.prepare('UPDATE form_copy_offers SET status=? WHERE id=?').run(o.sender_id===uid?'revoked':'declined',id);}
+}

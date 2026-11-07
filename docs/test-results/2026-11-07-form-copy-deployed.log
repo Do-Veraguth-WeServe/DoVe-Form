@@ -1,0 +1,1 @@
+PASS: opt-in library/state copies; desktop/mobile/reload; CSRF/auth; three-account ACL; immutable snapshot37; revoked offer rejected; recipient-owned disabled copies.

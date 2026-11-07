@@ -1,0 +1,19 @@
+
+> form3@3.3.0 test:form-sharing
+> node build.mjs && node --test test/form-sharing.test.mjs test/forms.test.mjs && node test/form-sharing-browser.mjs
+
+build ok: dist/
+✔ explicit recipient acceptance, immutable independent state, disabled copy, no capability transfer (372.180768ms)
+✔ revoked/declined offers cannot be accepted; stale revision and disabled sender rejected (341.097056ms)
+✔ actual persisted custom Form state is snapshotted, not template defaults or later edits (302.777917ms)
+✔ failed acceptance rolls back and pending offers are bounded (431.470751ms)
+✔ private forms, versions, deletion without resurrection, safe rendering contract (277.482785ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1635.263102
+PASS: opt-in library/state copies; desktop/mobile/reload; CSRF/auth; three-account ACL; immutable snapshot37; revoked offer rejected; recipient-owned disabled copies.

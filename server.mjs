@@ -1,6 +1,7 @@
 import {Bugs} from './bugs.mjs';
 import {elementEvidence,ELEMENT_EVIDENCE_POLICY} from './element-context.mjs';
 import {Forms,chatPrompt} from './forms.mjs';
+import {FormSharing} from './form-sharing.mjs';
 import {planningPrompt} from './blueprints.mjs';
 import {HTTPConnections,httpRegistry} from './http-tools.mjs';
 import http from 'node:http';
@@ -39,6 +40,7 @@ catch (e) { console.error('store init failed:', e.message); process.exit(1); }
 if (store.interruptedOnStart > 0)
   console.log(`[jobs] marked ${store.interruptedOnStart} interrupted job(s) as failed (server restart)`);
 const forms=new Forms(store);
+const formSharing=new FormSharing(store,forms);
 const bugs=new Bugs(store);
 const CHAT_TOTAL_MS = Number(process.env.FORM3_CHAT_TIMEOUT_MS || 0); // total job budget across BOTH rounds
 const mcp=new MCPConnections(path.join(DATA_DIR,'mcp.json'));
@@ -339,10 +341,14 @@ const server = http.createServer(async (req, res) => {
   if(pathname==='/api/forms'||pathname.startsWith('/api/forms/')){
     try{
       forms.seed(user.id);
+      if(req.method==='GET'&&pathname==='/api/forms/copies')return reply(res,200,{offers:formSharing.list(user.id)});
       if(req.method==='GET')return reply(res,200,pathname==='/api/forms'?{forms:forms.list(user.id)}:{versions:forms.versions(user.id,url.searchParams.get('id'))});
       if(req.method==='POST'){
         if(!rate('forms:'+user.id,30,60000))return reply(res,429,{error:'Bitte kurz warten.'});
         const d=JSON.parse(await readBody(req,10000));
+        if(pathname==='/api/forms/copies/offer')return reply(res,200,formSharing.offer(user.id,d));
+        if(pathname==='/api/forms/copies/accept')return reply(res,200,formSharing.accept(user.id,d.id));
+        if(pathname==='/api/forms/copies/close'){formSharing.close(user.id,d.id);return reply(res,200,{ok:true});}
         if(pathname==='/api/forms/accept'){
           if(store.messageOwner(d.messageId)?.userId!==user.id||!Number.isInteger(d.index)||d.index<0||d.index>1)throw Error('Vorschlag nicht gefunden.');
           const accepted=store.db.prepare('SELECT form_id FROM form_acceptances WHERE message_id=? AND proposal_index=?').get(d.messageId,d.index);if(accepted)return reply(res,200,{ok:true,formId:accepted.form_id});

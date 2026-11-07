@@ -1,0 +1,4 @@
+Baseline: HEAD 8b8b850 has zero /api/forms/copies routes and no copy controls in Forms library. Sharing feature absent; no user artifact modified.
+Migration rehearsal: SQLite backup /opt/form/.rollback/20261107-form-copy/form.db (protected, form-owned). Applied FormSharing additive migration twice to disposable restored DB. Fingerprints of all 16 pre-existing tables unchanged; foreign_key_check clean. Disposable DB removed.
+Initial browser fixture failed only on mobile reload navigation (#formsbtn hidden behind sidebar); corrected fixture to open #mobile, retained count/ACL assertions. No production workaround or weakened test. Final log records rerun.
+Scope: library definition copies and persisted custom-Form state snapshots. Explicit recipient acceptance, disabled initially; no DB/network/provider grant. Element copies/shared live DB and ordinary message checkbox/text snapshots remain pending.

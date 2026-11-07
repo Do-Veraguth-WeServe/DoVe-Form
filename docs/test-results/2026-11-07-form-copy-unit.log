@@ -1,0 +1,13 @@
+✔ explicit recipient acceptance, immutable independent state, disabled copy, no capability transfer (373.282463ms)
+✔ revoked/declined offers cannot be accepted; stale revision and disabled sender rejected (254.523418ms)
+✔ actual persisted custom Form state is snapshotted, not template defaults or later edits (293.728165ms)
+✔ failed acceptance rolls back and pending offers are bounded (395.164871ms)
+✔ private forms, versions, deletion without resurrection, safe rendering contract (333.053373ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1501.909267
