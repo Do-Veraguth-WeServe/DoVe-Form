@@ -1,0 +1,202 @@
+
+> form3@3.3.0 test:blueprints
+> node build.mjs && node --test test/refinement-cas.test.mjs test/element-persistence.test.mjs test/element-sharing.test.mjs test/css-preflight.test.mjs test/css-policy.test.mjs test/element-timeline.test.mjs test/chat-envelope.test.mjs test/element-context.test.mjs test/forms.test.mjs test/form-sharing.test.mjs test/blueprint-questions.test.mjs test/unit.test.mjs test/provider.test.mjs test/model-access.test.mjs test/agent-loop.test.mjs test/tool-execution.test.mjs test/mcp.test.mjs test/memory.test.mjs test/http-tools.test.mjs test/element-actions.test.mjs && node test/element-grants-http.mjs && node test/owner-persistence-browser.mjs && node test/css-policy-browser.mjs && node test/activity.test.mjs && node test/plan-fold.test.mjs && node test/blueprints.test.mjs && node test/forms-flow.test.mjs && node test/checklist-state.test.mjs && node test/accounts.test.mjs && node test/sidebar-layout.test.mjs && node --test test/mcp-e2e.test.mjs test/auto-api.test.mjs && node test/calendar.test.mjs && node test/flappy.test.mjs
+
+build ok: dist/
+✔ standalone loop supplies tools, executes once and returns tool result to model (92.377282ms)
+✔ unknown tool is rejected without executing (46.737621ms)
+[provider] retry empty interrupted stream code=ECONNRESET
+✔ ambiguous external failure is not retried (25.248647ms)
+✔ transport retry after a tool result never re-executes that tool (6.814577ms)
+✔ unanswered questions override optimistic model readiness (5.311172ms)
+✔ resolved questions allow an otherwise ready plan (0.833709ms)
+✔ question count, length, schema and nonempty text are bounded (1.302698ms)
+✔ stored pre-questions format remains readable (2.270806ms)
+✔ bare, fenced, chunks, malformed, foreign and ordinary JSON (10.480754ms)
+✔ pseudo-element failure explains removed features without inventing data causes (18.988957ms)
+✔ prompt and sanitizer consume one immutable capability policy (3.233885ms)
+✔ unsafe syntax remains blocked and reports stay bounded without source values (11.23743ms)
+✔ ordinary responsive layout and colors survive unchanged (2.46527ms)
+✔ new output rejects every reported unsupported variation, existing artifacts remain readable and unchanged (20.212449ms)
+✔ real SSE generation corrects unsupported CSS exactly once with policy evidence (147.655585ms)
+✔ second unsupported output fails honestly with no render and no third attempt (42.018712ms)
+[job] id=c1f494bf failed after 2 round(s): invalid-artifact
+[job] id=0f78ab62 user=868bbc58 kind=refine dur=26ms rounds=2 finish=stop/stop chars=323 render=yes fail=invalid-artifact
+✔ persisted failed refinement preserves original; corrected build becomes ready (307.611781ms)
+✔ supported output stays one round (11.498283ms)
+✔ element actions bind owner, tool revision and reject concurrent clicks (305.553952ms)
+✔ stored element evidence: isolation, fresh values, truncation and read-only (362.328664ms)
+✔ serializes writes using acknowledged state, snapshots queued input (29.989668ms)
+✔ blocks queued writes without replay after 409 (10.745245ms)
+✔ blocks queued writes without replay after 401 (4.490832ms)
+✔ blocks queued writes without replay after 403 (2.521202ms)
+✔ blocks queued writes without replay after 503 (1.981521ms)
+✔ blocks queued writes without replay after network (2.763683ms)
+✔ blocks queued writes without replay after malformed (2.294913ms)
+✔ bounded queue fails closed without a request flood (3.452664ms)
+✔ stopped snapshot cannot dispatch queued work (1.604617ms)
+✔ opt-in acceptance and uniform foreign denial, no copied chats or capability transfer (371.862459ms)
+✔ actual shared rows update one namespace; forged namespace and schema operations cannot escape (314.339312ms)
+✔ revocation rechecks every read/write; new grant never reactivates old token (339.570069ms)
+✔ state updates remain visible, code changes fail closed until fresh acceptance (287.440926ms)
+✔ disabled accounts and deleted source are unavailable; additive table survives reopening (282.074698ms)
+✔ pending offers cannot read and quotas do not auto-share other elements (524.73526ms)
+✔ grant listing is paginated and account scoped without pending source data (328.303321ms)
+✔ state compare-and-set detects stale snapshots without editing code (272.529093ms)
+✔ state errors roll back and unavailable grants cannot disclose conflict state (298.193498ms)
+✔ recipient create compatibility never changes schema and matches owner response (281.275962ms)
+✔ separate recipients share conflict token and failed persistence is atomic (296.531014ms)
+✔ cross-process revocation cannot interleave shared row authorization and use (522.230531ms)
+✔ cross-process disable cannot interleave offer or acceptance checks (674.97986ms)
+✔ shared snapshots are coherent against cross-process revocation (515.154849ms)
+✔ owner persistence preserves legacy saves but requires CAS for active shared code (290.020345ms)
+✔ owner code replacement is atomic, versioned and invalidates accepted code (298.609199ms)
+✔ owner CAS holds writer lock through snapshot and persistence (499.647737ms)
+✔ one element follows newest build anchor; prose/forms and identity stay unchanged (5.285476ms)
+✔ explicit recipient acceptance, immutable independent state, disabled copy, no capability transfer (355.039837ms)
+✔ revoked/declined offers cannot be accepted; stale revision and disabled sender rejected (283.527522ms)
+✔ actual persisted custom Form state is snapshotted, not template defaults or later edits (294.628805ms)
+✔ failed acceptance rolls back and pending offers are bounded (444.904103ms)
+✔ standard cards snapshot text and checkboxes into independent owned chats, atomically and once (417.99639ms)
+✔ Element templates: owned revision, independent fresh identity, no actions, withdrawal and quota rollback (335.015162ms)
+✔ private forms, versions, deletion without resurrection, safe rendering contract (289.97566ms)
+✔ HTTP rejects local, metadata, encoded IPs and unsafe configuration (12.689931ms)
+✔ HTTP permission, hidden credentials, DNS pinning, redirect and size limits (12.885926ms)
+✔ MCP endpoint rejects insecure remote URLs and embedded credentials (2.500687ms)
+✔ connections are disabled by default, tokens stay private, permissions persist (96.355355ms)
+✔ HTTP MCP initialize, discover and call use official client (257.115198ms)
+✔ standalone memories isolate owners and support search edit delete (257.672133ms)
+✔ private by default, explicit sharing, foreign key never exposed, stable legacy ownership (2.381043ms)
+✔ nonadmin provider transport denies private DNS, pins public DNS, denies redirects (57.965276ms)
+✔ clean round: prose parsed, finish_reason stop, actual content captured (no SSE envelopes) (80.757132ms)
+✔ finish_reason=length sets truncated; unterminated artifact reported as invalid (35.848369ms)
+✔ malformed SSE frames are ignored, valid frames still parsed (8.897425ms)
+✔ explicit provider error frame throws ProviderError (distinct from malformed frames) (10.228478ms)
+✔ final unterminated SSE line is parsed (9.729747ms)
+✔ UTF-8 multibyte char split across reads is reassembled (6.404028ms)
+✔ upstream 401 becomes ProviderError with status (permanent, caller must not retry) (10.300993ms)
+✔ content cap (accumulated deltas) throws SizeError (6.907007ms)
+✔ transport cap (raw SSE bytes) throws SizeError even with tiny visible content (13.450984ms)
+✔ round deadline expiry maps to abortKind timeout (308.148087ms)
+[provider] retry empty interrupted stream code=ECONNRESET
+[provider] retry empty interrupted stream code=ECONNRESET
+✔ external abort maps to abortKind external, not timeout (153.708595ms)
+✔ already-expired deadline fails fast with timeout kind (0.792933ms)
+✔ job generation has no default or zero-configured deadline (8.873859ms)
+✔ empty ECONNRESET retries once and completes, permanent reset stays bounded (3.252643ms)
+✔ connection reset after visible prose is not replayed (21.937637ms)
+✔ completion rejects state changed after early hash check (218.456712ms)
+✔ completion rejects code changed after early hash check (209.022695ms)
+✔ completion rejects actions changed after early hash check (218.549892ms)
+✔ completion holds writer lock across hash read and replacement (283.495194ms)
+✔ cancelled completion never invokes apply (141.843694ms)
+[job] id=3738019d user=f9fc3e1c kind=refine dur=84ms rounds=1 finish=stop chars=104 render=yes fail=-
+[job] failed: c46f98d4 Modellaufruf fehlgeschlagen: Das Element wurde während der Aktualisierung geändert — erneut versuchen.
+✔ runner turns the late transactional conflict into failed, never ready (349.844151ms)
+✔ tool requires owner approval, persists outcome, isolates other users (225.257494ms)
+✔ default tools execute immediately without pending approval, retaining owner isolation and unknown outcomes (217.505246ms)
+[ping] session=s1 host=good.example ip=93.184.216.34 ok=true ms=23
+[ping] session= host=good.example ip=93.184.216.34 ok=false
+[ping] session= host=private.example blocked (resolved: 10.0.0.5)
+[ping] session= host=dual.example blocked (resolved: 93.184.216.34,fe80::1)
+[ping] session= host=nope.example error=dns
+[ping] session= host=good.example ip=93.184.216.34 ok=false
+config unreadable: Unexpected token 'o', "not json" is not valid JSON
+✔ render contract rejects malformed and oversized output (3.688095ms)
+✔ system prompt carries the v3 two-phase + SVG visual rules (0.55673ms)
+✔ render contract: optional name is sanitized as text (0.610315ms)
+✔ deriveName: heading, then prose snippet, then fallback (1.418194ms)
+✔ refine instruction demands a full in-place update (0.456498ms)
+✔ validHost: strict hostnames only, no literals/URLs/private forms (1.125135ms)
+✔ ipBlocked: every private/reserved range is caught, public passes (11.994826ms)
+✔ runPing: ok / blocked / dual-stack / dns-fail / timeout with injected backend (6.313244ms)
+﹣ optional: real /bin/ping binary probe (skip when absent or offline) (0.390049ms) # SKIP
+✔ element db: lifecycle, where semantics, scoping, persistence, quotas (29.494708ms)
+✔ element db: hard quotas — 10 tables, 5000 rows, 2 MB element (1953.057179ms)
+✔ stream parser: prose-only answer relays everything (1.39863ms)
+✔ stream parser: marker split across chunks is not emitted as prose (0.856558ms)
+✔ stream parser: artifact in same chunk as marker, unterminated fence (0.670383ms)
+✔ stream parser: partial-marker suffix is held back, not lost (0.415254ms)
+✔ model registry: validation, masking, persistence, ENOENT safety (2.56275ms)
+✔ store: passwords scrypt-hashed, salted, timing-safe verify (316.062671ms)
+✔ store: first user is owner, second is user; sessions bound to users (590.965795ms)
+✔ store: conversations, messages, elements are user-scoped (242.510019ms)
+✔ store: import validation rejects malformed archives, regenerates ids (136.357357ms)
+✔ config: defaults to registration off, env forces on, ENOENT safe (1.705152ms)
+✔ system prompt documents ui.db for data-driven elements (0.235741ms)
+✔ QuickJS has no browser capabilities or host Function escape (67.336873ms)
+✔ QuickJS interrupts CPU exhaustion (53.066063ms)
+✔ generated interaction validation catches DOM event and value getter mistakes without hiding stored elements (1.509654ms)
+ℹ tests 110
+ℹ suites 0
+ℹ pass 109
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 7051.26771
+PASS grant HTTP: three-account ACL, auth/CSRF/Origin/type/method/size/rate, opt-in, owner/recipient CAS, stale editor denial, row identity, disabled users, revocation, private legacy persistence, logout-during-upload at both write routes, lock recovery.
+PASS offline reconciliation freezes sandbox; desktop/mobile owner CAS, real recipient conflict, persisted reload, stale editor rejection, confirmed full replacement. No production data.
+PASS real renderer sanitizer: desktop/mobile, zero/positive counts, real-span replacement, blocked network; isolated DOM fixture, not user content
+CASE chat
+released prose chat
+RELOAD writing [
+  {
+    kind: 'chat',
+    state: 'building',
+    prose: 'Eine **Antwort** wächst. '
+  }
+]
+finish chat
+CASE plan
+released prose plan
+RELOAD writing [
+  {
+    kind: 'plan',
+    state: 'building',
+    prose: 'Eine **Antwort** wächst. '
+  }
+]
+finish plan
+CASE chat-live
+released prose chat-live
+RELOAD writing [
+  {
+    kind: 'chat',
+    state: 'building',
+    prose: 'Eine **Antwort** wächst. '
+  }
+]
+finish chat-live
+[job] failed: 90db3b70 Modell-Endpunkt antwortete 400
+PASS chat+plan: animated thinking immediately; reload then prose transition; persisted writing/reload; desktop/mobile; reduced motion; completion/cancel/error cleanup; foreign prose isolation; no duplicate provider call or implicit construction
+PASS auto-open questions; submit collapse; persisted collapse; resolved revision collapsed; keyboard reopen; new questions reopen; reduced motion; mobile
+PASS placement: old target outside history, newest build anchor, mobile/reload, exactly one element, stable ID/state/versions and original prose
+[job] failed: a7ea4798 Modellaufruf fehlgeschlagen: Ungültiger Blueprint. Bitte erneut besprechen.
+[job] failed: 296f08d3 Modell-Endpunkt antwortete 500
+PASS failed/retried/cancelled refinement preserves last successful placement, pin, state and element DB; foreign DB denied
+PASS blueprint-only chat; cumulative summaries; no text-triggered build; stale/foreign/forged starts rejected; explicit start; double-click dedup; held build + simultaneous same-chat discussion at capacity 1; immutable approved snapshot; reload/crane; interactive state persistence; confirmed in-place refinement; malformed planner blocked; deletion isolation. Planning calls=8 build calls=4
+PASS normal streaming chat without blueprint; reusable forms and snapshots; library CRUD/version restore/isolation; confirmed AI edits; explicit Plan and build; chat during build; custom template reuse without build; admin reset invalidates sessions; disable/enable; roles; delete confirmation and owner protection; desktop/mobile.
+PASS checklist desktop/mobile/reload, failed-write rollback, shape limits, custom state compatibility, CSRF and cross-account mutation rejection.
+PASS shared artifact built
+persisted [{"value":8}]
+[job] failed: 9059e4b8 Modellaufruf fehlgeschlagen: Modell nicht mehr konfiguriert.
+PASS owner/admin user creation; private/shared providers; real model dropdown and artifact interaction/reload; isolation; deletion confirmation/persistence; revocation; key secrecy; private legacy migration
+[{"count":36,"height":383,"scrollHeight":1864,"minRow":44,"bottom":606,"footerTop":630,"wheelScroll":1481,"viewport":{"width":1280,"height":800},"tab":"chats"},{"count":36,"height":383,"scrollHeight":1864,"minRow":44,"bottom":606,"footerTop":630,"wheelScroll":1481,"viewport":{"width":1280,"height":800},"tab":"elements"},{"count":36,"height":372,"scrollHeight":1864,"minRow":44,"bottom":655,"footerTop":679,"wheelScroll":1492,"viewport":{"width":390,"height":844},"tab":"chats"},{"count":36,"height":372,"scrollHeight":1864,"minRow":44,"bottom":655,"footerTop":679,"wheelScroll":1492,"viewport":{"width":390,"height":844},"tab":"elements"},{"count":36,"height":96,"scrollHeight":1864,"minRow":44,"bottom":379,"footerTop":403,"wheelScroll":1768,"viewport":{"width":390,"height":568},"tab":"chats"},{"count":36,"height":96,"scrollHeight":1864,"minRow":44,"bottom":379,"footerTop":403,"wheelScroll":1768,"viewport":{"width":390,"height":568},"tab":"elements"}]
+PASS sidebar rows retain size; chat and element lists wheel-scroll on desktop and mobile
+✔ public API element links automatically, executes without confirmation, restart preserves behavior (8470.662549ms)
+✔ Form UI configures MCP, plans without tools, explicitly executes blueprint and receives final answer (10751.67174ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11652.548697
+{"version":1,"delay":0,"dayCount":30,"errors":[]}
+{"version":1,"delay":150,"dayCount":30,"errors":[]}
+{"version":2,"delay":0,"dayCount":30,"errors":[]}
+{"version":2,"delay":150,"dayCount":30,"errors":[]}
+PASS saved calendar versions render days, navigation and notes with delayed DB
+PASS realtime movement, pause, reset, playfield, keyboard, collision, restart, destroy

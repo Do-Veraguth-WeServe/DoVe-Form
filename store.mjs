@@ -359,11 +359,19 @@ export class Store {
   // building/validating can attach its render — a cancel (or conversation
   // delete) always wins over a late result.
   completeJob(id, apply) {
-    const job = this.getJob(id);
-    if (!job) return null;
-    const rev = this.nextJobRev(), now = new Date().toISOString();
-    this.db.exec('BEGIN');
+    this.db.exec('BEGIN IMMEDIATE');
     try {
+      const job = this.getJob(id);
+      if (!job || !['building','validating'].includes(job.state)) { this.db.exec('ROLLBACK'); return null; }
+      // The runner's early comparison is not a lock: another connection may
+      // write shared state/code before completion. Compare the approved full
+      // render under the SAME writer lock that protects replacement/versioning.
+      if (job.kind === 'refine' && job.request?.targetHash) {
+        const current = this.getRender(job.targetMessageId);
+        const hash = current ? crypto.createHash('sha256').update(JSON.stringify(current)).digest('hex') : null;
+        if (hash !== job.request.targetHash) throw Error('Das Element wurde während der Aktualisierung geändert — erneut versuchen.');
+      }
+      const rev = this.nextJobRev(), now = new Date().toISOString();
       const r = this.db.prepare("UPDATE jobs SET state='ready', error=NULL, rev=?, updated_at=? WHERE id=? AND state IN ('building','validating')").run(rev, now, String(id));
       if (!r.changes) { this.db.exec('ROLLBACK'); return null; }
       apply(job); // attach render and/or finish the placeholder message

@@ -1,0 +1,40 @@
+✔ new output rejects every reported unsupported variation, existing artifacts remain readable and unchanged (25.648069ms)
+✔ real SSE generation corrects unsupported CSS exactly once with policy evidence (125.918346ms)
+✔ second unsupported output fails honestly with no render and no third attempt (16.962066ms)
+[job] id=a696222d failed after 2 round(s): invalid-artifact
+[job] id=0056c463 user=8c069ec2 kind=refine dur=25ms rounds=2 finish=stop/stop chars=323 render=yes fail=invalid-artifact
+✔ persisted failed refinement preserves original; corrected build becomes ready (412.484718ms)
+✔ supported output stays one round (9.605909ms)
+✔ opt-in acceptance and uniform foreign denial, no copied chats or capability transfer (465.516737ms)
+✔ actual shared rows update one namespace; forged namespace and schema operations cannot escape (270.535159ms)
+✔ revocation rechecks every read/write; new grant never reactivates old token (300.215236ms)
+✔ state updates remain visible, code changes fail closed until fresh acceptance (272.909185ms)
+✔ disabled accounts and deleted source are unavailable; additive table survives reopening (248.533045ms)
+✔ pending offers cannot read and quotas do not auto-share other elements (479.136869ms)
+✔ grant listing is paginated and account scoped without pending source data (307.846778ms)
+✔ state compare-and-set detects stale snapshots without editing code (269.911574ms)
+✔ state errors roll back and unavailable grants cannot disclose conflict state (275.906385ms)
+✔ recipient create compatibility never changes schema and matches owner response (244.608831ms)
+✔ separate recipients share conflict token and failed persistence is atomic (285.674052ms)
+✔ cross-process revocation cannot interleave shared row authorization and use (476.781018ms)
+✔ cross-process disable cannot interleave offer or acceptance checks (588.415535ms)
+✔ shared snapshots are coherent against cross-process revocation (545.369149ms)
+✔ owner persistence preserves legacy saves but requires CAS for active shared code (360.519923ms)
+✔ owner code replacement is atomic, versioned and invalidates accepted code (312.336587ms)
+✔ owner CAS holds writer lock through snapshot and persistence (407.723238ms)
+✔ completion rejects state changed after early hash check (320.263703ms)
+✔ completion rejects code changed after early hash check (228.1337ms)
+✔ completion rejects actions changed after early hash check (209.10932ms)
+✔ completion holds writer lock across hash read and replacement (273.322ms)
+✔ cancelled completion never invokes apply (110.123816ms)
+[job] id=33d928a6 user=4dc06d2f kind=refine dur=76ms rounds=1 finish=stop chars=104 render=yes fail=-
+[job] failed: a814059f Modellaufruf fehlgeschlagen: Das Element wurde während der Aktualisierung geändert — erneut versuchen.
+✔ runner turns the late transactional conflict into failed, never ready (341.799006ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6543.658474
