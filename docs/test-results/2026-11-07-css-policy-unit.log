@@ -1,0 +1,35 @@
+✔ pseudo-element failure explains removed features without inventing data causes (14.726247ms)
+✔ prompt and sanitizer consume one immutable capability policy (3.513819ms)
+✖ unsafe syntax remains blocked and reports stay bounded without source values (6.304529ms)
+✔ ordinary responsive layout and colors survive unchanged (2.131647ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 398.249087
+
+✖ failing tests:
+
+test at test/css-policy.test.mjs:10:1
+✖ unsafe syntax remains blocked and reports stay bounded without source values (6.304529ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  6 !== 5
+  
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/css-policy.test.mjs:11:265)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 6,
+    expected: 5,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

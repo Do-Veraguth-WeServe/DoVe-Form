@@ -1,0 +1,12 @@
+✔ pseudo-element failure explains removed features without inventing data causes (12.090874ms)
+✔ prompt and sanitizer consume one immutable capability policy (2.856851ms)
+✔ unsafe syntax remains blocked and reports stay bounded without source values (6.458931ms)
+✔ ordinary responsive layout and colors survive unchanged (1.924303ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 338.328428

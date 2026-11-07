@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {build} from 'esbuild';
+import {chromium} from 'playwright-core';
+const root=process.env.FORM_TEST_ROOT||process.cwd();
+const bundle=await build({stdin:{contents:"import {safeCSS} from './src/sanitize.js';window.policyCSS=safeCSS;",resolveDir:root},bundle:true,write:false,format:'iife',platform:'browser'});
+const browser=await chromium.launch({executablePath:'/root/.cache/puppeteer/chrome/linux-153.0.8010.36/chrome-linux64/chrome',headless:true,args:['--no-sandbox']});
+try{const page=await browser.newPage();let requests=0;page.on('request',()=>requests++);await page.setContent('<main></main>');await page.addScriptTag({content:bundle.outputFiles[0].text});
+ for(const width of [1280,390]){await page.setViewportSize({width,height:844});for(const count of [0,3]){const result=await page.evaluate(count=>{document.querySelector('main').innerHTML='<style>'+window.policyCSS('.flame::before{content:"fire";position:absolute;transform:rotate(45deg);background:linear-gradient(red,orange)}.replacement{display:inline-block;width:12px;height:18px;background:orange}')+'</style><span class=flame></span><span class=replacement></span><span>'+count+'</span>';return {pseudo:getComputedStyle(document.querySelector('.flame'),'::before').content,width:document.querySelector('.replacement').getBoundingClientRect().width,color:getComputedStyle(document.querySelector('.replacement')).backgroundColor};},count);assert.equal(result.pseudo,'none');assert.equal(result.width,12);assert.equal(result.color,'rgb(255, 165, 0)');}}
+ await page.evaluate(()=>{document.querySelector('main').innerHTML='<style>'+window.policyCSS('@import url(https://invalid.example/x);.a{background:url(https://invalid.example/y)}')+'</style><div class=a>x</div>';});assert.equal(requests,0);console.log('PASS real renderer sanitizer: desktop/mobile, zero/positive counts, real-span replacement, blocked network; isolated DOM fixture, not user content');
+}finally{await browser.close();}
