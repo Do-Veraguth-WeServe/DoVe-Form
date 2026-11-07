@@ -1,6 +1,6 @@
 # Form sharing — bounded rollout, 2026-11-07
 
-Report 6911dd6f is NOT fully resolved. This slice adds independent Form library copies and persisted custom-Form state snapshots. Element template copies and revocable shared-data Elements/live synchronization remain pending. Nothing is auto-shared.
+Report 6911dd6f is NOT fully resolved. This slice adds independent Form library copies and persisted custom-Form state snapshots. Revocable shared-data Elements/live synchronization remain pending. Element template copy verification is recorded below. Nothing is auto-shared.
 
 ## Copy semantics
 
@@ -36,3 +36,15 @@ All six standard layouts are snapshotted from the owned stored message, never fr
 Standard-card rollback: `/opt/form/.rollback/20261107-standard-card-copy/files.tar` and protected `pm2-dump.json`. Restore code only after checking active jobs; do not restore user databases. Baseline rejection evidence: `docs/test-results/2026-11-07-standard-copy-before.txt`. Initial broad gate hit the pre-existing asynchronous Flappy reset assertion (immediate DOM read 135.75 versus expected155); assertions were not relaxed. Final gate results are recorded separately.
 
 Verified standard-card rollout: final full `test:blueprints` passed unchanged, six Form/sharing unit tests passed, and the extended three-account Chromium fixture passed on source and deployed code (isolated stores). Desktop/390px screenshots inspected. Loopback and Tailnet homepage/CSP, closed registration, anonymous401 and bundle SHA256 `61469496e72d69240aca8325ea6d55575e1b326297111ca56d1d69ddb74951ba` verified. Restart followed two zero-active-job checks. No production-user content changed. Dated standard-copy logs retain before/after/deployed evidence, including the initial timing failure.
+
+## Element template copies (bounded slice)
+
+The full-screen Element view offers **Element-Vorlage kopieren**. Enter the exact recipient username; the recipient accepts explicitly under **Formen**. This copies the selected validated HTML/CSS/JS and persisted JSON state into a new recipient-owned chat/message with a fresh, initially empty database namespace. No source table rows, history, versions, linked tools or declarative actions transfer. Both users can independently edit their own copy; KI edits still require the normal explicit Plan/build approval. Offers are immutable and checked against a SHA256 of the normalized render at offering time; stale/foreign offers fail. Acceptance is atomic, quota bounded and idempotent, including retry navigation. Pending offers may be withdrawn/declined; accepted independent copies are not revocable.
+
+This is NOT the requested shared-data mode. Revocable grants, shared values, live synchronization and owner-only editing of shared Elements remain outstanding; #6911dd6f remains working. No existing user artifact is modified by deployment.
+
+Verification: extended `npm run test:form-sharing` covers normalized revisions, action stripping, quota rollback and three-account Chromium UI acceptance, empty/independent database namespaces, edit ACL, persisted state and desktop/390px. Baseline checks the previous deployed UI lacks the copy control in an isolated store. No schema migration. Code-only rollback target: `/opt/form/.rollback/20261107-element-copy/files.tar`; never restore the live user DB for rollback.
+
+Element-copy rollout 2026-11-07: seven focused units and full `test:blueprints` passed. Three-account Chromium desktop/390px/reload and DB/CSRF/ACL fixture passed on source; screenshots inspected. Initial browser failure exposed raw-versus-normalized render property ordering in revision hashes; normalization fixed it without weakening the stale-revision check. Live loopback/Tailnet homepage, CSP, closed registration and anonymous401 verified; bundle SHA256 `eddb389ed86d9247cb7bd8c846a7d2051940fa3857423fafafa4c97583a693fa`. Restart followed two zero-active-job checks. Source/deployed code and documentation kept identical. Dated `2026-11-07-element-copy-*` logs retain baseline, initial failure, final units/browser, release and deployment evidence. No production-user login or real-model build is claimed by these isolated fixtures.
+
+The extended three-account Chromium fixture also passed against deployed code using an isolated disposable store; no production data used.

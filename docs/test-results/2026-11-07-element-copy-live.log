@@ -1,0 +1,14 @@
+http://127.0.0.1:5177 auth status {
+  authenticated: false,
+  user: null,
+  registration: false,
+  hasUsers: true
+}
+PASS home/CSP/auth/anonymous isolation; bundle eddb389ed86d9247cb7bd8c846a7d2051940fa3857423fafafa4c97583a693fa
+https://fhisling.tail11036c.ts.net:9444 auth status {
+  authenticated: false,
+  user: null,
+  registration: false,
+  hasUsers: true
+}
+PASS home/CSP/auth/anonymous isolation; bundle eddb389ed86d9247cb7bd8c846a7d2051940fa3857423fafafa4c97583a693fa

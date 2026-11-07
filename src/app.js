@@ -796,7 +796,8 @@ function fillOverlay(){
     b1.onclick=()=>{closeOverlay();if(!(marked&&marked.msgId===m.id))marked={sessionId:db.current,msgId:m.id};render();$('#prompt').focus();toast('Element markiert — deine nächste Nachricht verfeinert es an Ort und Stelle.')};
     const b2=document.createElement('button');b2.type='button';b2.textContent='Code bearbeiten';b2.onclick=()=>{overlayMode='code';fillOverlay()};
     const b3=document.createElement('button');b3.type='button';b3.textContent='Versionen';b3.onclick=()=>{overlayMode='versions';fillOverlay()};
-    foot.append(b1,b2,b3);body.append(foot);
+    const copy=document.createElement('button');copy.type='button';copy.textContent='Element-Vorlage kopieren';copy.onclick=()=>formsUI.copyElement(m);
+    foot.append(b1,b2,b3,copy);body.append(foot);
     if(me?.role==='owner')void renderElementActions(body,m);
   }
 

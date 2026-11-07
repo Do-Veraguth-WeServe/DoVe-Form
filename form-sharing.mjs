@@ -5,7 +5,7 @@ import {validateRender} from './contract.mjs';
 export class FormSharing {
  constructor(store,forms){this.store=store;this.forms=forms;this.db=store.db;this.db.exec(
   "CREATE TABLE IF NOT EXISTS form_copy_offers(id TEXT PRIMARY KEY,sender_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,recipient_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,snapshot TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'pending',copy_id TEXT,created_at TEXT NOT NULL)");}
- list(uid){return this.db.prepare('SELECT o.id,o.sender_id,o.recipient_id,o.snapshot,o.status,o.copy_id,o.created_at,s.username sender,r.username recipient FROM form_copy_offers o JOIN users s ON s.id=o.sender_id JOIN users r ON r.id=o.recipient_id WHERE (o.sender_id=? OR o.recipient_id=?) ORDER BY o.created_at DESC LIMIT 100').all(uid,uid).map(o=>({id:o.id,name:JSON.parse(o.snapshot).name,status:o.status,copyId:o.copy_id,createdAt:o.created_at,sender:o.sender,recipient:o.recipient,direction:o.sender_id===uid?'sent':'received'}));}
+ list(uid){return this.db.prepare('SELECT o.id,o.sender_id,o.recipient_id,o.snapshot,o.status,o.copy_id,o.created_at,s.username sender,r.username recipient FROM form_copy_offers o JOIN users s ON s.id=o.sender_id JOIN users r ON r.id=o.recipient_id WHERE (o.sender_id=? OR o.recipient_id=?) ORDER BY o.created_at DESC LIMIT 100').all(uid,uid).map(o=>({id:o.id,name:JSON.parse(o.snapshot).name,kind:JSON.parse(o.snapshot).kind||'form',status:o.status,copyId:o.copy_id,createdAt:o.created_at,sender:o.sender,recipient:o.recipient,direction:o.sender_id===uid?'sent':'received'}));}
  offer(uid,d){
   if(typeof d.recipient!=='string')throw Error('Empfänger erforderlich.');
   const recipient=this.store.getUserByName(d.recipient.trim());
@@ -36,13 +36,33 @@ export class FormSharing {
   if(this.db.prepare("SELECT count(*) n FROM form_copy_offers WHERE (sender_id=? OR recipient_id=?) AND status='pending'").get(uid,recipient.id).n>=40)throw Error('Zu viele offene Kopie-Angebote.');
   const id=crypto.randomUUID();this.db.prepare('INSERT INTO form_copy_offers(id,sender_id,recipient_id,snapshot,created_at) VALUES (?,?,?,?,?)').run(id,uid,recipient.id,JSON.stringify(snapshot),new Date().toISOString());return {id};
  }
+ offerElement(uid,d){
+  if(typeof d.recipient!=='string')throw Error('Empfänger erforderlich.');
+  const recipient=this.store.getUserByName(d.recipient.trim());
+  if(!recipient||recipient.disabled||recipient.id===uid)throw Error('Empfänger nicht verfügbar.');
+  if(this.store.messageOwner(d.messageId)?.userId!==uid)throw Error('Element nicht gefunden.');
+  const render=this.store.getRender(d.messageId);
+  if(!render)throw Error('Element nicht gefunden.');
+  const revision=crypto.createHash('sha256').update(JSON.stringify(validateRender(render))).digest('hex');
+  if(d.revision!==revision)throw Error('Element wurde inzwischen geändert. Bitte neu laden.');
+  const {actions,...element}=validateRender(render);
+  const snapshot={kind:'element',name:element.name||'Element',element};
+  if(this.db.prepare("SELECT count(*) n FROM form_copy_offers WHERE (sender_id=? OR recipient_id=?) AND status='pending'").get(uid,recipient.id).n>=40)throw Error('Zu viele offene Kopie-Angebote.');
+  const id=crypto.randomUUID();this.db.prepare('INSERT INTO form_copy_offers(id,sender_id,recipient_id,snapshot,created_at) VALUES (?,?,?,?,?)').run(id,uid,recipient.id,JSON.stringify(snapshot),new Date().toISOString());return {id};
+ }
  accept(uid,id){
   const offer=this.db.prepare('SELECT * FROM form_copy_offers WHERE id=? AND recipient_id=?').get(id,uid);
   if(!offer)throw Error('Angebot nicht verfügbar.');
-  if(offer.status==='accepted')return {id:offer.copy_id};
+  if(offer.status==='accepted'){const snapshot=JSON.parse(offer.snapshot);return {id:offer.copy_id,...(snapshot.kind==='element'?{conversationId:this.store.messageOwner(offer.copy_id)?.conversationId}: {})};}
   if(offer.status!=='pending'||this.store.getUser(offer.sender_id)?.disabled)throw Error('Angebot nicht verfügbar.');
   const snapshot=JSON.parse(offer.snapshot);
   this.db.exec('SAVEPOINT accept_form_copy');try{
+   if(snapshot.kind==='element'){
+    const conversation=this.store.createConversation(uid,'Kopie: '+snapshot.name);
+    const messageId=this.store.appendMessage(conversation.id,'assistant',{prose:'Unabhängige Element-Vorlage. Eigene leere Datenbank; keine Tool-Freigaben.',render:validateRender(snapshot.element)});
+    this.db.prepare("UPDATE form_copy_offers SET status='accepted',copy_id=? WHERE id=?").run(messageId,id);
+    this.db.exec('RELEASE accept_form_copy');return {id:messageId,conversationId:conversation.id};
+   }
    const copy=this.forms.save(uid,snapshot,'accepted-copy',snapshot.template||null);
    let conversationId;
    if(snapshot.card){

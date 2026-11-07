@@ -1,0 +1,2 @@
+PASS Element copy: actual UI acceptance; independent state/reload; empty DB, owner/copy writes isolated, third-party denied; editable desktop/mobile.
+PASS: opt-in library/state copies; desktop/mobile/reload; CSRF/auth; three-account ACL; immutable snapshot37; revoked offer rejected; recipient-owned disabled copies.

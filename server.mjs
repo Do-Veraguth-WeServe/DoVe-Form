@@ -346,6 +346,7 @@ const server = http.createServer(async (req, res) => {
       if(req.method==='POST'){
         if(!rate('forms:'+user.id,30,60000))return reply(res,429,{error:'Bitte kurz warten.'});
         const d=JSON.parse(await readBody(req,10000));
+        if(pathname==='/api/forms/copies/element')return reply(res,200,formSharing.offerElement(user.id,d));
         if(pathname==='/api/forms/copies/offer')return reply(res,200,formSharing.offer(user.id,d));
         if(pathname==='/api/forms/copies/accept')return reply(res,200,formSharing.accept(user.id,d.id));
         if(pathname==='/api/forms/copies/close'){formSharing.close(user.id,d.id);return reply(res,200,{ok:true});}

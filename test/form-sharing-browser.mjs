@@ -27,5 +27,35 @@ try{
  await pb.locator('#formsdialog').waitFor({state:'hidden'});const boxes=pb.locator('#feed .form-list input');await boxes.first().waitFor();assert.equal(await boxes.first().isChecked(),true);assert.equal(await boxes.nth(1).isChecked(),false);assert.equal(await pb.locator('#feed').getByText('Copied text',{exact:true}).count(),1);
  await boxes.nth(1).check();await pb.waitForFunction(()=>!document.querySelector('#feed .form-list input').disabled);await pb.reload();await boxes.first().waitFor();assert.equal(await boxes.nth(1).isChecked(),true);await pb.screenshot({path:'docs/screenshots/standard-copy-mobile.png'});await pb.setViewportSize({width:1280,height:900});await pb.screenshot({path:'docs/screenshots/standard-copy-desktop.png'});
  assert.equal(await pa.locator('#feed .form-list input').nth(1).isChecked(),false);
+ // Element template copies use a new message identity and a fresh database namespace.
+ await pa.getByRole('button',{name:'Element öffnen',exact:true}).first().click();
+ const copyButton=pa.getByRole('button',{name:'Element-Vorlage kopieren',exact:true});
+ if(process.env.REPRO_ELEMENT_BASELINE==='1'){assert.equal(await copyButton.count(),0);console.log('BASELINE: no Element template copy control in previous deployment');}
+ else {
+ await copyButton.waitFor();assert.equal(await pa.evaluate(async()=> (await fetch('/api/forms/copies/element',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).status),403);pa.once('dialog',d=>d.accept('bobby'));await copyButton.click();
+ await pb.locator('#formsbtn').click();await pb.getByRole('button',{name:'Kopie annehmen'}).waitFor();
+ const elementOffer=(await api(pb,'/api/forms/copies')).data.offers.find(o=>o.status==='pending'&&o.kind==='element');assert.ok(elementOffer);
+ assert.equal((await api(pc,'/api/forms/copies/accept',{id:elementOffer.id})).status,400);
+ const sourceDb={sessionId:conv.id,elementId:mid,table:'private_rows'};
+ assert.equal((await api(pa,'/api/db',{...sourceDb,op:'create'})).status,200);
+ assert.equal((await api(pa,'/api/db',{...sourceDb,op:'insert',row:{value:'owner-only'}})).status,200);
+ await pb.getByRole('button',{name:'Kopie annehmen'}).click();await pb.locator('#formsdialog').waitFor({state:'hidden'});
+ await pb.locator('#feed iframe').first().waitFor();await pb.waitForFunction(()=>document.querySelector('#feed iframe'));
+ const accepted=(await api(pb,'/api/forms/copies')).data.offers.find(o=>o.id===elementOffer.id);assert.equal(accepted.status,'accepted');
+ const check=new Store(dir),copyOwner=check.messageOwner(accepted.copyId);assert.equal(copyOwner.userId,b.id);assert.equal(check.getRender(accepted.copyId).state.n,4);check.close();
+ const targetDb={sessionId:copyOwner.conversationId,elementId:accepted.copyId,table:'private_rows'};
+ assert.equal((await api(pb,'/api/db',{...sourceDb,op:'select'})).status,403);
+ assert.equal((await api(pc,'/api/db',{...targetDb,op:'select'})).status,403);
+ assert.equal((await api(pb,'/api/db',{...targetDb,op:'select'})).status,404);
+ assert.equal((await api(pb,'/api/db',{...targetDb,op:'create'})).status,200);
+ assert.equal((await api(pb,'/api/db',{...targetDb,op:'insert',row:{value:'copy-only'}})).status,200);
+ const ownerRows=(await api(pa,'/api/db',{...sourceDb,op:'select'})).data.rows;assert.equal(ownerRows.length,1);assert.equal(ownerRows[0].value,'owner-only');
+ assert.equal((await api(pb,'/api/state',{messageId:accepted.copyId,state:{n:7}})).status,200);
+ assert.equal((await api(pa,'/api/state',{messageId:accepted.copyId,state:{n:90}})).status,403);
+ await pb.reload();await pb.frameLocator('#feed iframe').first().locator('#n').waitFor();assert.equal(await pb.frameLocator('#feed iframe').first().locator('#n').textContent(),'7');
+ await pb.getByRole('button',{name:'Element öffnen',exact:true}).first().click();await pb.getByRole('button',{name:'Code bearbeiten',exact:true}).waitFor();
+ await pb.frameLocator('#overlay iframe').locator('#n').waitFor();await pb.waitForFunction(()=>document.querySelector('#overlay iframe'));assert.equal(await pb.frameLocator('#overlay iframe').locator('#n').textContent(),'7');await pb.screenshot({path:'docs/screenshots/element-copy-desktop.png'});await pb.setViewportSize({width:390,height:844});await pb.screenshot({path:'docs/screenshots/element-copy-mobile.png'});
+ console.log('PASS Element copy: actual UI acceptance; independent state/reload; empty DB, owner/copy writes isolated, third-party denied; editable desktop/mobile.');
+ }
  assert.deepEqual(errors,[]);console.log('PASS: opt-in library/state copies; desktop/mobile/reload; CSRF/auth; three-account ACL; immutable snapshot37; revoked offer rejected; recipient-owned disabled copies.');
 }finally{await browser?.close();if(app&&app.exitCode===null){app.kill('SIGTERM');await once(app,'exit');}fs.rmSync(dir,{recursive:true,force:true});}

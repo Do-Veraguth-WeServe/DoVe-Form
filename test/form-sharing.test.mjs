@@ -1,3 +1,5 @@
+import {validateRender} from '../contract.mjs';
+import crypto from 'node:crypto';
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import {Store} from '../store.mjs';import {Forms} from '../forms.mjs';import {FormSharing} from '../form-sharing.mjs';
 function fixture(fn){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'form-copy-'));const s=new Store(dir);try{const a=s.createUser('alice','password123'),b=s.createUser('bobby','password123'),c=s.createUser('carol','password123'),f=new Forms(s),x=new FormSharing(s,f);const conv=s.createConversation(a.id),mid=s.appendMessage(conv.id,'assistant',{render:{version:1,name:'Counter',html:'<p id="n"></p>',css:'',js:'ui.text("n",state.n)',state:{n:4},actions:[{name:'x',url:'https://example.com/',method:'GET',args:{}}]}});const form=f.save(a.id,{name:'Counter',layout:'custom',instructions:'For counters',sourceMessageId:mid});fn({s,a,b,c,f,x,form,mid});}finally{s.close();fs.rmSync(dir,{recursive:true,force:true});}}
 test('explicit recipient acceptance, immutable independent state, disabled copy, no capability transfer',()=>fixture(({a,b,c,f,x,form})=>{const {id}=x.offer(a.id,{id:form.id,revision:1,recipient:'bobby'});assert.equal(f.list(b.id).length,0);assert.deepEqual(x.list(c.id),[]);assert.throws(()=>x.accept(c.id,id));assert.throws(()=>x.accept(a.id,id));assert.throws(()=>x.close(c.id,id));assert.throws(()=>x.offer(b.id,{id:form.id,revision:1,recipient:'carol'}));f.save(a.id,{...form,name:'New'});const copy=x.accept(b.id,id);assert.deepEqual(x.accept(b.id,id),copy);const own=f.get(b.id,copy.id);assert.equal(own.name,'Counter');assert.equal(own.enabled,false);assert.deepEqual(own.template.state,{n:4});assert.equal(own.template.actions,undefined);assert.equal(f.get(a.id,copy.id),null);assert.equal(f.get(b.id,form.id),null);x.close(a.id,id);assert.ok(f.get(b.id,copy.id));f.remove(a.id,form.id);assert.ok(f.get(b.id,copy.id));f.save(b.id,{...own,name:'Independent'});assert.equal(f.get(b.id,copy.id).name,'Independent');}));
@@ -24,4 +26,19 @@ test('standard cards snapshot text and checkboxes into independent owned chats, 
  const offer=x.offer(a.id,{id:form.id,revision:1,recipient:'bobby',messageId:mid,index:0});
  while(s.db.prepare('SELECT count(*) n FROM conversations WHERE user_id=?').get(b.id).n<40)s.createConversation(b.id);
  const before=f.list(b.id).length;assert.throws(()=>x.accept(b.id,offer.id));assert.equal(f.list(b.id).length,before);assert.equal(x.list(b.id).find(o=>o.id===offer.id).status,'pending');
+}));
+
+test('Element templates: owned revision, independent fresh identity, no actions, withdrawal and quota rollback',()=>fixture(({s,a,b,c,x,mid})=>{
+ const render=s.getRender(mid),revision=crypto.createHash('sha256').update(JSON.stringify(validateRender(render))).digest('hex');
+ const input={messageId:mid,revision,recipient:'bobby'};
+ assert.throws(()=>x.offerElement(c.id,input));assert.throws(()=>x.offerElement(a.id,{...input,revision:'stale'}));
+ const offer=x.offerElement(a.id,input);assert.equal(x.list(b.id)[0].kind,'element');assert.throws(()=>x.accept(c.id,offer.id));
+ s.db.prepare('UPDATE messages SET render=? WHERE id=?').run(JSON.stringify({...render,state:{n:99}}),mid);
+ const copy=x.accept(b.id,offer.id);assert.notEqual(copy.id,mid);assert.equal(s.conversationOwner(copy.conversationId),b.id);assert.equal(s.getRender(copy.id).state.n,4);assert.equal(s.getRender(copy.id).actions,undefined);
+ assert.deepEqual(x.accept(b.id,offer.id),copy);assert.equal(s.db.prepare('SELECT count(*) n FROM messages WHERE conversation_id=?').get(copy.conversationId).n,1);
+ s.db.prepare('UPDATE messages SET render=? WHERE id=?').run(JSON.stringify({...s.getRender(copy.id),state:{n:7}}),copy.id);assert.equal(s.getRender(mid).state.n,99);
+ const current={...input,revision:crypto.createHash('sha256').update(JSON.stringify(validateRender(s.getRender(mid)))).digest('hex')};
+ const revoked=x.offerElement(a.id,current);x.close(a.id,revoked.id);assert.throws(()=>x.accept(b.id,revoked.id));
+ const full=x.offerElement(a.id,current);while(s.db.prepare('SELECT count(*) n FROM conversations WHERE user_id=?').get(b.id).n<40)s.createConversation(b.id);
+ assert.throws(()=>x.accept(b.id,full.id));assert.equal(x.list(b.id).find(o=>o.id===full.id).status,'pending');
 }));

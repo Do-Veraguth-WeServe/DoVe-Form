@@ -1,0 +1,2 @@
+BASELINE: no Element template copy control in previous deployment
+PASS: opt-in library/state copies; desktop/mobile/reload; CSRF/auth; three-account ACL; immutable snapshot37; revoked offer rejected; recipient-owned disabled copies.
