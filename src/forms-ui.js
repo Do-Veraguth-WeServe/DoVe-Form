@@ -1,11 +1,11 @@
-export function formCard(f,{suggest=()=>{}}={}){
+export function formCard(f,{suggest=()=>{},onState=async()=>{},onError=()=>{}}={}){
  const box=document.createElement('section');box.className='chat-form form-'+f.layout;
  const h=document.createElement('strong');h.textContent=f.title;box.append(h);
  if(f.text){const p=document.createElement('p');p.textContent=f.text;box.append(p);}
  const items=document.createElement(f.layout==='steps'?'ol':'div');items.className='form-items';
  for(const i of f.items||[]){const row=document.createElement(f.layout==='steps'?'li':'div');row.className='form-item';
  if(f.layout==='choices'){const b=document.createElement('button');b.type='button';b.textContent=i.label;b.onclick=()=>suggest(i.label);row.append(b);}
- else if(f.layout==='list'){const l=document.createElement('label'),c=document.createElement('input');c.type='checkbox';l.append(c,document.createTextNode(i.label));row.append(l);}
+ else if(f.layout==='list'){const l=document.createElement('label'),c=document.createElement('input');c.type='checkbox';c.checked=f.data?.checked?.[(f.items||[]).indexOf(i)]===true;c.onchange=async()=>{const boxes=[...box.querySelectorAll('input[type=checkbox]')],previous=f.data;const state={checked:boxes.map(x=>x.checked)};boxes.forEach(x=>x.disabled=true);try{await onState(state);f.data=state;}catch(e){boxes.forEach((x,n)=>x.checked=previous?.checked?.[n]===true);onError(e.message);}finally{boxes.forEach(x=>x.disabled=false);}};l.append(c,document.createTextNode(i.label));row.append(l);}
  else{const label=document.createElement('b');label.textContent=i.label;row.append(label);}
  if(i.detail){const p=document.createElement('p');p.textContent=i.detail;row.append(p);}items.append(row);}
  if(items.childNodes.length)box.append(items);return box;

@@ -23,6 +23,14 @@ export class Forms {
  this.db.prepare('UPDATE forms SET template=? WHERE id=?').run(clean.template?JSON.stringify(clean.template):null,id);
  this.db.prepare('INSERT INTO form_versions VALUES (?,?,?,?,?)').run(id,revision,JSON.stringify(clean),source,now);this.db.exec('RELEASE save_form');return this.get(uid,id);}catch(e){this.db.exec('ROLLBACK TO save_form; RELEASE save_form');throw e;}
  }
+ updateCardState(uid,messageId,index,state){
+  if(this.store.messageOwner(messageId)?.userId!==uid)throw Error('Nachricht nicht gefunden.');
+  if(!Number.isInteger(index)||index<0||index>2||!state||typeof state!=='object'||Array.isArray(state)||JSON.stringify(state).length>4096)throw Error('Ungültiger Zustand.');
+  const row=this.db.prepare('SELECT forms FROM messages WHERE id=?').get(messageId),payload=JSON.parse(row.forms||'{}'),item=payload.items?.[index];
+  if(!item||!['custom','list'].includes(item.layout))throw Error('Form nicht gefunden.');
+  if(item.layout==='list'&&(Object.keys(state).length!==1||!Array.isArray(state.checked)||state.checked.length!==(item.items||[]).length||state.checked.length>8||state.checked.some(v=>typeof v!=='boolean')))throw Error('Ungültiger Checklisten-Zustand.');
+  item.data=state;this.db.prepare('UPDATE messages SET forms=? WHERE id=?').run(JSON.stringify(payload),messageId);
+ }
  versions(uid,id){if(!this.get(uid,id))throw Error('Form nicht gefunden.');return this.db.prepare('SELECT revision,definition,source,at FROM form_versions WHERE form_id=? ORDER BY revision DESC LIMIT 20').all(id).map(r=>({...r,definition:JSON.parse(r.definition)}));}
  restore(uid,id,revision){const old=this.get(uid,id);const v=this.versions(uid,id).find(v=>v.revision===revision);if(!v)throw Error('Version nicht gefunden.');return this.save(uid,{...v.definition,id,revision:old.revision},'restore',v.definition.template||null);}
  remove(uid,id){if(!this.get(uid,id))throw Error('Form nicht gefunden.');this.db.prepare('DELETE FROM forms WHERE id=? AND user_id=?').run(id,uid);}

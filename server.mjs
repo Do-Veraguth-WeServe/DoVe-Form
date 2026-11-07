@@ -356,9 +356,7 @@ const server = http.createServer(async (req, res) => {
           store.db.exec('BEGIN');try{const f=forms.save(user.id,proposal,'assistant-confirmed');store.db.prepare('INSERT INTO form_acceptances VALUES (?,?,?)').run(d.messageId,d.index,f.id);store.db.exec('COMMIT');return reply(res,200,{ok:true,formId:f.id});}catch(e){store.db.exec('ROLLBACK');throw e;}
         }
         if(pathname==='/api/forms/state'){
-          const mo=store.messageOwner(d.messageId);if(!mo||mo.userId!==user.id)throw Error('Nachricht nicht gefunden.');
-          if(!Number.isInteger(d.index)||d.index<0||d.index>2||!d.state||typeof d.state!=='object'||Array.isArray(d.state)||JSON.stringify(d.state).length>4096)throw Error('Ungültiger Zustand.');
-          const row=store.db.prepare('SELECT forms FROM messages WHERE id=?').get(d.messageId);const payload=JSON.parse(row.forms||'{}');const item=payload.items?.[d.index];if(!item||item.layout!=='custom')throw Error('Form nicht gefunden.');item.data=d.state;store.db.prepare('UPDATE messages SET forms=? WHERE id=?').run(JSON.stringify(payload),d.messageId);return reply(res,200,{ok:true});
+          forms.updateCardState(user.id,d.messageId,d.index,d.state);return reply(res,200,{ok:true});
         }
         if(pathname==='/api/forms/save')return reply(res,200,{form:forms.save(user.id,d)});
         if(pathname==='/api/forms/restore')return reply(res,200,{form:forms.restore(user.id,d.id,d.revision)});

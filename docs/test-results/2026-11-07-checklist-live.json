@@ -1,0 +1,18 @@
+[
+  {
+    "base": "http://127.0.0.1:5177",
+    "health": true,
+    "registration": false,
+    "bundleSha256": "3d3ebff3e2a496164088e9d6349273ce1f40f641cb96a8fb5b03aec460173055",
+    "anonymousCopies": 401,
+    "csp": true
+  },
+  {
+    "base": "https://fhisling.tail11036c.ts.net:9444",
+    "health": true,
+    "registration": false,
+    "bundleSha256": "3d3ebff3e2a496164088e9d6349273ce1f40f641cb96a8fb5b03aec460173055",
+    "anonymousCopies": 401,
+    "csp": true
+  }
+]

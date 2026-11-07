@@ -1,0 +1,1 @@
+PASS checklist desktop/mobile/reload, failed-write rollback, shape limits, custom state compatibility, CSRF and cross-account mutation rejection.
