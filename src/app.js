@@ -1,3 +1,4 @@
+import {elementPersistence} from './element-persistence.js';
 import {elementTimeline} from './element-timeline.js';
 import {planFold} from './plan-fold.js';
 import {renderMarkdown} from './markdown.js';
@@ -8,7 +9,9 @@ import {validateRender,deriveName,sanitizeName} from '../contract.mjs';
 const $=s=>document.querySelector(s),uid=()=>crypto.randomUUID(),KEY='form.v3';
 let db={version:4,sessions:[],elements:{pins:[],versions:{}},current:null},csrf='',me=null,registrationOpen=false,models=[],modelId=localStorage.getItem('form3.model')||'',pending=new Set(),views=[],marked=null;
 let legacyDb=null;          // pre-login local archive — offered for import on first login
-const stateSync=new Map();  // messageId -> debounce timer for /api/state
+const elementSaves=new WeakMap(); // serialized CAS queue per server snapshot
+const activeElementSaves=new Set();
+function stopElementSaves(){for(const writer of activeElementSaves)writer.stop();activeElementSaves.clear();}
 let jobs=new Map();         // jobId -> job (server-owned element builds; transient client mirror)
 let jobStream=null;        // EventSource for /api/jobs/stream
 let sendFinishing=false;   // send() completing its turn — suppress duplicate renders
@@ -140,6 +143,7 @@ $('#regform').onsubmit=async e=>{
 $('#switchreg').onclick=e=>{e.preventDefault();$('#loginform').classList.toggle('hidden');$('#regform').classList.toggle('hidden');};
 $('#logout').onclick=async()=>{
   try{await fetch('/api/auth/logout',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:'{}'})}catch{}
+  stopElementSaves();
   me=null;csrf='';models=[];
   disconnectJobs();
   try{localStorage.removeItem(KEY)}catch{}
@@ -172,7 +176,9 @@ async function loadFromServer(){
     const r=await fetch('/api/conversations');
     if(r.status===401){me=null;csrf='';showLogin('Sitzung abgelaufen — bitte erneut anmelden.');return false}
     if(!r.ok)return false;
-    db=fromServer(await r.json());
+    const data=await r.json();
+    stopElementSaves();
+    db=fromServer(data);
     if(!current()&&db.sessions.length)db.current=db.sessions[0].id;
     save();
     return true;
@@ -195,16 +201,25 @@ function pushVersion(m,render){
   list.push({at:new Date().toISOString(),render:JSON.parse(JSON.stringify(render))});
   while(list.length>5)list.shift();
 }
-function scheduleStateSync(id,state){
-  clearTimeout(stateSync.get(id));
-  stateSync.set(id,setTimeout(()=>{
-    stateSync.delete(id);
-    if(!csrf)return;
-    fetch('/api/state',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify({messageId:id,state})}).catch(()=>{});
-  },600));
+function persistence(m){
+  if(!elementSaves.has(m))elementSaves.set(m,elementPersistence({messageId:m.id,state:m.render.state,
+    request:body=>fetch('/api/state',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify(body)}),
+    onFailure:async error=>{m.persistenceFailed=true;closeOverlay();renderPreservingScroll();toast(error.message);await syncFromServer();}
+  }));
+  const writer=elementSaves.get(m);activeElementSaves.add(writer);return writer;
 }
-function syncRender(m){ // full render replaced locally (code editor / version restore) -> server
-  fetch('/api/state',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify({messageId:m.id,render:m.render})}).catch(()=>toast('Speichern auf dem Server fehlgeschlagen.'));
+function ownerView(m,callbacks){
+  if(!m.persistenceFailed)return renderUI(m.render,callbacks);
+  const element=document.createElement('p');element.className='notice error';element.textContent='Speichern nicht bestätigt. Bitte die Seite neu laden.';
+  return {element,destroy(){}};
+}
+function stateCallback(m){
+  const writer=persistence(m);
+  return state=>{m.render.state=state;save();void writer.save({state});};
+}
+async function syncRender(m,next){
+  if(!await persistence(m).save({render:next}))return false;
+  pushVersion(m,m.render);m.render=next;save();render();return true;
 }
 function togglePin(m){
   const i=db.elements.pins.indexOf(m.id);
@@ -555,9 +570,9 @@ function render(){  views.forEach(v=>v.destroy());views=[];
             const reuse=document.createElement('button');reuse.type='button';reuse.textContent='Als Form';reuse.title='Dieses Element als wiederverwendbare Form speichern';reuse.onclick=()=>{formsUI.fromElement(m);};
             head.append(nm,pinB,exp,reuse);
             const note=document.createElement('div');note.className='small';
-            const view=renderUI(m.render,{
+            const view=ownerView(m,{
               onAction:(name,inputs)=>runBoundAction(m,name,inputs),
-      onState:state=>{m.render.state=state;save();scheduleStateSync(m.id,state)},
+      onState:stateCallback(m),
               onSuggest:text=>{$('#prompt').value=text;toast('Vorschlag eingefügt — nur du sendest ihn.')},
               onError:text=>{note.textContent=text;note.className='notice error'},
               onPing:doPing,
@@ -585,6 +600,7 @@ function render(){  views.forEach(v=>v.destroy());views=[];
   renderQuickbar();
   renderChip();
   updateComposer();
+  if($('#overlay').open){views.forEach(v=>v.destroy());views=[];}
 }
 
 function liveMessage(mode,modelLabel){
@@ -752,6 +768,8 @@ async function doDb(elementId,payload){
 
 // --- element overlay: focused view, code editor, version history ---
 function openOverlay(m){
+  // The hidden feed must not keep a second mutable sandbox alive.
+  views.forEach(v=>v.destroy());views=[];
   overlayMsg=m;overlayMode='view';
   fillOverlay();
   $('#overlay').showModal?.();
@@ -782,9 +800,9 @@ function fillOverlay(){
   if(overlayMode==='view'){
     const holder=document.createElement('div');body.append(holder);
     const note=document.createElement('div');note.className='small';body.append(note);
-    overlayView=renderUI(m.render,{
+    overlayView=ownerView(m,{
       onAction:(name,inputs)=>runBoundAction(m,name,inputs),
-      onState:state=>{m.render.state=state;save();scheduleStateSync(m.id,state)},
+      onState:stateCallback(m),
       onSuggest:text=>{$('#prompt').value=text;toast('Vorschlag eingefügt — nur du sendest ihn.')},
       onError:tx=>{note.textContent=tx;note.className='notice error'},
       onPing:doPing,
@@ -802,6 +820,7 @@ function fillOverlay(){
   }
 
   else if(overlayMode==='code'){
+    persistence(m);
     const f=document.createElement('form');f.className='codeed';f.noValidate=true;
     const mk=(label,val,rows)=>{
       const l=document.createElement('label');
@@ -819,7 +838,7 @@ function fillOverlay(){
     const apply=document.createElement('button');apply.type='submit';apply.textContent='Anwenden';
     const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Abbrechen';cancel.onclick=()=>{overlayMode='view';fillOverlay()};
     row.append(apply,cancel);f.append(row);body.append(f);
-    f.onsubmit=e=>{
+    f.onsubmit=async e=>{
       e.preventDefault();
       err.hidden=true;
       let stateObj;
@@ -830,9 +849,9 @@ function fillOverlay(){
       try{safeHTML(r.html);safeCSS(r.css)}catch(e3){err.textContent='Abgelehnt: '+(e3.message||'Inhalt ungültig');err.hidden=false;return}
       let cleaned=false;
       try{cleaned=safeHTML(r.html)!==r.html}catch{}
-      pushVersion(m,m.render);
-      m.render=r;
-      save();syncRender(m);render();
+      apply.disabled=true;
+      if(!await syncRender(m,r)){apply.disabled=false;return;}
+      if(overlayMsg!==m)return;
       overlayMode='view';fillOverlay();
       toast(cleaned?'Angewendet — unsichere Teile wurden entfernt (wie bei KI-Antworten).':'Code-Änderung angewendet.');
     };
@@ -848,10 +867,11 @@ function fillOverlay(){
       const when=v.at?new Date(v.at).toLocaleString('de-CH'):'früher';
       info.textContent='v'+(list.length-i)+' · '+when+(v.render&&v.render.name?' · '+v.render.name:'');
       const rv=document.createElement('button');rv.type='button';rv.textContent='Wiederherstellen';
-      rv.onclick=()=>{
-        pushVersion(m,m.render);
-        try{m.render=validateRender(JSON.parse(JSON.stringify(v.render)))}catch{toast('Version ungültig.');return}
-        save();syncRender(m);render();
+      rv.onclick=async()=>{
+        let next;try{next=validateRender(JSON.parse(JSON.stringify(v.render)))}catch{toast('Version ungültig.');return}
+        rv.disabled=true;
+        if(!await syncRender(m,next)){rv.disabled=false;return;}
+        if(overlayMsg!==m)return;
         overlayMode='view';fillOverlay();
         toast('Version wiederhergestellt.');
       };

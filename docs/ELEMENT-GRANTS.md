@@ -1,5 +1,7 @@
 # Shared-data Element grants — integration in progress
 
+Latest source integration: [Owner browser persistence](OWNER-PERSISTENCE.md) adds serialized state tokens and explicit conflict/error reconciliation, with desktop/mobile tests. Still **not deployed**; opt-in UI, per-delivery ACL/live synchronization, code revision and release gates remain. Historical sections below describe earlier checkpoints.
+
 Report #6911dd6f remains working. **Current source (2026-11-08) imports the module and adds authenticated HTTP routes; production still does not. Do not deploy this source until owner browser CAS/conflict handling, opt-in UI, live invalidation/synchronization and release acceptance are complete. Backend owner CAS is implemented in the final section below.** No shared UI/event stream or production migration has shipped. Independent copies remain separate in FORM-SHARING.md. Earlier sections below record historical foundation slices, not the current source integration status.
 
 ## Implemented boundary
