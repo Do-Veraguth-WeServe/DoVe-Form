@@ -25,7 +25,9 @@ const waitReady = (proc, tag, pattern = /ready/) => new Promise((resolve, reject
   proc.on('exit', code => { clearTimeout(t); reject(Error(tag + ' exited early (' + code + ')')); });
 });
 
+step('guided planning metadata',run('node',['--test','test/planning-offer.test.mjs']));
 step('build (esbuild + bridge hash + wasm)', run('node', ['build.mjs']));
+step('contextual planning offer browser',run('node',['test/guided-planning.test.mjs']));
 step('account-scoped conversation selection',run('node',['--test','test/session-selection.test.mjs']));
 step('DB-dependent Element initialization and reload',run('node',['test/db-element-lifecycle.test.mjs']));
 step('unchanged feed Elements survive real updates',run('node',['test/feed-stability.test.mjs']));

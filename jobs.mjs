@@ -207,12 +207,12 @@ export class JobRunner {
         const out=await runRound(model,job.request.messages,{signal:ctrl.signal,textOnly:true,maxTokens:3200,deadlineMs:Date.now()+60000},t=>parser.feed(t),()=>{});parser.finish();
         const library=this.getForms(job.userId).filter(f=>(job.request.forms||[]).some(old=>old.id===f.id&&old.revision===f.revision));
         const result=parseChat(out.contentText,library);
-        if(!result.prose&&!result.forms.length)throw Error('Keine Chatantwort erhalten.');
+        if(!result.prose&&!result.forms.length&&!result.planningOffer)throw Error('Keine Chatantwort erhalten.');
         this.store.setJobProse(jobId,result.prose);
         const done=this.store.completeJob(jobId,j=>{
           this.store.finishMessage(j.conversationId,j.messageId,{prose:result.prose,error:result.metadataError?'Formdaten konnten nicht vollständig verarbeitet werden. Bitte erneut versuchen.':out.truncated?'Antwort wurde gekürzt.':null});
-          this.store.db.prepare('UPDATE messages SET forms=? WHERE id=?').run(JSON.stringify({items:result.forms,edits:result.formEdits}),j.messageId);
-        });if(done){done.forms={items:result.forms,edits:result.formEdits};this.emitJob(done,true);}return;
+          this.store.db.prepare('UPDATE messages SET forms=? WHERE id=?').run(JSON.stringify({items:result.forms,edits:result.formEdits,planningOffer:result.planningOffer}),j.messageId);
+        });if(done){done.forms={items:result.forms,edits:result.formEdits,planningOffer:result.planningOffer};this.emitJob(done,true);}return;
       }
       if(job.kind==='plan'){
         let raw='',sent=0;

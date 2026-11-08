@@ -1,0 +1,14 @@
+✔ bare, fenced, chunks, malformed, foreign and ordinary JSON (12.467071ms)
+✔ private forms, versions, deletion without resurrection, safe rendering contract (285.514717ms)
+✔ bounded inert offer rejects commands and malformed values (4.374299ms)
+✔ metadata-only fenced and chunked offers do not leak into prose (6.653333ms)
+✔ clear legacy prose offers have fallback but ordinary discussion does not (1.714397ms)
+✔ prompt requires contextual offers and separate explicit build approval (0.765039ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 652.117974

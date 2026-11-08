@@ -1,0 +1,9 @@
+# Guided planning — report #83aa74f1
+
+Bounded first release: chat generation is instructed to offer planning proactively through inert versioned metadata. Strict title-only validation, textContent rendering and a narrow legacy prose fallback provide an app-owned contextual “Element planen” action. Offers persist with the answer and survive reload. Only the newest assistant answer displays an offer; planning immediately consumes that conversational position. Double clicks do not create multiple plans. Planning and building remain separate explicit approvals, with existing backend authorization unchanged. No model URL, command, tool access or execution authority is accepted.
+
+Reproduction: prior chat envelope accepted only forms/formEdits, chat prompt sent users to the composer Plan control, and no contextual planning action existed. Regression covers metadata-only/chunked/fenced responses, malformed/command-bearing offers, negative prose, desktop/mobile, persisted reload, no automatic planning/building, double click one plan, explicit separate build, actual sandbox ready. All tests use disposable accounts/data and a mock provider. No real-provider reliability guarantee is claimed.
+
+IMPORTANT remaining acceptance: the legacy composer Plan control remains in this bounded release. Removing/replacing it requires migration of existing refinement/replanning entry points and their regression fixtures; report stays working until that requested flow is delivered. Structured offer prompting cannot guarantee that every model always proposes one. The narrow prose fallback intentionally does not infer arbitrary intent.
+
+Source test logs: docs/test-results/2026-11-08-guided-planning-unit.txt, guided-planning-browser.txt and guided-planning-release.txt with same date prefix. The existing full Blueprint gate passed (130 pass, one optional skip, integration/browser); generic npm test backlog is not claimed fixed.
