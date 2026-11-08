@@ -1,0 +1,14 @@
+[
+  {
+    "base": "http://127.0.0.1:5177",
+    "health": 200,
+    "sha": "9a6a73fff9cd5263c43b42da603d579be6cdd3aece30db1a2ee74585ad338129",
+    "CSP": true
+  },
+  {
+    "base": "https://fhisling.tail11036c.ts.net:9444",
+    "health": 200,
+    "sha": "9a6a73fff9cd5263c43b42da603d579be6cdd3aece30db1a2ee74585ad338129",
+    "CSP": true
+  }
+]
