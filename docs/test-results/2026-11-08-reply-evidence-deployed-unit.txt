@@ -1,0 +1,14 @@
+✔ stored element evidence: isolation, fresh values, truncation and read-only (317.668781ms)
+✔ static CSS evidence is scoped, revision-bound, read-only and independent of stored counts (292.486734ms)
+✔ oversized CSS is explicitly unavailable; unchanged source hashes are deterministic (3.32719ms)
+✔ archive metadata cannot forge app-owned verification (189.058827ms)
+✔ no elements yields no diagnostic badge; legacy jobs remain compatible (0.593546ms)
+✔ only bounded static provenance is exposed; model-like fields cannot certify a repair (0.922265ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 679.63493

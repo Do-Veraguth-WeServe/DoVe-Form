@@ -1,5 +1,6 @@
 import {Bugs} from './bugs.mjs';
 import {saveOwnedElement} from './owner-save.mjs';
+import {replyEvidence} from './reply-evidence.mjs';
 import {elementEvidence,ELEMENT_EVIDENCE_POLICY} from './element-context.mjs';
 import {Forms,chatPrompt} from './forms.mjs';
 import {FormSharing} from './form-sharing.mjs';
@@ -713,7 +714,7 @@ const server = http.createServer(async (req, res) => {
       targetMessageId: planningTarget,
       kind: isPlanning?'plan':'chat',
       modelId: model.id,
-      request: { messages, baseRevision:previousBlueprint?.revision||0,...(!isPlanning?{forms:formLibrary.map(({template,...f})=>f)}:{}) },
+      request: { messages, baseRevision:previousBlueprint?.revision||0,...(!isPlanning?{forms:formLibrary.map(({template,...f})=>f),replyEvidence:replyEvidence(evidence)}:{}) },
       requestId: d.requestId, userMessageId
     });
     store.db.exec('COMMIT');

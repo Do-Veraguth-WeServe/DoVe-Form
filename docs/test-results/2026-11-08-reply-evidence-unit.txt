@@ -1,0 +1,15 @@
+✔ bare, fenced, chunks, malformed, foreign and ordinary JSON (13.088739ms)
+✔ stored element evidence: isolation, fresh values, truncation and read-only (447.337362ms)
+✔ static CSS evidence is scoped, revision-bound, read-only and independent of stored counts (411.103755ms)
+✔ oversized CSS is explicitly unavailable; unchanged source hashes are deterministic (3.748991ms)
+✔ archive metadata cannot forge app-owned verification (229.601863ms)
+✔ no elements yields no diagnostic badge; legacy jobs remain compatible (0.895868ms)
+✔ only bounded static provenance is exposed; model-like fields cannot certify a repair (1.094322ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 883.774069

@@ -211,8 +211,8 @@ export class JobRunner {
         this.store.setJobProse(jobId,result.prose);
         const done=this.store.completeJob(jobId,j=>{
           this.store.finishMessage(j.conversationId,j.messageId,{prose:result.prose,error:result.metadataError?'Formdaten konnten nicht vollständig verarbeitet werden. Bitte erneut versuchen.':out.truncated?'Antwort wurde gekürzt.':null});
-          this.store.db.prepare('UPDATE messages SET forms=? WHERE id=?').run(JSON.stringify({items:result.forms,edits:result.formEdits,planningOffer:result.planningOffer}),j.messageId);
-        });if(done){done.forms={items:result.forms,edits:result.formEdits,planningOffer:result.planningOffer};this.emitJob(done,true);}return;
+          this.store.db.prepare('UPDATE messages SET forms=? WHERE id=?').run(JSON.stringify({items:result.forms,edits:result.formEdits,planningOffer:result.planningOffer,replyEvidence:job.request.replyEvidence||null}),j.messageId);
+        });if(done){done.forms={items:result.forms,edits:result.formEdits,planningOffer:result.planningOffer,replyEvidence:job.request.replyEvidence||null};this.emitJob(done,true);}return;
       }
       if(job.kind==='plan'){
         let raw='',sent=0;

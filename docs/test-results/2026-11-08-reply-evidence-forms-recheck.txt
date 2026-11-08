@@ -1,0 +1,1 @@
+PASS normal streaming chat without blueprint; reusable forms and snapshots; library CRUD/version restore/isolation; confirmed AI edits; explicit Plan and build; chat during build; custom template reuse without build; admin reset invalidates sessions; disable/enable; roles; delete confirmation and owner protection; desktop/mobile.
