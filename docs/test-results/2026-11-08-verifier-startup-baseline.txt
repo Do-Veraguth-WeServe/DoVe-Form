@@ -1,0 +1,12 @@
+0 FAIL 5731 Animation browser verification rejected [STARTUP]: Fix guest startup errors; use only supported ui APIs and bounded computation.
+1 PASS 5725
+2 PASS 6072
+3 PASS 6806
+4 PASS 6706
+5 PASS 5990
+6 PASS 5795
+7 PASS 5803
+8 PASS 5821
+9 PASS 5869
+10 PASS 6111
+11 PASS 6009

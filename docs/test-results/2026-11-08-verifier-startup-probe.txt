@@ -1,0 +1,31 @@
+file:///root/.openclaw/workspace/projects/form/test/animation-startup-probe.mjs:12
+const units=()=>run('list-units',name+'@*','--all','--plain','--no-legend').split('
+                                                                                  ^
+
+SyntaxError: Invalid or unexpected token
+    at compileSourceTextModule (node:internal/modules/esm/utils:319:16)
+    at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:89:18)
+    at #translate (node:internal/modules/esm/loader:438:20)
+    at afterLoad (node:internal/modules/esm/loader:506:29)
+    at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:511:12)
+    at #getOrCreateModuleJobAfterResolve (node:internal/modules/esm/loader:564:36)
+    at afterResolve (node:internal/modules/esm/loader:611:52)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:617:12)
+    at node:internal/modules/esm/loader:636:32
+    at TracingChannel.tracePromise (node:diagnostics_channel:370:14)
+
+Node.js v24.22.2
+{"attempt":0,"elapsedMs":7946,"ok":true}
+{"attempt":1,"elapsedMs":7316,"ok":true}
+{"attempt":2,"elapsedMs":6271,"ok":true}
+{"attempt":3,"elapsedMs":6316,"ok":true}
+{"attempt":4,"elapsedMs":5793,"ok":true}
+{"attempt":5,"elapsedMs":5587,"ok":true}
+{"attempt":6,"elapsedMs":5931,"ok":true}
+{"attempt":7,"elapsedMs":5795,"ok":true}
+{"attempt":8,"elapsedMs":5572,"ok":true}
+{"attempt":9,"elapsedMs":5710,"ok":true}
+{"attempt":10,"elapsedMs":6187,"ok":true}
+{"attempt":11,"elapsedMs":5706,"ok":true}
+Failed to reset failed state of unit form-startup-probe-40043@11-40043-0.service: Unit form-startup-probe-40043@11-40043-0.service not loaded.
+CLEAN isolated synthetic probe; installed runtime unchanged
