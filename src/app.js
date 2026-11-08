@@ -1,3 +1,4 @@
+import {settingsLayout} from './settings-layout.js';
 import {sharedElements} from './shared-elements.js';
 import {buildStatus,buildFailure} from '../build-recovery.mjs';
 import {connectionSettings} from './connection-settings.js';
@@ -471,7 +472,7 @@ function updateComposer(){
   $('#send').disabled=!has;
   const who=me?String(me.username).slice(0,12):'';
   $('#statuslabel').textContent=!me?'NICHT ANGEMELDET':(has?('ANGEMELDET · '+who.toUpperCase()):'KEIN MODELL');
-  $('#prompt').placeholder=has?'Nachricht …':'Zuerst ein Modell hinzufügen (⚙ oben rechts)';
+  $('#prompt').placeholder=has?'Nachricht …':'Modell unter Einstellungen → Modelle hinzufügen';
   $('#mcpbtn').classList.toggle('hidden',me?.role!=='owner');
   $('#usersbtn').classList.toggle('hidden',!['owner','admin'].includes(me?.role));
   $('#whoami').textContent=me?(me.username+(me.role==='owner'?' · Owner':'')):'';
@@ -1048,6 +1049,7 @@ $('#preferencesbtn').onclick=()=>$('#preferences').showModal();$('#preferencescl
 async function refreshBugs(){const data=await uiRequest('/api/bugs');const list=$('#buglist');list.replaceChildren();if(!data.reports.length)list.textContent='Noch keine Meldungen.';for(const b of data.reports){const row=document.createElement('section');row.className='library-row';const title=document.createElement('strong');title.textContent=b.title;const meta=document.createElement('p');meta.className='small';meta.textContent=b.username+' · '+new Date(b.created_at).toLocaleString()+' · #'+b.id.slice(0,8);const body=document.createElement('p');body.style.whiteSpace='pre-wrap';body.textContent=b.description+'\nErwartet: '+b.expected+(b.conversation_id?'\nChat-ID: '+b.conversation_id:'');const status=document.createElement('select');status.setAttribute('aria-label','Bugstatus');for(const [v,l]of [['open','Offen'],['working','In Arbeit'],['resolved','Behoben']]){const o=document.createElement('option');o.value=v;o.textContent=l;status.append(o)}status.value=b.status;status.disabled=!data.canManage;const note=document.createElement('textarea');note.setAttribute('aria-label','Bearbeitungsnotiz');note.maxLength=2000;note.value=b.resolution;note.readOnly=!data.canManage;row.append(title,meta,body,status,note);if(data.canManage){const save=document.createElement('button');save.textContent='Status speichern';save.onclick=async()=>{try{await uiRequest('/api/bugs/status',{id:b.id,status:status.value,resolution:note.value});toast('Status gespeichert.')}catch(e){toast(e.message)}};row.append(save)}list.append(row)}}
 $('#bugbtn').onclick=()=>{$('#bugdialog').showModal();refreshBugs().catch(e=>toast(e.message));};$('#bugclose').onclick=()=>$('#bugdialog').close();$('#bugrefresh').onclick=()=>refreshBugs().catch(e=>toast(e.message));
 $('#bugform').onsubmit=async e=>{e.preventDefault();const f=e.target;$('#bugsubmit').disabled=true;try{const out=await uiRequest('/api/bugs',{title:f.elements.title.value,description:f.elements.description.value,expected:f.elements.expected.value,conversationId:f.elements.context.checked?db.current:null});f.reset();$('#bugfeedback').textContent='Gesendet · #'+out.id.slice(0,8);await refreshBugs()}catch(err){$('#bugfeedback').textContent=err.message}finally{$('#bugsubmit').disabled=false}};
+settingsLayout();
 boot();
 
 function blueprintEl(s){

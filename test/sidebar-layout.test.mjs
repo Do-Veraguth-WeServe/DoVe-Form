@@ -12,7 +12,7 @@ try{
    await p.locator('#'+tab+'-tab').click();const selector=tab==='chats'?'#sessions':'#elements-list';
    const r=await p.locator(selector).evaluate(e=>{const rows=[...e.querySelectorAll(e.id==='sessions'?'.session-open':'button')];return {count:rows.length,height:e.clientHeight,scrollHeight:e.scrollHeight,minRow:Math.min(...rows.map(b=>b.getBoundingClientRect().height)),bottom:e.getBoundingClientRect().bottom,footerTop:document.querySelector('.sidebottom').getBoundingClientRect().top};});
    await p.locator(selector).evaluate(e=>{e.scrollTop=0});await p.locator(selector).hover();await p.mouse.wheel(0,2000);await p.waitForTimeout(100);r.wheelScroll=await p.locator(selector).evaluate(e=>e.scrollTop);r.viewport=viewport;r.tab=tab;reports.push(r);
-   if(!process.env.EXPECT_LAYOUT_BUG){assert.ok(r.minRow>=40,JSON.stringify(r));assert.ok(r.height>0&&r.scrollHeight>r.height,JSON.stringify(r));assert.ok(r.wheelScroll>0,JSON.stringify(r));assert.ok(r.bottom<=r.footerTop+1,JSON.stringify(r));}
+   if(!process.env.EXPECT_LAYOUT_BUG){assert.ok(r.minRow>=40,JSON.stringify(r));assert.ok(r.height>=88&&r.scrollHeight>r.height,JSON.stringify(r));assert.ok(r.wheelScroll>0,JSON.stringify(r));assert.ok(r.bottom<=r.footerTop+1,JSON.stringify(r));}
   }
   const shots='docs/screenshots';fs.mkdirSync(shots,{recursive:true});await p.screenshot({path:shots+'/sidebar-'+viewport.width+'x'+viewport.height+(process.env.EXPECT_LAYOUT_BUG?'-before':'-after')+'.png'});
  }
