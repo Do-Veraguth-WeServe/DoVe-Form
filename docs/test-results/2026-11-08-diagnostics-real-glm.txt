@@ -1,0 +1,45 @@
+{
+  "testOnly": true,
+  "model": "glm-5.3-flash",
+  "scope": "authenticated synthetic chat, static CSS causal evidence; NOT browser/layout/repair certification",
+  "results": [
+    {
+      "count": 0,
+      "elapsedMs": 37634,
+      "events": {
+        "element-job": 1,
+        "prose-chunk": 74,
+        "done": 1
+      },
+      "checks": {
+        "mentionsContent": true,
+        "mentionsRemoval": true,
+        "disclosesLimits": true
+      },
+      "answer": "Kurz untersucht – nur Befundlage, keine Maßnahme:\n\n**Belegt (aus dem Snapshot, Stand 13:07 Uhr):**\n- Der gespeicherte Zähler des Elements „Synthetic flame“ steht auf **0**.\n- Die statische CSS-Policy für diese Code-Revision entfernt **drei Deklarationen**: `content`, `position` und `background`. Entferntes `content` verhindert Pseudo-Element-Darstellung über CSS – unabhängig vom Zählerstand.\n\n**Ungeprüft:**\n- Kein Laufzeit-Check: `visualVerified` und `runtimeObserved` sind beide **false**. Es ist also nicht bestätigt, dass die Flamme tatsächlich per CSS gezeichnet wird oder dass genau diese Entfernungen die Ursache sind.\n- Die eigentliche Render-Regel der Flamme ist unbekannt. Ob sie z. B. `count > 0` voraussetzt, lässt sich aus den Daten nicht ableiten – Zählerstand 0 allein ist kein Kausalitätsbeweis.\n- Ob es eine Ersatzdarstellung gibt, ist offen; die Diagnose „inspected-removals“ erfasst nur die entfernten Deklarationen, nicht das Gesamtbild.\n- Falls die Anzeige von Streak-/Zählerlogik abhängt: Die zugehörigen Tabellen sind leer; das belegt nur, dass keine Tabellendaten vorliegen.\n\nKurz: Zwei harte Fakten (Zähler 0, drei entfernte CSS-Deklarationen), aber die visuelle Ursache ist ohne Laufzeit-Beobachtung nicht abschließend geklärt.",
+      "codeRevision": "96c238904a01aeeb36ec93e943918e2f18b28ca25eb6a599679926efd88ed06a",
+      "visualVerified": false,
+      "artifactUnchanged": true,
+      "noBuild": true
+    },
+    {
+      "count": 3,
+      "elapsedMs": 26835,
+      "events": {
+        "element-job": 1,
+        "prose-chunk": 41,
+        "done": 1
+      },
+      "checks": {
+        "mentionsContent": true,
+        "mentionsRemoval": true,
+        "disclosesLimits": true
+      },
+      "answer": "Kurzer Befund (nur Untersuchung):\n\n**Belegt:**\n- Die statische CSS-Policy (Revision 96c23890…) entfernt drei Deklarationen: `content` (blocked-property), `position` (blocked-property) und `background` (unsupported-function). Das Entfernen von `content` verhindert, dass diese Deklaration Pseudo-Element-Inhalte erzeugt – unabhängig vom gespeicherten Zähler.\n- Gespeichert ist `state.count = 3`. Der Snapshot dokumentiert den Wert, nicht seine Bedeutung.\n- Die Tabellen sind leer. Das belegt nur, dass die Tabellen leer sind – nicht, dass berechnete Werte null wären.\n\n**Ungeprüft:**\n- Ob genau diese drei Entfernungen die *gesamte* visuelle Ursache sind: nicht belegt. Die Policy zeigt nur Entfernungen, nicht das vollständige Rendering und keinen möglichen Ersatz.\n- Laufzeit: `visualVerified: false`, `runtimeObserved: false`. Ich habe die Anzeige nicht live beobachtet; dass die Flamme tatsächlich fehlt, beruht auf deiner Schilderung.\n- Was `count = 3` semantisch bedeutet (Flammen, Tage, etwas anderes) und ob ein Ersatzmechanismus greift.\n\n**Fazit:** Gesichert ist nur, dass `content`, `position` und `background` von dieser CSS-Policy entfernt werden und eine pseudo-element-basierte Darstellung darüber nicht entstehen kann. Die vollständige Erklärung des fehlenden Bildes ist nicht verifiziert – dazu wäre eine Laufzeit-Beobachtung nötig.",
+      "codeRevision": "96c238904a01aeeb36ec93e943918e2f18b28ca25eb6a599679926efd88ed06a",
+      "visualVerified": false,
+      "artifactUnchanged": true,
+      "noBuild": true
+    }
+  ]
+}

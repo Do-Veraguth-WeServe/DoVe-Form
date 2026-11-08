@@ -1,0 +1,45 @@
+{
+  "testOnly": true,
+  "model": "minimax-m3.1-flash",
+  "scope": "authenticated synthetic chat, static CSS causal evidence; NOT browser/layout/repair certification",
+  "results": [
+    {
+      "count": 0,
+      "elapsedMs": 9663,
+      "events": {
+        "element-job": 1,
+        "prose-chunk": 5,
+        "done": 1
+      },
+      "checks": {
+        "mentionsContent": true,
+        "mentionsRemoval": true,
+        "disclosesLimits": true
+      },
+      "answer": "**Belegt:**\n- Im Snapshot vom **08.11.2026, 13:08:23.688Z** steht `state.count` auf **0**.\n- Die statische CSS-Prüfung für die genannte Code-Revision hat drei relevante Deklarationen entfernt:\n  - `content` – als blockierte Eigenschaft\n  - `position` – als blockierte Eigenschaft\n  - `background` – wegen einer nicht unterstützten Funktion\n- Ohne gültige `content`-Deklaration kann das betreffende CSS-Pseudo-Element **keinen Pseudo-Inhalt erzeugen**, unabhängig vom gespeicherten Zähler.\n\n**Noch ungeprüft:**\n- Ob die Flamme tatsächlich über dieses Pseudo-Element erzeugt wird und ob die Entfernungen die **gesamte** visuelle Ursache sind.\n- Welche genaue Darstellungsregel zwischen `count = 0` und der Flamme besteht. Der Zählerwert 0 ist deshalb allein keine belegte Erklärung.\n- Das tatsächliche Browser-Rendering, Layout und eine sichtbare Ersatzdarstellung: `visualVerified` und `runtimeObserved` sind beide `false`.\n\n**Fazit:** Am belegtesten ist, dass die CSS-Policy die `content`-Erzeugung blockiert und zusätzlich `position` sowie `background` entfernt hat. Das erklärt das fehlende Pseudo-Element, die vollständige visuelle Ursache wurde aber nicht live verifiziert.",
+      "codeRevision": "96c238904a01aeeb36ec93e943918e2f18b28ca25eb6a599679926efd88ed06a",
+      "visualVerified": false,
+      "artifactUnchanged": true,
+      "noBuild": true
+    },
+    {
+      "count": 3,
+      "elapsedMs": 9777,
+      "events": {
+        "element-job": 1,
+        "prose-chunk": 7,
+        "done": 1
+      },
+      "checks": {
+        "mentionsContent": true,
+        "mentionsRemoval": true,
+        "disclosesLimits": true
+      },
+      "answer": "**Belegt:**\n\n- Für „Synthetic flame“ wurden in der aktuellen statischen CSS-Policy drei Deklarationen entfernt: `content`, `position` und eine `background`-Deklaration mit nicht unterstützter Funktion.\n- Durch die Entfernung von `content` erzeugt die betreffende CSS-Regel keinen Pseudo-Inhalt mehr. Das gespeicherte `count: 3` kann diese Erzeugung nicht wiederherstellen.\n- Damit gibt es einen konkreten technischen Grund, warum die Flamme in dieser CSS-Darstellung fehlt.\n\n**Noch ungeprüft:**\n\n- Es gab keine Laufzeit- oder visuelle Browserprüfung (`runtimeObserved: false`, `visualVerified: false`).\n- Daher ist nicht vollständig belegt, ob weitere Regeln oder ein Ersatz an der gesamten visuellen Ursache beteiligt sind.\n- Aus `count: 3` lässt sich keine unbekannte Schwellenwert- oder Berechnungsregel ableiten.",
+      "codeRevision": "96c238904a01aeeb36ec93e943918e2f18b28ca25eb6a599679926efd88ed06a",
+      "visualVerified": false,
+      "artifactUnchanged": true,
+      "noBuild": true
+    }
+  ]
+}
