@@ -1,0 +1,15 @@
+✔ pseudo-element failure explains removed features without inventing data causes (11.128097ms)
+✔ prompt and sanitizer consume one immutable capability policy (2.668783ms)
+✔ unsafe syntax remains blocked and reports stay bounded without source values (6.755129ms)
+✔ ordinary responsive layout and colors survive unchanged (2.202998ms)
+✔ stored element evidence: isolation, fresh values, truncation and read-only (289.305179ms)
+✔ static CSS evidence is scoped, revision-bound, read-only and independent of stored counts (248.117244ms)
+✔ oversized CSS is explicitly unavailable; unchanged source hashes are deterministic (2.386896ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 682.941428

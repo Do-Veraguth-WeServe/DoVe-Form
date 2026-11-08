@@ -1,0 +1,20 @@
+✖ static CSS evidence is scoped, revision-bound, read-only and independent of stored counts (204.959809ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 522.220455
+
+✖ failing tests:
+
+test at test/element-diagnostics.test.mjs:8:1
+✖ static CSS evidence is scoped, revision-bound, read-only and independent of stored counts (204.959809ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'kind')
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/element-diagnostics.test.mjs:18:17)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
