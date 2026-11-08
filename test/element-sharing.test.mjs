@@ -270,3 +270,46 @@ for(const phase of ['pending','active','revoked','declined','invalidated'])test(
  }
  assert.equal(x.ownerSave(a.id,mid,{state:{n:78},expectedRevision,expectedCodeRevision}).status,200);
 }));
+
+for(const phase of ['pending','active','revoked','declined','invalidated'])test('recipient deletion preserves grant-era owner protection: '+phase,()=>fixture(({s,db,a,b,mid,x,input})=>{
+ const g=x.offer(a.id,input);
+ if(phase!=='pending')x.accept(b.id,g.id);
+ if(phase==='revoked')x.close(a.id,g.id);
+ if(phase==='declined')x.close(b.id,g.id);
+ if(phase==='invalidated')s.updateMessageRender(a.id,mid,{...s.getRender(mid),html:'<p>Changed</p>'});
+ s.db.prepare('DELETE FROM users WHERE id=?').run(b.id);
+ assert.equal(s.db.prepare('SELECT count(*) n FROM element_grants WHERE message_id=?').get(mid).n,0);
+ const reopened=new ElementSharing(s,db),current=s.getRender(mid);
+ assert.throws(()=>reopened.view(b.id,g.id));
+ for(const payload of [{state:{n:88}},{render:{...current,html:'legacy'}}]){
+  assert.equal(reopened.ownerSave(a.id,mid,payload).status,409);
+  assert.deepEqual(s.getRender(mid),current);
+ }
+ const expectedRevision=elementStateRevision(current.state),expectedCodeRevision=createHash('sha256').update(ownerCodeText(current)).digest('hex');
+ assert.equal(reopened.ownerSave(a.id,mid,{state:{n:89},expectedRevision,expectedCodeRevision}).status,200);
+}));
+
+test('grant marker backfills existing grants without changing source, survives reopen and cascades with source',()=>fixture(({s,db,a,b,conv,mid,x,input})=>{
+ x.offer(a.id,input);const before=s.getRender(mid);
+ s.db.exec('DROP TABLE element_grant_history'); // synthetic pre-marker installation
+ const reopened=new ElementSharing(s,db);
+ assert.deepEqual(s.getRender(mid),before);
+ assert.equal(s.db.prepare('SELECT count(*) n FROM element_grant_history WHERE message_id=?').get(mid).n,1);
+ s.db.prepare('DELETE FROM users WHERE id=?').run(b.id);
+ new ElementSharing(s,db);
+ assert.equal(reopened.ownerSave(a.id,mid,{state:{n:80}}).status,409);
+ assert.deepEqual(s.db.prepare('PRAGMA table_info(element_grant_history)').all().map(c=>c.name),['message_id']);
+ assert.equal(s.db.prepare('PRAGMA integrity_check').get().integrity_check,'ok');
+ s.deleteConversation(a.id,conv.id);
+ assert.equal(s.db.prepare('SELECT count(*) n FROM element_grant_history').get().n,0);
+}));
+test('failed offer rolls back marker and grant together; never-offered elements stay private-compatible',()=>fixture(({s,a,mid,x,input})=>{
+ s.db.exec("CREATE TRIGGER fixture_fail_marker BEFORE INSERT ON element_grant_history BEGIN SELECT RAISE(ABORT,'fixture marker failure'); END");
+ assert.throws(()=>x.offer(a.id,input),/fixture marker failure/);
+ assert.equal(s.db.prepare('SELECT count(*) n FROM element_grants').get().n,0);
+ assert.equal(s.db.prepare('SELECT count(*) n FROM element_grant_history').get().n,0);
+ assert.equal(x.ownerSave(a.id,mid,{state:{n:9}}).status,200);
+ s.db.exec('DROP TRIGGER fixture_fail_marker');
+ assert.ok(x.offer(a.id,input).id);
+ assert.equal(x.ownerSave(a.id,mid,{state:{n:10}}).status,409);
+}));

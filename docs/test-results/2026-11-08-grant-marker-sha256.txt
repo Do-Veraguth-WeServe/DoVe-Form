@@ -1,0 +1,3 @@
+6b793cc491addbd1f9cdf1b8142e45bd7482e2b7785706b698c506c88b4a231c  element-sharing.mjs
+46f7c3007e2af59117211f354722d712011e2c54d928f345212e2fb05ca7ce2c  test/element-sharing.test.mjs
+7bd726eb794f4013cabb45f5d873953ffa446c04e6743ec318742f9b960d7338  test/element-grants-http.mjs

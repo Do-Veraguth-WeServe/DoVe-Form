@@ -100,5 +100,15 @@ try{
  s.db.exec('BEGIN IMMEDIATE');try{const locked=await call(0);assert.equal(locked.status,503);assert.equal(locked.data.error,'Dienst beschäftigt. Bitte neu laden.');}finally{s.db.exec('ROLLBACK');}
  assert.equal((await call(0)).status,200);
  let limited=false;for(let i=0;i<65;i++){if((await call(2)).status===429){limited=true;break;}}assert.ok(limited);
+ // Recipient removal erases ACL rows, never the owner's snapshot requirement.
+ const beforeDeletion=s.getRender(mid);
+ s.db.prepare('DELETE FROM users WHERE id=?').run(users[1].id);
+ assert.equal(s.db.prepare('SELECT count(*) n FROM element_grants WHERE message_id=?').get(mid).n,0);
+ assert.equal((await call(1,'/view?id='+id)).status,401);
+ assert.equal((await ownerSave({state:{n:90}})).status,409);
+ assert.equal((await ownerSave({render:{...beforeDeletion,html:'stale'}})).status,409);
+ assert.deepEqual(s.getRender(mid),beforeDeletion);
+ assert.equal((await ownerSave({state:{n:91},expectedRevision:crypto.createHash('sha256').update(JSON.stringify(beforeDeletion.state)).digest('hex'),expectedCodeRevision:freshCode})).status,200);
+ console.log('PASS recipient deletion: revoked session, no grant rows, legacy owner state/editor denied, fresh snapshot accepted.');
  console.log('PASS grant HTTP: three-account ACL, auth/CSRF/Origin/type/method/size/rate, opt-in, owner/recipient CAS, stale editor denial, row identity, disabled users, revocation, private legacy persistence, logout-during-upload at both write routes, lock recovery.');
 }finally{if(app&&app.exitCode===null){app.kill('SIGTERM');await once(app,'exit');}s.close();fs.rmSync(dir,{recursive:true,force:true});}

@@ -98,3 +98,5 @@ Verification: 28/28 focused tests passed. Full test:blueprints exited0 with 109 
 
 
 Latest source slice: OWNER-PERSISTENCE.md documents same-state stale code/actions protection and mandatory state+code tokens for every Element with grant history, including pending, closed and old-code grants. Only never-offered Elements retain tokenless legacy compatibility. Five baseline variants reproduced lost protection; focused unit and real HTTP fixtures now fail closed for legacy clients while fresh owners can save. Not deployed; prior UI/live delivery and release gates remain.
+
+Latest source safety slice: OWNER-PERSISTENCE.md documents the minimal durable grant-era marker. Recipient account deletion must not restore tokenless owner writes when grant rows cascade away. Source migration backfills existing surviving grants; the marker contains only message_id and cascades with source deletion. This is not production deployment or completion of #6911dd6f.

@@ -21,6 +21,12 @@ export class ElementSharing {
       "CREATE TABLE IF NOT EXISTS element_grants(id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, recipient_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE, code_revision TEXT NOT NULL, status TEXT NOT NULL CHECK(status IN ('pending','active','revoked','declined')), created_at TEXT NOT NULL)"
     );
     this.db.exec('CREATE INDEX IF NOT EXISTS element_grants_parties ON element_grants(owner_id,recipient_id,status)');
+    // Minimal sticky safety marker: recipient deletion must not restore legacy
+    // tokenless writes. Contains no recipient identity and dies with the source.
+    this.locked(() => {
+      this.db.exec('CREATE TABLE IF NOT EXISTS element_grant_history(message_id TEXT PRIMARY KEY REFERENCES messages(id) ON DELETE CASCADE)');
+      this.db.exec('INSERT OR IGNORE INTO element_grant_history SELECT DISTINCT message_id FROM element_grants');
+    });
   }
   // Hold the ACL database writer lock through each synchronous operation.
   // Lock order: form.db first, then elements.sqlite. No await/network work here.
@@ -55,6 +61,7 @@ export class ElementSharing {
       if(count>=40)throw Error('Zu viele offene Freigaben.');
       const id=crypto.randomUUID();
       this.db.prepare("INSERT INTO element_grants VALUES(?,?,?,?,?,'pending',?)").run(id,uid,target.id,messageId,revision,new Date().toISOString());
+      this.db.prepare("INSERT OR IGNORE INTO element_grant_history(message_id) VALUES(?)").run(messageId);
       return {id};
     });
   }
@@ -121,7 +128,7 @@ export class ElementSharing {
       const owner=this.store.messageOwner(messageId);
       if(!owner||owner.userId!==uid||!owner.hasRender)unavailable();
       const render=this.store.getRender(messageId);
-      const grantEra=this.db.prepare("SELECT 1 FROM element_grants WHERE owner_id=? AND message_id=? LIMIT 1").get(uid,messageId);
+      const grantEra=this.db.prepare("SELECT 1 FROM element_grant_history WHERE message_id=?").get(messageId);
       const revision=elementStateRevision(render.state);
       const ownerCodeRevision=r=>crypto.createHash('sha256').update(ownerCodeText(r)).digest('hex');
       if((grantEra||expectedCodeRevision!==undefined)&&expectedCodeRevision!==ownerCodeRevision(render))
