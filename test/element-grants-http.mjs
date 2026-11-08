@@ -3,6 +3,7 @@ import http from 'node:http';
 import crypto from 'node:crypto';
 import fs from 'node:fs';import os from 'node:os';import path from 'node:path';
 import {spawn} from 'node:child_process';import {once} from 'node:events';
+import {ownerCodeText} from '../owner-code.mjs';
 import {Store} from '../store.mjs';import {elementCodeRevision} from '../element-sharing.mjs';
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'form-grant-http-'));
 const s=new Store(dir),users=['alice','bobby','carol'].map(n=>s.createUser(n,'password123'));
@@ -37,16 +38,18 @@ try{
  const changed=await call(1,'/state',{id,state:{n:2},expectedRevision:view.data.stateRevision,messageId:'forged'});assert.equal(changed.status,200);
  assert.equal((await call(0,'/state',{id,state:{n:3},expectedRevision:view.data.stateRevision})).status,409);
  assert.equal(s.getRender(mid).state.n,2);
+ const expectedCodeRevision=crypto.createHash('sha256').update(ownerCodeText(render)).digest('hex');
  const ownerSave=async(body,who=0)=>{const r=await fetch(base+'/api/state',{method:'POST',headers:{cookie:'form3sess='+sessions[who].token,'content-type':'application/json','x-form-csrf':sessions[who].csrf,origin:base},body:JSON.stringify({messageId:mid,...body})});return {status:r.status,data:await r.json()};};
  assert.equal((await ownerSave({state:{n:50}})).status,409,'legacy owner must not overwrite shared state without a revision');
- const staleOwner=await ownerSave({state:{n:50},expectedRevision:view.data.stateRevision});
+ assert.equal((await ownerSave({state:{n:50},expectedRevision:changed.data.stateRevision})).status,409,'state-only old clients fail closed');
+ const staleOwner=await ownerSave({state:{n:50},expectedRevision:view.data.stateRevision,expectedCodeRevision});
  assert.equal(staleOwner.status,409);assert.equal(staleOwner.data.state.n,2);assert.equal(s.getRender(mid).state.n,2);
- const ownerWrite=await ownerSave({state:{n:3},expectedRevision:changed.data.stateRevision});assert.equal(ownerWrite.status,200);
+ const ownerWrite=await ownerSave({state:{n:3},expectedRevision:changed.data.stateRevision,expectedCodeRevision});assert.equal(ownerWrite.status,200);
  assert.equal((await call(1,'/state',{id,state:{n:4},expectedRevision:changed.data.stateRevision})).status,409);
  assert.equal((await ownerSave({render:{...render,html:'stale replacement'},expectedRevision:changed.data.stateRevision})).status,409);
  assert.equal(s.getRender(mid).html,render.html);
  assert.equal((await ownerSave({state:{n:100}},2)).status,403);
- assert.equal((await ownerSave({state:{n:2},expectedRevision:ownerWrite.data.stateRevision})).status,200);
+ assert.equal((await ownerSave({state:{n:2},expectedRevision:ownerWrite.data.stateRevision,expectedCodeRevision})).status,200);
 
  assert.equal((await call(0,'/db',{id,op:'create',table:'counter'})).status,200);
  assert.equal((await call(1,'/db',{id,op:'create',table:'counter'})).status,409);
@@ -66,7 +69,14 @@ try{
  assert.equal((await call(0,'/close',{id})).status,200);
  for(const route of ['/state','/db','/accept'])assert.equal((await call(1,route,{id,state:{n:9},op:'select',table:'counter'})).status,404);
  assert.equal((await call(1,'/view?id='+id)).status,404);
- assert.equal((await ownerSave({state:{n:6}})).status,200,'closed grants restore legacy private save compatibility');
+ assert.equal((await ownerSave({state:{n:6}})).status,409,'closed grants cannot revive stale legacy saves');
+ const beforeCodeChange=s.getRender(mid);
+ s.updateMessageRender(users[0].id,mid,{...beforeCodeChange,html:'<p>New revision</p>'});
+ assert.equal((await ownerSave({render:beforeCodeChange,expectedRevision:ownerWrite.data.stateRevision})).status,409,'old code grant cannot permit legacy overwrite');
+ assert.equal(s.getRender(mid).html,'<p>New revision</p>');
+ const freshCode=crypto.createHash('sha256').update(ownerCodeText(s.getRender(mid))).digest('hex');
+ const freshState=crypto.createHash('sha256').update(JSON.stringify(s.getRender(mid).state)).digest('hex');
+ assert.equal((await ownerSave({state:{n:6},expectedRevision:freshState,expectedCodeRevision:freshCode})).status,200,'current owner remains able to save after close/code change');
  // Hold the request body open, prove initial session lookup happened via sliding
  // expiry, then log out before the final byte. No stale session may offer a grant.
  for(const target of [prefix+'/offer','/api/state']){

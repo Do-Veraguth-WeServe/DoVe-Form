@@ -111,7 +111,8 @@ export class ElementSharing {
     });
   }
   // Owner saves use the same state token as recipients. Legacy unshared saves
-  // remain compatible; once a current-code grant is active, a token is mandatory.
+  // remain compatible only for never-offered Elements. Any grant history requires
+  // both tokens, even after close/code invalidation: stale clients remain mounted.
   // Full code replacements also participate, so stale editor snapshots cannot
   // silently discard another participant's state. No client grant ID is trusted.
   ownerSave(uid,messageId,{state,render:replacement,expectedRevision,expectedCodeRevision}={}) {
@@ -120,12 +121,12 @@ export class ElementSharing {
       const owner=this.store.messageOwner(messageId);
       if(!owner||owner.userId!==uid||!owner.hasRender)unavailable();
       const render=this.store.getRender(messageId);
-      const shared=this.db.prepare("SELECT 1 FROM element_grants WHERE owner_id=? AND message_id=? AND code_revision=? AND status='active' LIMIT 1").get(uid,messageId,elementCodeRevision(render));
+      const grantEra=this.db.prepare("SELECT 1 FROM element_grants WHERE owner_id=? AND message_id=? LIMIT 1").get(uid,messageId);
       const revision=elementStateRevision(render.state);
       const ownerCodeRevision=r=>crypto.createHash('sha256').update(ownerCodeText(r)).digest('hex');
-      if(expectedCodeRevision!==undefined&&expectedCodeRevision!==ownerCodeRevision(render))
+      if((grantEra||expectedCodeRevision!==undefined)&&expectedCodeRevision!==ownerCodeRevision(render))
         return {status:409,result:{ok:false,error:'Element wurde geändert. Neu laden.'}};
-      if((shared||expectedRevision!==undefined)&&expectedRevision!==revision)
+      if((grantEra||expectedRevision!==undefined)&&expectedRevision!==revision)
         return {status:409,result:{ok:false,error:'Zustand wurde geändert. Neu laden.',state:render.state,stateRevision:revision}};
       if(replacement==null&&(!state||typeof state!=='object'||Array.isArray(state)||Buffer.byteLength(JSON.stringify(state))>4096))throw Error('Ungültiger Zustand.');
       const next=validateRender(replacement??{...render,state});

@@ -1,0 +1,44 @@
+✔ serializes writes using acknowledged state, snapshots queued input (18.909484ms)
+✔ blocks queued writes without replay after 409 (2.135229ms)
+✔ blocks queued writes without replay after 401 (1.45505ms)
+✔ blocks queued writes without replay after 403 (1.359161ms)
+✔ blocks queued writes without replay after 503 (1.217752ms)
+✔ blocks queued writes without replay after network (1.530626ms)
+✔ blocks queued writes without replay after malformed (1.295043ms)
+✔ bounded queue fails closed without a request flood (2.265785ms)
+✔ stopped snapshot cannot dispatch queued work (0.629759ms)
+✔ code snapshot survives state writes and advances only after confirmed replacement (5.050116ms)
+✔ missing or invalid code acknowledgement blocks queue undefined (1.747486ms)
+✔ missing or invalid code acknowledgement blocks queue wrong (4.28103ms)
+✔ opt-in acceptance and uniform foreign denial, no copied chats or capability transfer (299.109459ms)
+✔ actual shared rows update one namespace; forged namespace and schema operations cannot escape (286.78075ms)
+✔ revocation rechecks every read/write; new grant never reactivates old token (312.122863ms)
+✔ state updates remain visible, code changes fail closed until fresh acceptance (327.202519ms)
+✔ disabled accounts and deleted source are unavailable; additive table survives reopening (265.060741ms)
+✔ pending offers cannot read and quotas do not auto-share other elements (443.681945ms)
+✔ grant listing is paginated and account scoped without pending source data (304.387797ms)
+✔ state compare-and-set detects stale snapshots without editing code (255.656004ms)
+✔ state errors roll back and unavailable grants cannot disclose conflict state (314.557192ms)
+✔ recipient create compatibility never changes schema and matches owner response (286.617173ms)
+✔ separate recipients share conflict token and failed persistence is atomic (284.644229ms)
+✔ cross-process revocation cannot interleave shared row authorization and use (489.950431ms)
+✔ cross-process disable cannot interleave offer or acceptance checks (550.667284ms)
+✔ shared snapshots are coherent against cross-process revocation (444.846532ms)
+✔ owner persistence preserves legacy saves but requires CAS for active shared code (295.858671ms)
+✔ owner code replacement is atomic, versioned and invalidates accepted code (263.786793ms)
+✔ owner CAS holds writer lock through snapshot and persistence (421.675741ms)
+✔ owner snapshot rejects same-state html replacement and state write (259.019458ms)
+✔ owner snapshot rejects same-state actions replacement and state write (282.670928ms)
+✔ grant-era owner saves fail closed for legacy clients: pending (310.837658ms)
+✔ grant-era owner saves fail closed for legacy clients: active (279.628988ms)
+✔ grant-era owner saves fail closed for legacy clients: revoked (279.710586ms)
+✔ grant-era owner saves fail closed for legacy clients: declined (272.21607ms)
+✔ grant-era owner saves fail closed for legacy clients: invalidated (307.731918ms)
+ℹ tests 36
+ℹ suites 0
+ℹ pass 36
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8242.92601

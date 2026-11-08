@@ -1,0 +1,149 @@
+✔ opt-in acceptance and uniform foreign denial, no copied chats or capability transfer (311.640063ms)
+✔ actual shared rows update one namespace; forged namespace and schema operations cannot escape (296.418371ms)
+✔ revocation rechecks every read/write; new grant never reactivates old token (316.298054ms)
+✔ state updates remain visible, code changes fail closed until fresh acceptance (286.894668ms)
+✔ disabled accounts and deleted source are unavailable; additive table survives reopening (281.291315ms)
+✔ pending offers cannot read and quotas do not auto-share other elements (480.679139ms)
+✔ grant listing is paginated and account scoped without pending source data (303.568618ms)
+✔ state compare-and-set detects stale snapshots without editing code (278.267194ms)
+✔ state errors roll back and unavailable grants cannot disclose conflict state (264.181056ms)
+✔ recipient create compatibility never changes schema and matches owner response (320.879572ms)
+✔ separate recipients share conflict token and failed persistence is atomic (340.896618ms)
+✔ cross-process revocation cannot interleave shared row authorization and use (560.182003ms)
+✔ cross-process disable cannot interleave offer or acceptance checks (616.994227ms)
+✔ shared snapshots are coherent against cross-process revocation (544.714231ms)
+✔ owner persistence preserves legacy saves but requires CAS for active shared code (307.630565ms)
+✔ owner code replacement is atomic, versioned and invalidates accepted code (246.960546ms)
+✔ owner CAS holds writer lock through snapshot and persistence (413.322106ms)
+✔ owner snapshot rejects same-state html replacement and state write (245.776001ms)
+✔ owner snapshot rejects same-state actions replacement and state write (238.735808ms)
+✖ grant-era owner saves fail closed for legacy clients: pending (253.99749ms)
+✖ grant-era owner saves fail closed for legacy clients: active (260.687838ms)
+✖ grant-era owner saves fail closed for legacy clients: revoked (245.742753ms)
+✖ grant-era owner saves fail closed for legacy clients: declined (279.163103ms)
+✖ grant-era owner saves fail closed for legacy clients: invalidated (278.508559ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 19
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8433.281433
+
+✖ failing tests:
+
+test at test/element-sharing.test.mjs:254:76
+✖ grant-era owner saves fail closed for legacy clients: pending (253.99749ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  200 !== 409
+  
+      at file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:264:11
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:25:3)
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:254:148)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 200,
+    expected: 409,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/element-sharing.test.mjs:254:76
+✖ grant-era owner saves fail closed for legacy clients: active (260.687838ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  200 !== 409
+  
+      at file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:264:11
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:25:3)
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:254:148)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 200,
+    expected: 409,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/element-sharing.test.mjs:254:76
+✖ grant-era owner saves fail closed for legacy clients: revoked (245.742753ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  200 !== 409
+  
+      at file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:264:11
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:25:3)
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:254:148)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 200,
+    expected: 409,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/element-sharing.test.mjs:254:76
+✖ grant-era owner saves fail closed for legacy clients: declined (279.163103ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  200 !== 409
+  
+      at file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:264:11
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:25:3)
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:254:148)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 200,
+    expected: 409,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/element-sharing.test.mjs:254:76
+✖ grant-era owner saves fail closed for legacy clients: invalidated (278.508559ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  200 !== 409
+  
+      at file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:264:11
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:25:3)
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:254:148)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 200,
+    expected: 409,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
