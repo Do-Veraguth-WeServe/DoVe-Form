@@ -1,6 +1,6 @@
 import {cancelFeedMomentum,startFeedMomentum} from './feed-momentum.js';
 import {validateAnimations,prepareAnimation} from '../animation-policy.mjs';
-import {inspectHTML,safeCSS,safeFragment} from './sanitize.js';
+import {inspectHTML,safeCSS,inspectFragment} from './sanitize.js';
 
 const HOST_OK=/^[a-z0-9.-]{1,253}$/i;
 
@@ -76,11 +76,14 @@ export function bridge(){
           if(['INPUT','SELECT'].includes(el.tagName))el.value=o.value.slice(0,1000);
           else port.postMessage({type:'misuse',id:o.id});
         }
-        if(o.op==='html'&&typeof o.html==='string'&&o.html.length<=24000&&!['INPUT','SELECT','TEXTAREA'].includes(el.tagName))
-          el.innerHTML=el.namespaceURI==='http://www.w3.org/2000/svg'&&typeof o.svg==='string'?o.svg:
-            el.tagName==='TABLE'&&typeof o.table==='string'?o.table:
-            ['TBODY','THEAD','TFOOT'].includes(el.tagName)&&typeof o.section==='string'?o.section:
-            el.tagName==='TR'&&typeof o.row==='string'?o.row:o.html;
+        if(o.op==='html'&&typeof o.html==='string'&&o.html.length<=24000&&!['INPUT','SELECT','TEXTAREA'].includes(el.tagName)){
+          const kind=el.namespaceURI==='http://www.w3.org/2000/svg'&&typeof o.svg==='string'?'svg':
+            el.tagName==='TABLE'&&typeof o.table==='string'?'table':
+            ['TBODY','THEAD','TFOOT'].includes(el.tagName)&&typeof o.section==='string'?'section':
+            el.tagName==='TR'&&typeof o.row==='string'?'row':'html';
+          el.innerHTML=o[kind];
+          if(o.warnings?.[kind]?.removed===true)port.postMessage({type:'html-warning',idRemoved:o.warnings[kind].idRemoved===true});
+        }
         if(o.op==='attr'&&['d','points','aria-pressed','aria-label'].includes(o.name)&&typeof o.value==='string'&&o.value.length<8000)
           el.setAttribute(o.name,o.value);
         if(o.op==='on'&&['click','input','change','keydown'].includes(o.event)){
@@ -155,6 +158,7 @@ export function renderUI(data,{onState,onSuggest,onError,onWarning=()=>{},onPing
       }
       if(d?.type==='animation-result'&&/^n[0-9]{1,8}$/.test(d.ref)&&['finished','cancelled','error'].includes(d.status))deliver('__animation:'+d.ref,'animation',{ok:d.ok===true,status:d.status,error:typeof d.error==='string'?d.error.slice(0,120):undefined});
       if(d?.type==='event'){onInteraction();dispatch(d);}
+      if(d?.type==='html-warning')onWarning('Darstellung eingeschränkt: Dynamische HTML-Bestandteile wurden aus Sicherheitsgründen entfernt oder angepasst.'+(d.idRemoved===true?' Eine Element-ID wurde entfernt; zugehörige Interaktionen können fehlen.':''));
       if(d?.type==='misuse')onError('Hinweis: ui.value gilt nur für Eingabefelder — dynamische Inhalte gehören in ui.html.');
     };
     worker.onmessage=({data:d})=>{
@@ -182,7 +186,7 @@ export function renderUI(data,{onState,onSuggest,onError,onWarning=()=>{},onPing
           if(typeof o.text==='string')onSuggest(o.text.slice(0,500));
         }else if(o.op==='html'){
           if(typeof o.id==='string'&&typeof o.html==='string'&&o.html.length<=24000){
-            try{const fr=safeFragment(o.html);dom.push({op:'html',id:o.id,html:fr.html,svg:fr.svg,table:fr.table,section:fr.section,row:fr.row})}catch{}
+            try{const fr=inspectFragment(o.html);dom.push({op:'html',id:o.id,...fr})}catch{onWarning('Darstellung eingeschränkt: Dynamischer HTML-Inhalt überschreitet die Sicherheitsgrenzen.');}
           }
         }else if(o.op==='ping'){
           const ref=typeof o.ref==='string'?o.ref.slice(0,32):'';

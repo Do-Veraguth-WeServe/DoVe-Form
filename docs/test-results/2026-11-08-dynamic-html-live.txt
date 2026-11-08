@@ -1,0 +1,2 @@
+PASS http://127.0.0.1:5177 home/CSP/new bridge hash/bundle/closed registration/anonymous401 8f968a190468f4a636cda40a80a95ef562d54afbbb9bd1f23873784bef4148d4
+PASS https://fhisling.tail11036c.ts.net:9444 home/CSP/new bridge hash/bundle/closed registration/anonymous401 8f968a190468f4a636cda40a80a95ef562d54afbbb9bd1f23873784bef4148d4

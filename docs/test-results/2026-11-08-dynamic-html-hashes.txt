@@ -1,0 +1,6 @@
+8f968a190468f4a636cda40a80a95ef562d54afbbb9bd1f23873784bef4148d4  dist/app.js
+c60912d60ab183026c767189d11e50a9efebc3aaf1dae5a0ee8b34a64a9d4991  dist/bridge-hash.txt
+fb2ccd2b093ff1860fec3896ebdf77c4ff5a594572e3fdebcf5fcd12d6308aee  dist/animation-verification.js
+8f968a190468f4a636cda40a80a95ef562d54afbbb9bd1f23873784bef4148d4  /opt/form/dist/app.js
+c60912d60ab183026c767189d11e50a9efebc3aaf1dae5a0ee8b34a64a9d4991  /opt/form/dist/bridge-hash.txt
+fb2ccd2b093ff1860fec3896ebdf77c4ff5a594572e3fdebcf5fcd12d6308aee  /opt/form-verifier/dist/animation-verification.js

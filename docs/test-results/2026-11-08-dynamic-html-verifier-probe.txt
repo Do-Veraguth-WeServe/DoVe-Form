@@ -1,0 +1,12 @@
+{
+  status: 'passed',
+  scope: 'startup-and-declared-clips',
+  sourceHash: 'aec6f2abe95b4edff53131263e9bcd4c14badecfd99f00a24e21bea7f7604b5c',
+  viewport: { width: 390, height: 844 },
+  clips: [ { clip: 0, targets: 1, samples: [Array], status: 'finished' } ],
+  limitations: [
+    'No semantic visual-intent certification',
+    'No generated click/persistence workflow certification',
+    'Empty isolated data; no production actions'
+  ]
+}
