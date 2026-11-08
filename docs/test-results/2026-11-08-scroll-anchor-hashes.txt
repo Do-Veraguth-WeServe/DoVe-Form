@@ -1,0 +1,6 @@
+2dfb8406c377cfd69427e052276cdec80b38239769990d38e22411fbfb11cae6  test/session-entry.test.mjs
+2dfb8406c377cfd69427e052276cdec80b38239769990d38e22411fbfb11cae6  /opt/form/test/session-entry.test.mjs
+7e28d107f5ccdbe4de1f1418131f07e5927c7a84154e2f66677da466a4809e71  docs/SESSION-ENTRY.md
+6560a5365d7bcbbd99c4f57e8def1f03b0e289c43a83090f756b342bee999700  docs/BROWSER-CORE-ACCEPTANCE.md
+e637a8d86e7232b54e401206da9c8a0582385d05eef006a7472b02bb6c80e60f  docs/test-results/2026-11-08-scroll-anchor-source.txt
+4b2635e106007bac04fe2e87e3257afa22095d92dd0e551c8ebc5771df6a163f  docs/test-results/2026-11-08-scroll-anchor-deployed.txt

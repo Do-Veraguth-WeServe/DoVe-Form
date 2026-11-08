@@ -73,3 +73,14 @@ This slice changes tests/docs only, not application behavior, production account
 Verified: browser fixture passes desktop1280/mobile390 against source and installed /opt/form modules (four viewport runs); all six CAS regressions pass. Syntax and diff checks pass. Test/docs-only synchronization, no application restart or production data changes. Logs retained as 2026-11-08-refine-{source,deployed,cas}.txt; source hashes retained separately. All fixture processes/data cleaned.
 
 Installed CAS source was initially absent; synchronization stopped at cmp before any commit. Installed the existing tracked test, then all six CAS tests passed against installed modules too; no application dependency was changed. Repeated file comparisons pass.
+
+
+## Held-provider scroll anchor acceptance — 2026-11-08
+
+Legacy7e now has strengthened current-contract coverage in test/session-entry.test.mjs: desktop1280 and mobile390, Enter AND send button, at 45% of the available scroll range AND at the bottom. Each of eight cases holds the actual local provider response before any output, then explicitly releases it. Both held and completed states must retain the same first-visible message ID, its offset and scrollTop within the existing strict 2px bound. Exactly one provider request and visible completed prose are required; fixed completion sleeps no longer substitute for the completed response. Existing entry/reload/manual-scroll/late-sizing deadline checks remain. No bottom-pinning or history-window-rotation exception is accepted during submission.
+
+The first expanded fixture reused one conversation across both viewports; after eight turns its Element legitimately left the disclosed reload history window, so the final iframe check timed out. Each viewport now ends on a different synthetic conversation, preserving the original sizing test as well as all new anchor assertions. A premature overlapping rerun failed with EADDRINUSE before starting another app; the combined initial failure log is retained (including its sparse-file NUL gap). No runtime defect or production change is inferred from these harness failures.
+
+This is acceptance-only work with disposable accounts/store and a held local mock. No production artifact, account or provider settings are changed; no real-provider spend, restart or new animation claim. Full npm-test and legacy7b–7d/8–9/11/13 reconciliation remain open. Reports #a3daf406 and #e89344ad remain unresolved for their recorded reasons.
+
+Verified: all eight combinations pass against source and installed /opt/form application modules (16 cases; held and completed anchors checked in each). Existing entry/sizing checks pass in both runs. Syntax/diff checks pass. Only test/docs are synchronized; no runtime release or restart. Dated scroll-anchor-source/deployed logs and SHA256 evidence are retained. Full-suite certification and unresolved reports are unchanged.
