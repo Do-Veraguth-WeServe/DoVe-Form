@@ -1,0 +1,8 @@
+e46c7fe73448cac0b06ee720f20bd7749d50107aedb955c16c31076e0c7c286e  test/api.test.mjs
+b705b92868b18e99886cc2eefe96ff40fcb3607be69d46378d5eef3616e2fcda  test/run-legacy-api.mjs
+5865ab6a433db80ac28d37025620c43fcc99ee1799c05d019bbfdd2d8b05c8f2  docs/API-ACCEPTANCE.md
+40b8e67cb51e9f4f331f2d06b68e05ad99a7152c414e325aaae4d39f1e260854  docs/test-results/2026-11-08-api-baseline.txt
+b821153d31aa0fb15398cd4b0202cdc603ebd23e13641f1b731cd3becec17ec0  docs/test-results/2026-11-08-api-after.txt
+033c5c6d40c525c13292c07d23b95128196dd651a89e9cf2d3b2a5913931afa6  docs/test-results/2026-11-08-api-release.txt
+f78578d679eae62f5756fa26d908248a36ff688676cbb0d7fee21c24ff079cfb  docs/test-results/2026-11-08-api-final.txt
+3d7ac67b6ea42dd6873dd28cdaf284ef8ba431234509b51fc2834d09263031ad  docs/test-results/2026-11-08-api-deployed.txt

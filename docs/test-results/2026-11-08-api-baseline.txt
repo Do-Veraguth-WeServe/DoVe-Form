@@ -1,0 +1,172 @@
+✔ auth: bootstrap unauthenticated -> 401, status reports registration open + no users (119.035226ms)
+✔ auth: register first user = owner; cookie HttpOnly+SameSite=Strict (+Secure behind https proxy) (109.217228ms)
+✔ auth: register duplicate and bad inputs rejected (17.298828ms)
+✔ auth: login with wrong password rejected uniformly; success issues new session (240.602579ms)
+✔ auth: failed logins rate-limited (10 per 5 min per user+client) (742.394063ms)
+✔ CSRF is session-bound: owner token rejected on another session, missing token rejected (11.457879ms)
+✔ models: owner adds model, key masked everywhere, file chmod 600 (25.247799ms)
+✔ models: shared provider hides key, users own their private providers (116.836187ms)
+✔ conversations: server-side create + list, user B sees nothing of user A (18.89753ms)
+✔ chat: foreign conversation rejected for user B (6.261923ms)
+✖ chat streams prose chunks before render, then done with persisted ids (287.678696ms)
+✖ server-side conversations survive a FRESH session (device switch) (79.316184ms)
+✖ windowed history reaches upstream from the server store (225.539739ms)
+✖ element state sync: /api/state updates the stored render, ownership-checked (9.21415ms)
+✖ invalid artifact triggers exactly ONE retry then success (94.158084ms)
+✖ finish_reason=length truncation: ONE compact retry, corrected round renders, NO error; retry context is actual content, not SSE (73.104403ms)
+[job] failed: 9d48ffda Modellfehler beim Streaming: upstream exploded
+✔ explicit provider error frame: distinct error, NO retry, single upstream call (40.065179ms)
+[job] failed: e9c6ca02 Modell-Endpunkt antwortete 401 – Invalid API key
+✔ permanent upstream auth error (401): surfaced, NOT retried (47.449926ms)
+✔ final unterminated SSE line is still parsed (34.212243ms)
+✔ UTF-8 multibyte split across TCP reads is reassembled (32.660414ms)
+✔ prose-only answer needs no artifact and is valid (256.229559ms)
+✔ client disconnect detaches the viewer only: the provider job finishes server-side (6071.657558ms)
+✔ EXPLICIT cancel aborts the upstream provider call (1077.659717ms)
+✔ request validation: unknown fields, bad history, bad states rejected (14.847437ms)
+✖ refinement: refineTarget reaches upstream, element replaced IN PLACE server-side (6.072883ms)
+✖ refinement: invalid refineTarget rejected with size caps (26.691189ms)
+✔ db endpoint: auth guards mirror chat/ping (94.52602ms)
+✖ db endpoint: CRUD lifecycle on a REAL element, quotas + scoping enforced (10.137286ms)
+✔ ping endpoint: CSRF, strict host validation, fixture ok/blocked/dns, per-user rate limit (153.672808ms)
+✔ import: archives land server-side, ids regenerated; export surface stays key-free (26.376308ms)
+✔ models file is not served and static surface is minimal (7.912035ms)
+✔ logout invalidates the session server-side (80.37517ms)
+✔ jobs: snapshot/stream require auth; scoping, cancel ownership, retry guardrails (67.911435ms)
+✔ delete model, then chat is blocked with friendly error (10.16328ms)
+ℹ tests 34
+ℹ suites 0
+ℹ pass 25
+ℹ fail 9
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10392.770642
+
+✖ failing tests:
+
+test at test/api.test.mjs:218:1
+✖ chat streams prose chunks before render, then done with persisted ids (287.678696ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+    assert.ok(proseIdx > -1 && renderIdx > -1 && proseIdx < renderIdx)
+
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/api.test.mjs:226:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test/api.test.mjs:245:1
+✖ server-side conversations survive a FRESH session (device switch) (79.316184ms)
+  AssertionError [ERR_ASSERTION]: conversation with the element found
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/api.test.mjs:252:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test/api.test.mjs:260:1
+✖ windowed history reaches upstream from the server store (225.539739ms)
+  AssertionError [ERR_ASSERTION]: server loaded stored history
+  + actual - expected
+
+    [
+      'system',
+      'user',
+      'assistant',
+      'user',
+  +   'user'
+    ]
+
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/api.test.mjs:265:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'system', 'user', 'assistant', 'user', 'user' ],
+    expected: [ 'system', 'user', 'assistant', 'user' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at test/api.test.mjs:269:1
+✖ element state sync: /api/state updates the stored render, ownership-checked (9.21415ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'id')
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/api.test.mjs:272:71)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/api.test.mjs:281:1
+✖ invalid artifact triggers exactly ONE retry then success (94.158084ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  0 !== 1
+
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/api.test.mjs:285:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/api.test.mjs:293:1
+✖ finish_reason=length truncation: ONE compact retry, corrected round renders, NO error; retry context is actual content, not SSE (73.104403ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  0 !== 1
+
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/api.test.mjs:298:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/api.test.mjs:433:1
+✖ refinement: refineTarget reaches upstream, element replaced IN PLACE server-side (6.072883ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'id')
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/api.test.mjs:437:28)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/api.test.mjs:462:1
+✖ refinement: invalid refineTarget rejected with size caps (26.691189ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'id')
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/api.test.mjs:468:70)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/api.test.mjs:481:1
+✖ db endpoint: CRUD lifecycle on a REAL element, quotas + scoping enforced (10.137286ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'id')
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/api.test.mjs:484:71)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

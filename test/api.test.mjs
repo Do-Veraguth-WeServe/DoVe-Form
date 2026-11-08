@@ -96,6 +96,35 @@ async function waitJobsSettled(sess = owner, timeout = 6000) {
   throw Error('background jobs did not settle');
 }
 
+// Exercise actual plan/approval and job SSE, never synthesize render events.
+async function approvedBuild(text, extra={}) {
+ const before=(await (await api(owner,'/api/conversations')).json()).conversations.find(c=>c.id===convId).messages.filter(m=>m.render);
+ const plan=await chat(owner,text,{...extra,mode:'plan'});assert.equal(plan.status,200);
+ assert.ok(!parseSSE(await plan.text()).some(e=>e.event==='error'));
+ const current=(await (await api(owner,'/api/conversations')).json()).conversations.find(c=>c.id===convId);
+ assert.deepEqual(current.messages.filter(m=>m.render),before,'planning never mutates Elements');
+ const bp=current.blueprint;assert.ok(bp?.ready&&!bp.executedJobId);
+ const approval={sessionId:convId,blueprintId:bp.id,revision:bp.revision};
+ assert.equal((await api(userB,'/api/blueprints/execute',{method:'POST',body:approval})).status,404,'foreign valid-CSRF session cannot approve');
+ assert.equal((await api(owner,'/api/blueprints/execute',{method:'POST',body:{...approval,revision:bp.revision+1}})).status,409,'stale/mismatched plan revision rejected');
+ const stream=await api(owner,'/api/jobs/stream');assert.equal(stream.status,200);
+ const reader=stream.body.getReader(),dec=new TextDecoder(),observed=[];
+ const timer=setTimeout(()=>reader.cancel(),15000);
+ try {
+  const r=await api(owner,'/api/blueprints/execute',{method:'POST',body:{sessionId:convId,blueprintId:bp.id,revision:bp.revision}});
+  assert.equal(r.status,200);const {job}=await r.json();let buf='';
+  const duplicate=await api(owner,'/api/blueprints/execute',{method:'POST',body:approval});
+  assert.equal(duplicate.status,200);assert.equal((await duplicate.json()).job.id,job.id,'repeated approval returns same build');
+  while(true){const {done,value}=await reader.read();assert.equal(done,false,'terminal event before deadline');buf+=dec.decode(value,{stream:true});let i;
+   while((i=buf.indexOf('\n\n'))!==-1){const block=buf.slice(0,i+2);buf=buf.slice(i+2);
+    for(const e of parseSSE(block)){if(e.event!=='job'||e.data.id!==job.id)continue;observed.push(e.data);
+     if(['ready','failed','cancelled'].includes(e.data.state))return {job,final:e.data,observed};
+    }
+   }
+  }
+ }finally{clearTimeout(timer);await reader.cancel();}
+}
+
 const owner = makeSession(), userB = makeSession(), fresh = makeSession(), pingUser = makeSession();
 
 test('auth: bootstrap unauthenticated -> 401, status reports registration open + no users', async () => {
@@ -114,7 +143,7 @@ test('auth: register first user = owner; cookie HttpOnly+SameSite=Strict (+Secur
   assert.equal(body.user.role, 'owner');
   assert.match(setCookie, /HttpOnly/);
   assert.match(setCookie, /SameSite=Strict/);
-  assert.ok(!/Secure/.test(setCookie) || true); // Secure only behind https ingress
+  assert.equal(/; Secure(?:;|$)/.test(setCookie),false,'loopback HTTP fixture does not claim HTTPS');
   csrf = owner.csrf; cookie = owner.cookie;
   const b = await (await api(owner, '/api/bootstrap')).json();
   assert.equal(b.version, 3);
@@ -182,7 +211,6 @@ test('models: owner adds model, key masked everywhere, file chmod 600', async ()
 
 test('models: shared provider hides key, users own their private providers', async () => {
   assert.equal((await register(userB, 'bob1', 'password456')).status, 200);
-  assert.equal(userB.body ? true : true, true);
   assert.equal((await (await api(userB, '/api/models')).json()).models.length,0);
   assert.equal((await api(owner,'/api/models/share',{method:'POST',body:{id:modelId,shared:true}})).status,200);
   const list = await (await api(userB, '/api/models')).json();
@@ -215,31 +243,17 @@ test('chat: foreign conversation rejected for user B', async () => {
   assert.equal(r.status, 403);
 });
 
-test('chat streams prose chunks before render, then done with persisted ids', async () => {
-  const r = await chat(owner, 'Zeig mir einen Spar-Rechner mit Slider');
-  assert.equal(r.status, 200);
-  assert.match(r.headers.get('content-type'), /text\/event-stream/);
-  const text = await r.text();
-  const events = parseSSE(text);
-  const proseIdx = events.findIndex(e => e.event === 'prose-chunk');
-  const renderIdx = events.findIndex(e => e.event === 'render');
-  assert.ok(proseIdx > -1 && renderIdx > -1 && proseIdx < renderIdx);
-  assert.ok(events.filter(e => e.event === 'prose-chunk').length >= 3, 'prose visibly streams');
-  assert.equal(events[events.length - 1].event, 'done');
-  const done = events[events.length - 1].data;
-  assert.match(done.userMessageId, /^[0-9a-f-]{36}$/, 'user message id returned');
-  assert.match(done.assistantMessageId, /^[0-9a-f-]{36}$/, 'assistant message id returned');
-  // element completion is a durable background job bound to the assistant message
-  const jobEv = events.find(e => e.event === 'element-job');
-  assert.ok(jobEv, 'element-job event present');
-  assert.equal(jobEv.data.job.kind, 'create');
-  assert.equal(jobEv.data.job.messageId, done.assistantMessageId);
-  assert.equal(jobEv.data.job.state, 'queued');
-  await waitJobsSettled();
-  assert.ok(!text.includes(KEY), 'key never leaks into SSE stream');
-  const st = await mockStats();
-  assert.equal(st.lastAuthOk, true, 'server sent Bearer key upstream');
-  assert.deepEqual(st.lastRoles, ['system', 'user'], 'history is server-side (fresh conversation)');
+test('chat streams prose without implicit build; approved build persists result', async () => {
+ const r=await chat(owner,'Zeig mir einen Spar-Rechner mit Slider');assert.equal(r.status,200);
+ assert.match(r.headers.get('content-type'),/text\/event-stream/);
+ const text=await r.text(),events=parseSSE(text);assert.ok(events.filter(e=>e.event==='prose-chunk').length>=3);
+ assert.ok(!events.some(e=>e.event==='render'),'chat cannot authorize build');assert.equal(events.at(-1).event,'done');
+ const done=events.at(-1).data;assert.match(done.userMessageId,/^[0-9a-f-]{36}$/);assert.match(done.assistantMessageId,/^[0-9a-f-]{36}$/);
+ assert.equal(events.find(e=>e.event==='element-job').data.job.kind,'chat');
+ const {job,final,observed}=await approvedBuild('Zeig mir einen Spar-Rechner mit Slider');
+ assert.equal(job.kind,'create');assert.equal(final.state,'ready');assert.equal(final.render.name,'Spar-Rechner');
+ assert.ok(observed.some(j=>j.phase==='artifact'));assert.ok(!text.includes(KEY));
+ const st=await mockStats();assert.equal(st.lastAuthOk,true);assert.deepEqual(st.lastRoles,['system','user']);
 });
 
 test('server-side conversations survive a FRESH session (device switch)', async () => {
@@ -250,64 +264,51 @@ test('server-side conversations survive a FRESH session (device switch)', async 
   assert.ok(list.conversations.length >= 1);
   const conv = list.conversations.find(c => c.messages.some(m => m.render && m.render.name === 'Spar-Rechner'));
   assert.ok(conv, 'conversation with the element found');
-  assert.equal(conv.messages.length, 2, 'user + assistant persisted server-side');
+  assert.equal(conv.messages.length, 5, 'chat pair + plan pair + approved build');
   assert.equal(conv.messages[0].role, 'user');
   assert.equal(conv.messages[1].role, 'assistant');
-  assert.ok(conv.messages[1].render, 'element render persisted');
-  assert.equal(conv.messages[1].render.name, 'Spar-Rechner');
+  assert.ok(conv.messages.at(-1).render, 'element render persisted');
+  assert.equal(conv.messages.at(-1).render.name, 'Spar-Rechner');
 });
 
 test('windowed history reaches upstream from the server store', async () => {
-  const r = await chat(owner, 'History test mit Slider bitte');
+  const freshConv=(await (await api(owner,'/api/conversations',{method:'POST',body:{}})).json()).conversation.id;
+ await (await chat(owner,'History marker prose only',{__conv:freshConv})).text();
+ const r=await chat(owner,'History test prose only',{__conv:freshConv});
   assert.equal(r.status, 200);
   await r.text();
   const st = await mockStats();
-  assert.deepEqual(st.lastRoles, ['system', 'user', 'assistant', 'user'], 'server loaded stored history');
+  assert.deepEqual(st.lastRoles, ['system', 'user', 'assistant', 'user', 'user'], 'stored history plus separate app-owned evidence and current request');
+  assert.equal(st.lastMessages[1].content,'History marker prose only');
+  assert.ok(st.lastMessages[2].content.includes('Virtual Private Network'));
+  assert.ok(st.lastMessages[3].content.startsWith('[element-evidence]'));
   assert.ok(st.lastUserContent.includes('History test'));
 });
 
 test('element state sync: /api/state updates the stored render, ownership-checked', async () => {
   await waitJobsSettled();
   const list = await (await api(owner, '/api/conversations')).json();
-  const elementId = list.conversations[0].messages.find(m => m.render).id;
+  const elementId = list.conversations.find(c=>c.id===convId).messages.find(m => m.render).id;
   const ok = await api(owner, '/api/state', { method: 'POST', body: { messageId: elementId, state: { value: 7 } } });
   assert.equal(ok.status, 200);
   const denied = await api(userB, '/api/state', { method: 'POST', body: { messageId: elementId, state: {} } });
   assert.equal(denied.status, 403, 'user B cannot touch user A elements');
   const again = await (await api(owner, '/api/conversations')).json();
-  assert.equal(again.conversations[0].messages.find(m => m.id === elementId).render.state.value, 7);
+  assert.equal(again.conversations.find(c=>c.id===convId).messages.find(m => m.id === elementId).render.state.value, 7);
 });
 
-test('invalid artifact triggers exactly ONE retry then success', async () => {
-  const before = await mockStats();
-  const r = await chat(owner, 'Test invalid artifact bitte');
-  const events = parseSSE(await r.text());
-  assert.equal(events.filter(e => e.event === 'retry').length, 1);
-  assert.ok(events.some(e => e.event === 'render'));
-  assert.equal(events[events.length - 1].event, 'done');
-  const after = await mockStats();
-  assert.equal(after.calls.invalid, (before.calls.invalid || 0) + 1);
-  assert.equal(after.calls.corrected, (before.calls.corrected || 0) + 1);
+test('invalid artifact triggers exactly ONE corrective build round then success', async () => {
+ const before=await mockStats();const {final,observed}=await approvedBuild('Test invalid artifact bitte');
+ assert.equal(final.state,'ready');assert.ok(final.render);assert.equal(observed.filter((j,i)=>j.phase==='correcting'&&observed[i-1]?.phase!=='correcting').length,1);
+ const after=await mockStats();assert.equal(after.calls.invalid,(before.calls.invalid||0)+1);assert.equal(after.calls.corrected,(before.calls.corrected||0)+1);
 });
 
-test('finish_reason=length truncation: ONE compact retry, corrected round renders, NO error; retry context is actual content, not SSE', async () => {
-  const before = await mockStats();
-  const r = await chat(owner, 'bitte truncate testen');
-  const events = parseSSE(await r.text());
-  const retries = events.filter(e => e.event === 'retry');
-  assert.equal(retries.length, 1);
-  assert.equal(retries[0].data.code, 'truncated');
-  assert.ok(events.some(e => e.event === 'render'), 'corrected round renders');
-  assert.equal(events.filter(e => e.event === 'error').length, 0, 'no spurious error after successful round2');
-  assert.equal(events[events.length - 1].event, 'done');
-  const after = await mockStats();
-  assert.equal(after.calls.truncate, (before.calls.truncate || 0) + 1);
-  assert.equal(after.calls.corrected, (before.calls.corrected || 0) + 1, 'exactly one corrective round');
-  // the assistant message replayed upstream must be real content, never raw SSE envelopes
-  const assistantInRetry = after.lastMessages.filter(m => m.role === 'assistant').pop();
-  assert.ok(assistantInRetry, 'retry request contains the previous assistant answer');
-  assert.ok(assistantInRetry.content.includes('```json'), 'actual artifact text replayed');
-  assert.ok(!assistantInRetry.content.includes('data:'), 'no SSE envelope leaked into retry context');
+test('finish_reason=length: one compact correction, real content replay, ready render', async () => {
+ const before=await mockStats();const {final,observed}=await approvedBuild('bitte truncate testen');
+ assert.equal(final.state,'ready');assert.ok(final.render);assert.equal(final.error,null);assert.equal(observed.filter((j,i)=>j.phase==='correcting'&&observed[i-1]?.phase!=='correcting').length,1);
+ const after=await mockStats();assert.equal(after.calls.truncate,(before.calls.truncate||0)+1);assert.equal(after.calls.corrected,(before.calls.corrected||0)+1);
+ const previous=after.lastMessages.filter(m=>m.role==='assistant').at(-1);
+ assert.ok(previous?.content.includes('```json'));assert.ok(!previous.content.includes('data:'));
 });
 
 test('explicit provider error frame: distinct error, NO retry, single upstream call', async () => {
@@ -377,7 +378,7 @@ test('client disconnect detaches the viewer only: the provider job finishes serv
   // the detached job completes and persists the answer
   await waitJobsSettled(owner, 12000);
   const list = await (await api(owner, '/api/conversations')).json();
-  const lastMsg = list.conversations[0].messages.at(-1);
+  const lastMsg = list.conversations.find(c=>c.id===convId).messages.at(-1);
   assert.equal(lastMsg.role, 'assistant');
   assert.ok(lastMsg.prose && lastMsg.prose.includes('Zweiter Teil'), 'generation completed despite the closed connection');
   assert.ok(!lastMsg.error);
@@ -430,42 +431,27 @@ test('request validation: unknown fields, bad history, bad states rejected', asy
   assert.equal((await chat(owner, 'x', { states: [{ id: 'a', state: 'not-object' }] })).status, 400);
 });
 
-test('refinement: refineTarget reaches upstream, element replaced IN PLACE server-side', async () => {
-  const list = await (await api(owner, '/api/conversations')).json();
-  const elementsBefore = list.conversations[0].messages.filter(m => m.render).length;
-  const element = list.conversations[0].messages.find(m => m.render);
-  const rt = { id: element.id, name: 'Spar-Rechner', html: element.render.html, css: element.render.css, js: element.render.js, state: element.render.state };
-  const r = await chat(owner, 'mache den Akzent blau', { refineTarget: rt });
-  assert.equal(r.status, 200);
-  const events = parseSSE(await r.text());
-  const render = events.find(e => e.event === 'render');
-  assert.ok(render, 'refined render arrives');
-  assert.equal(render.data.render.name, 'Spar-Rechner');
-  assert.ok(render.data.render.css.includes('#7fd4ef'), 'artifact is the updated version');
-  const refineJob = events.find(e => e.event === 'element-job');
-  assert.ok(refineJob, 'refinement completes via a background job');
-  assert.equal(refineJob.data.job.kind, 'refine');
-  assert.equal(refineJob.data.job.targetMessageId, element.id);
-  const done = events[events.length - 1];
-  assert.equal(done.event, 'done');
-  assert.equal(done.data.assistantMessageId, null, 'refine never appends a message');
-  await waitJobsSettled();
-  const after = await (await api(owner, '/api/conversations')).json();
-  const conv = after.conversations[0];
-  assert.equal(conv.messages.filter(m => m.render).length, elementsBefore, 'refine replaced in place, no new element');
-  assert.ok(conv.messages.find(m => m.id === element.id).render.css.includes('#7fd4ef'), 'server stored the refined element');
-  assert.equal((after.versions[element.id] || []).length, 1, 'old version archived server-side');
-  const st = await mockStats();
-  assert.ok(st.lastUserContent.includes('[marked-element'), 'element code attached as untrusted data');
+test('refinement: approval required; target replaced in place and version archived', async () => {
+ const list=await (await api(owner,'/api/conversations')).json();const conv=list.conversations.find(c=>c.id===convId);
+ const element=conv.messages.find(m=>m.render),count=conv.messages.filter(m=>m.render).length;
+ const rt={id:element.id,name:element.render.name,html:element.render.html,css:element.render.css,js:element.render.js,state:element.render.state};
+ const {job,final}=await approvedBuild('mache den Akzent blau',{refineTarget:rt});
+ assert.equal(job.kind,'refine');assert.equal(job.targetMessageId,element.id);assert.equal(final.state,'ready');
+ assert.ok(final.render.css.includes('#7fd4ef'));assert.equal(final.render.name,'Spar-Rechner');
+ const after=await (await api(owner,'/api/conversations')).json(),updated=after.conversations.find(c=>c.id===convId);
+ assert.equal(updated.messages.filter(m=>m.render).length,count);assert.ok(updated.messages.find(m=>m.id===element.id).render.css.includes('#7fd4ef'));
+ assert.equal((after.versions[element.id]||[]).length,1);assert.ok((await mockStats()).lastUserContent.includes('[marked-element'));
 });
 
 test('refinement: invalid refineTarget rejected with size caps', async () => {
   const list = await (await api(owner, '/api/conversations')).json();
-  const element = list.conversations[0].messages.find(m => m.render);
+  const element = list.conversations.find(c=>c.id===convId).messages.find(m => m.render);
   assert.equal((await chat(owner, 'x', { refineTarget: { id: 'a' } })).status, 400);
   assert.equal((await chat(owner, 'x', { refineTarget: { id: uid(), html: 'x'.repeat(33000), css: '', js: '', state: {} } })).status, 400);
   assert.equal((await chat(owner, 'x', { refineTarget: { id: uid(), html: '<p>x</p>', css: '', js: '', state: 'nope' } })).status, 400);
-  assert.equal((await chat(owner, 'x', { refineTarget: { id: element.id, html: '<p>x</p>', css: '', js: '', state: {} } })).status, 200, 'name is optional, real element accepted');
+  const selected=await chat(owner, 'x', { refineTarget: { id: element.id, html: '<p>x</p>', css: '', js: '', state: {} } });
+  assert.equal(selected.status,200,'name is optional, real element accepted');
+  assert.ok(!parseSSE(await selected.text()).some(e=>e.event==='render'),'selecting target does not authorize refinement');
   await waitJobsSettled();
   await (await chat(owner, 'nochmal slider')).text();
   await waitJobsSettled();
@@ -481,7 +467,7 @@ test('db endpoint: auth guards mirror chat/ping', async () => {
 test('db endpoint: CRUD lifecycle on a REAL element, quotas + scoping enforced', async () => {
   await waitJobsSettled();
   const list = await (await api(owner, '/api/conversations')).json();
-  const elementId = list.conversations[0].messages.find(m => m.render).id;
+  const elementId = list.conversations.find(c=>c.id===convId).messages.find(m => m.render).id;
   const D = (body, sess = owner) => api(sess, '/api/db', { method: 'POST', body: { sessionId: convId, elementId, ...body } });
   // validation
   assert.equal((await D({ op: 'dropall', table: 'x' })).status, 400);

@@ -1,0 +1,44 @@
+✔ auth: bootstrap unauthenticated -> 401, status reports registration open + no users (135.397701ms)
+✔ auth: register first user = owner; cookie HttpOnly+SameSite=Strict (+Secure behind https proxy) (112.965291ms)
+✔ auth: register duplicate and bad inputs rejected (20.279448ms)
+✔ auth: login with wrong password rejected uniformly; success issues new session (254.394993ms)
+✔ auth: failed logins rate-limited (10 per 5 min per user+client) (818.14019ms)
+✔ CSRF is session-bound: owner token rejected on another session, missing token rejected (11.713931ms)
+✔ models: owner adds model, key masked everywhere, file chmod 600 (23.922638ms)
+✔ models: shared provider hides key, users own their private providers (115.115236ms)
+✔ conversations: server-side create + list, user B sees nothing of user A (22.298486ms)
+✔ chat: foreign conversation rejected for user B (9.11061ms)
+✔ chat streams prose without implicit build; approved build persists result (670.16802ms)
+✔ server-side conversations survive a FRESH session (device switch) (89.004425ms)
+✔ windowed history reaches upstream from the server store (500.46114ms)
+✔ element state sync: /api/state updates the stored render, ownership-checked (33.286179ms)
+✔ invalid artifact triggers exactly ONE corrective build round then success (285.778264ms)
+✔ finish_reason=length: one compact correction, real content replay, ready render (262.83942ms)
+[job] failed: 5ea49460 Modellfehler beim Streaming: upstream exploded
+✔ explicit provider error frame: distinct error, NO retry, single upstream call (39.669796ms)
+[job] failed: c6f70bef Modell-Endpunkt antwortete 401 – Invalid API key
+✔ permanent upstream auth error (401): surfaced, NOT retried (48.719479ms)
+✔ final unterminated SSE line is still parsed (37.405198ms)
+✔ UTF-8 multibyte split across TCP reads is reassembled (42.700747ms)
+✔ prose-only answer needs no artifact and is valid (252.369531ms)
+✔ client disconnect detaches the viewer only: the provider job finishes server-side (6091.890719ms)
+✔ EXPLICIT cancel aborts the upstream provider call (1068.162617ms)
+✔ request validation: unknown fields, bad history, bad states rejected (13.620635ms)
+✔ refinement: approval required; target replaced in place and version archived (213.516315ms)
+✔ refinement: invalid refineTarget rejected with size caps (495.076011ms)
+✔ db endpoint: auth guards mirror chat/ping (76.227356ms)
+✔ db endpoint: CRUD lifecycle on a REAL element, quotas + scoping enforced (175.866777ms)
+✔ ping endpoint: CSRF, strict host validation, fixture ok/blocked/dns, per-user rate limit (157.139873ms)
+✔ import: archives land server-side, ids regenerated; export surface stays key-free (19.482905ms)
+✔ models file is not served and static surface is minimal (9.362481ms)
+✔ logout invalidates the session server-side (94.198007ms)
+✔ jobs: snapshot/stream require auth; scoping, cancel ownership, retry guardrails (68.312995ms)
+✔ delete model, then chat is blocked with friendly error (8.761776ms)
+ℹ tests 34
+ℹ suites 0
+ℹ pass 34
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12429.446964
