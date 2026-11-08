@@ -26,6 +26,9 @@ const waitReady = (proc, tag, pattern = /ready/) => new Promise((resolve, reject
 });
 
 step('build (esbuild + bridge hash + wasm)', run('node', ['build.mjs']));
+step('private connection schema, vault, grants and SDK',run('node',['--test','test/connection-contract.test.mjs','test/connection-vault.test.mjs','test/connection-mcp.test.mjs','test/element-connections.test.mjs']));
+step('private connection HTTP boundaries',run('node',['test/connection-http.test.mjs']));
+step('element settings browser and sandbox',run('node',['test/connection-browser.test.mjs']));
 step('animation schema and budgets',run('node',['--test','test/animation-policy.test.mjs']));
 step('animation stack interaction and persistence recovery',run('node',['test/animation.test.mjs']));
 step('isolated animation startup and declared-clip verifier',run('node',['test/animation-verification.test.mjs']));

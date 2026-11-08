@@ -27,6 +27,8 @@ const ui = Object.freeze({
     handlers["__ping:"+ref+":ping"] = fn;
     __emit(JSON.stringify({op:"ping", host:String(host), ref}));
   },
+  settings: fn => {const ref='c'+(++actionc);handlers['__connection:'+ref+':connection']=v=>{delete handlers['__connection:'+ref+':connection'];if(typeof fn==='function')fn(v);};__emit(JSON.stringify({op:'connection',ref,settings:true}));},
+  connection: (slot,operation,args,fn) => {const ref='c'+(++actionc);handlers['__connection:'+ref+':connection']=v=>{delete handlers['__connection:'+ref+':connection'];if(typeof fn==='function')fn(v);};__emit(JSON.stringify({op:'connection',ref,slot,operation,args}));},
   action: (name, inputs, fn) => {
     const ref='a'+String(++actionc);
     if(typeof fn==='function')handlers['__action:'+ref+':action']=fn;

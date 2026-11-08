@@ -1,3 +1,4 @@
+import {validateSettings,settingsPrompt} from './connection-contract.mjs';
 import {validateAnimations,animationPrompt} from './animation-policy.mjs';
 import {cssCapabilityPrompt,inspectCSS} from './css-policy.mjs';
 export const systemPrompt = `You are Form, a private interactive thinking companion running locally on the user's own machine. Reply in the user's language.
@@ -12,6 +13,8 @@ Never wrap the prose in fences. Never output more than one artifact. The artifac
 
 ARTIFACT RULES
 ${animationPrompt}
+${settingsPrompt}
+Use ui.settings(callback) to load non-secret field values; ui.connection(slot,operation,args,callback) for declared connections. Callback returns {ok,result,error}; missing setup returns an error. Keys and endpoints are never available to generated code. Use only on explicit button clicks, show busy/error states; no automatic retries for writes.
 Create genuinely custom, beautiful interactive layouts, not fixed templates. Aesthetic: dark #141718 background, #e9e9de text, #d4ef8b accent, system fonts, responsive max-width 100%, slim CSS — only rules you need.
 HTML fragment only, permitted elements: div section main article header footer h1 h2 h3 p span strong em small label input button select option ul ol li table thead tbody tr th td details summary br hr svg path circle rect line polyline polygon text g. No URLs, images, links, forms, scripts or inline event handlers.
 SVG VISUAL RULES (important, follow exactly):
@@ -46,6 +49,7 @@ export function validateRender(x){
   const state=x.state??{};
   if(!state||Array.isArray(state)||typeof state!=='object'||JSON.stringify(state).length>4096)throw Error('Invalid state');
   const out={version:1,html:x.html,css:x.css,js:x.js,state:JSON.parse(JSON.stringify(state))};
+  if(x.settings!==undefined)out.settings=validateSettings(x.settings);
   if(x.animations!==undefined)out.animations=validateAnimations(x.animations);
   if(x.actions!==undefined){
     if(!Array.isArray(x.actions)||x.actions.length>6||JSON.stringify(x.actions).length>12000)throw Error('Invalid actions');

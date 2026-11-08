@@ -92,7 +92,7 @@ export function bridge(){
 }
 
 
-export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction}={}){
+export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction,onConnection}={}){
   const f=document.createElement('iframe');
   f.className='render';
   f.style.visibility='hidden';f.setAttribute('aria-busy','true');
@@ -102,6 +102,7 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction}={
   f.setAttribute('allow',"camera 'none'; microphone 'none'; geolocation 'none'");
   const channel=crypto.randomUUID(),nonce=crypto.randomUUID();
   let worker,port,timer,clock,inflight=false,stopped=false;
+  let connectionPending=0;
   const asyncQ=[]; // pending synthetic-event deliveries (ping/db results)
   const declarations=data.animations?validateAnimations(data.animations):null;
   const prepare=prepareAnimation;
@@ -186,6 +187,10 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction}={
               ms:typeof v.ms==='number'&&isFinite(v.ms)?Math.round(v.ms):undefined,
               error:typeof v.error==='string'?v.error.slice(0,120):undefined
             }));
+        }else if(o.op==='connection'){
+          const ref=String(o.ref||'');if(!/^c[0-9]{1,8}$/.test(ref))continue;
+          if(connectionPending>=2||JSON.stringify(o).length>17000){deliver('__connection:'+ref,'connection',{ok:false,error:'Zu viele Anfragen.'});continue;}
+          connectionPending++;Promise.resolve().then(()=>onConnection?.(o)||{ok:false,error:'Verbindung einrichten.'}).catch(()=>({ok:false,error:'Verbindung fehlgeschlagen.'})).then(v=>{if(!stopped)deliver('__connection:'+ref,'connection',v);}).finally(()=>connectionPending--);
         }else if(o.op==='action'){
           const ref=String(o.ref||'');
           if(!/^a[0-9]{1,8}$/.test(ref)||typeof o.name!=='string'||o.name.length>60||!o.inputs||typeof o.inputs!=='object'||JSON.stringify(o.inputs).length>6000||asyncQ.length>=8){

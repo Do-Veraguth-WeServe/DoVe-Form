@@ -1,3 +1,4 @@
+import {connectionSettings} from './connection-settings.js';
 import {elementPersistence} from './element-persistence.js';
 import {elementTimeline} from './element-timeline.js';
 import {planFold} from './plan-fold.js';
@@ -9,6 +10,7 @@ import {validateRender,deriveName,sanitizeName} from '../contract.mjs';
 const $=s=>document.querySelector(s),uid=()=>crypto.randomUUID(),KEY='form.v3';
 let db={version:4,sessions:[],elements:{pins:[],versions:{}},current:null},csrf='',me=null,registrationOpen=false,models=[],modelId=localStorage.getItem('form3.model')||'',pending=new Set(),views=[],marked=null;
 let legacyDb=null;          // pre-login local archive — offered for import on first login
+const connectionsUI=connectionSettings({csrf:()=>csrf,reload:()=>{}});
 const elementSaves=new WeakMap(); // serialized CAS queue per server snapshot
 const activeElementSaves=new Set();
 function stopElementSaves(){for(const writer of activeElementSaves)writer.stop();activeElementSaves.clear();}
@@ -209,7 +211,7 @@ function persistence(m){
   const writer=elementSaves.get(m);activeElementSaves.add(writer);return writer;
 }
 function ownerView(m,callbacks){
-  if(!m.persistenceFailed)return renderUI(m.render,callbacks);
+  if(!m.persistenceFailed)return renderUI(m.render,{...callbacks,onConnection:o=>connectionsUI.call(m,o)});
   const element=document.createElement('p');element.className='notice error';element.textContent='Speichern nicht bestätigt. Bitte die Seite neu laden.';
   return {element,destroy(){}};
 }
@@ -568,7 +570,7 @@ function render(){  views.forEach(v=>v.destroy());views=[];
             exp.setAttribute('aria-label','Element öffnen');exp.title='Element öffnen (Vollbild, Code, Versionen)';
             exp.onclick=()=>openOverlay(m);
             const reuse=document.createElement('button');reuse.type='button';reuse.textContent='Als Form';reuse.title='Dieses Element als wiederverwendbare Form speichern';reuse.onclick=()=>{formsUI.fromElement(m);};
-            head.append(nm,pinB,exp,reuse);
+            head.append(nm,pinB,exp,reuse);if(m.render.settings)head.append(connectionsUI.button(m));
             const note=document.createElement('div');note.className='small';
             const view=ownerView(m,{
               onAction:(name,inputs)=>runBoundAction(m,name,inputs),
@@ -793,7 +795,7 @@ function fillOverlay(){
   pin.setAttribute('aria-label',isPinned(m)?'Element lösen':'Element anpinnen');
   pin.onclick=()=>{togglePin(m);render();fillOverlay()};
   const close=document.createElement('button');close.type='button';close.textContent='✕';close.setAttribute('aria-label','Element schliessen');close.onclick=closeOverlay;
-  head.append(t,pin,close);
+  head.append(t,pin,close);if(m.render.settings)head.append(connectionsUI.button(m));
   const body=document.createElement('div');body.className='ovbody';
   c.append(head,body);
 

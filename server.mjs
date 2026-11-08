@@ -3,6 +3,8 @@ import {elementEvidence,ELEMENT_EVIDENCE_POLICY} from './element-context.mjs';
 import {Forms,chatPrompt} from './forms.mjs';
 import {FormSharing} from './form-sharing.mjs';
 import {ElementSharing} from './element-sharing.mjs';
+import {ConnectionVault} from './connection-vault.mjs';
+import {ElementConnections} from './element-connections.mjs';
 import {planningPrompt} from './blueprints.mjs';
 import {HTTPConnections,httpRegistry} from './http-tools.mjs';
 import http from 'node:http';
@@ -72,6 +74,8 @@ claimLegacy();
 // see or choose them; the /api/db handler additionally enforces user ownership.
 const elementDB = new ElementDB(path.join(DATA_DIR, 'elements.sqlite'));
 const elementSharing = new ElementSharing(store, elementDB);
+const privateConnections=new ConnectionVault(store.db,path.join(DATA_DIR,'connection-master.key'));
+const elementConnections=new ElementConnections(store,privateConnections);
 const DB_RATE = Number(process.env.FORM3_DB_RATE || 120);
 let bridgeHash = '';
 try { bridgeHash = fs.readFileSync(path.join(DIST, 'bridge-hash.txt'), 'utf8').trim(); }
@@ -231,6 +235,22 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  if(pathname==='/api/element-settings'||pathname.startsWith('/api/element-settings/')){
+    try{
+      if(req.method==='GET'&&pathname==='/api/element-settings')return reply(res,200,elementConnections.get(user.id,url.searchParams.get('messageId')));
+      if(req.method!=='POST')return reply(res,405,{error:'Methode nicht erlaubt.'});
+      if(!rate('connections:'+user.id,30,60000))return reply(res,429,{error:'Bitte warten.'});
+      const d=JSON.parse(await readBody(req,24000));const fresh=store.getSession(cookieToken(req));if(!fresh||fresh.user.id!==user.id||fresh.csrf!==sess.csrf)return reply(res,401,{error:'Anmeldung erforderlich.'});elementConnections.context(user.id,d.messageId);
+      const action=pathname.slice('/api/element-settings'.length);
+      if(action==='/save'){elementConnections.save(user.id,d.messageId,d);return reply(res,200,{ok:true});}
+      if(action==='/create')return reply(res,200,{id:privateConnections.create(user.id,d)});
+      if(action==='/secret'){privateConnections.replaceSecret(user.id,d.id,d.revision,d.token);return reply(res,200,{ok:true});}
+      if(action==='/remove'){privateConnections.remove(user.id,d.id,d.revision);return reply(res,200,{ok:true});}
+      if(action==='/test')return reply(res,200,await elementConnections.discover(user.id,d.id));
+      if(action==='/call')return reply(res,200,await elementConnections.call(user.id,d.messageId,d));
+      return reply(res,404,{error:'Nicht gefunden.'});
+    }catch{return reply(res,400,{error:'Verbindung nicht verfügbar. Einstellungen, Freigabe und Ergebnis prüfen; Schreibaktionen nicht blind wiederholen.'});}
+  }
   if(pathname==='/api/http'||pathname.startsWith('/api/http/')){
     if(user.role!=='owner')return reply(res,403,{error:'Nur Owner.'});
     try{
