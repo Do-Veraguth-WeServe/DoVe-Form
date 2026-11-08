@@ -1,0 +1,6 @@
+db3362bef0f8daf66b583270159140cf97282fed4cca2e95f4849904c7e307cb  test/browser-core.test.mjs
+b98babdc0e046455a51a6f217e0c572ba4a2c22436dc9a89e66f40a220e79216  docs/BROWSER-CORE-ACCEPTANCE.md
+c1a039339f620cc3c5387f70a2a85a5c0aa57523aa52cdf37c5ad9e4993ff84a  docs/test-results/2026-11-08-core-correction-source.txt
+2b6e97c24cea1f2c2ea2c648f922f410be7350b8354751767bc18deb7fbe8746  docs/test-results/2026-11-08-core-correction-deployed.txt
+20b8b721e448c8a3f106d0a139ccd0391e562ead8751a128274e283c1221cbc1  docs/screenshots/core-correction-correct-390.png
+20b8b721e448c8a3f106d0a139ccd0391e562ead8751a128274e283c1221cbc1  docs/screenshots/core-correction-fail-390.png
