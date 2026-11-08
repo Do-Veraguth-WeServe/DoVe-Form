@@ -1,0 +1,35 @@
+PASS wrong password rejected
+PASS registration and model-free composer gate
+PASS current settings navigation, model add, masked key and Escape
+PASS two visible prose stages before structured chat offer
+PASS ordinary imperative chat cannot build
+PASS concurrent chat completes before held build; desktop/mobile reload retain one identical job
+PASS tab-close build completion without viewer; desktop/mobile reopen one persisted Element, no regeneration
+PASS explicit approval and real held build before artifact
+PASS real server persistence and reload without duplicate build
+PASS 390px interaction and persisted reload
+PASS prose-only 1280: no build, no live iframe remount, unchanged persisted Element and reload
+PASS prose-only 390: no build, no live iframe remount, unchanged persisted Element and reload
+PASS explicit Stop 1280: upstream aborted, durable cancellation, static reduced motion, Element preserved
+PASS explicit Stop 390: upstream aborted, durable cancellation, static reduced motion, Element preserved
+PASS approved correction correct: exactly two rounds, durable mobile reload, honest terminal state
+PASS approved correction fail: exactly two rounds, durable mobile reload, honest terminal state
+PASS fresh device 1280: all conversations, exact saved messages and functioning Element
+PASS logout/relogin 1280: revoked cookie, independent session retained, data restored without generation
+PASS fresh device 390: all conversations, exact saved messages and functioning Element
+PASS logout/relogin 390: revoked cookie, independent session retained, data restored without generation
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: {"jobs":{"jobs":[{"id":"df806f9c-f6d1-416c-81c5-96782718eb6e","conversationId":"9e52b862-a19d-4c0c-bd86-2b3f4978e023","messageId":"350e4aaf-7e2a-487f-9134-671c87dc1fe0","targetMessageId":null,"kind":"chat","blueprintRevision":null,"state":"cancelled","phase":"prose","rev":23,"error":null,"createdAt":"2026-11-08T15:52:16.089Z","prose":""},{"id":"6a4862f5-467f-4fdf-b1f6-1c5fd3fdafe1","conversationId":"9e52b862-a19d-4c0c-bd86-2b3f4978e023","messageId":"57eeeda4-a533-4c3f-9a88-ee50cfcba697","targetMessageId":null,"kind":"chat","blueprintRevision":null,"state":"cancelled","phase":"prose","rev":26,"error":null,"createdAt":"2026-11-08T15:52:16.837Z","prose":""},{"id":"a7a69d54-20e4-4067-94a5-b82577551680","conversationId":"101c075a-7f20-4577-a878-a6563a17ce26","messageId":"b31037a5-ebba-43bd-ac21-ccb35e196f73","targetMessageId":null,"kind":"create","blueprintRevision":1,"state":"failed","phase":"correcting","rev":49,"error":"Das Modell lieferte auch im zweiten Versuch kein gültiges Artefakt (CSS capability preflight v1: 2 unsupported declarations/rules (blocked-property).). Der Text-Anteil oben bleibt erhalten.","createdAt":"2026-11-08T15:52:23.207Z","prose":""},{"id":"e3d61839-935c-4248-a3b2-97446e0865e5","conversationId":"435cf972-bce2-4b41-a16d-a13d50507366","messageId":"867f523c-53f7-40cd-91d5-4535ee4822f1","targetMessageId":null,"kind":"create","blueprintRevision":1,"state":"building","phase":"artifact","rev":58,"error":null,"createdAt":"2026-11-08T15:52:27.872Z","prose":null}],"rev":58},"partialBuilds":1,"closedBuilds":0,"builds":6}
+    at file:///root/.openclaw/workspace/projects/form/test/browser-core.test.mjs:263:10 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: undefined,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.22.2

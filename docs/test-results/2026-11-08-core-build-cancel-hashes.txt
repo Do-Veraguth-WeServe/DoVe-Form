@@ -1,0 +1,10 @@
+f7eb6567380fd42de57b2b5a20e82e588f831d5f5fc2d62058771c974a1099cf  test/browser-core.test.mjs
+eead8c0e943e7c983ca0a9761178411b3ee9081d0868127f5d280cac43c87111  docs/BROWSER-CORE-ACCEPTANCE.md
+f7eb6567380fd42de57b2b5a20e82e588f831d5f5fc2d62058771c974a1099cf  /opt/form/test/browser-core.test.mjs
+eead8c0e943e7c983ca0a9761178411b3ee9081d0868127f5d280cac43c87111  /opt/form/docs/BROWSER-CORE-ACCEPTANCE.md
+fd7ce46a8c43f909eea0a5d1a8a4dc60a1a12ef43576449512a832fa286b817c  /opt/form/dist/app.js
+161232599f790f851e8a494135233e61bc07520a6a03d8816439350e2af67316  docs/test-results/2026-11-08-core-build-cancel-deployed.txt
+ba78b33ec25a13bcbc4f638acdc11f6d8834e2ec4654aa49fadc6d0f7d3b34c1  docs/test-results/2026-11-08-core-build-cancel-initial.txt
+0b4f6a27eaf89b17b39d7bf2c34454e6ac4f6e9905e0fd245aec7ce62312f2c2  docs/test-results/2026-11-08-core-build-cancel-kind-failure.txt
+02b7f05319ea20a2cd788593b45dbc8492a594deccfe4fad7e0b7283cc5a2596  docs/test-results/2026-11-08-core-build-cancel-notice-failure.txt
+3adf5a6d9e1e96ec0f54f7bc9b954b0e2c3e8dc17f965bbed7fbaf0ada448b82  docs/test-results/2026-11-08-core-build-cancel-source.txt

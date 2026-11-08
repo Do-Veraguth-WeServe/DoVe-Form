@@ -15,6 +15,7 @@ const base='http://127.0.0.1:4826',key='fixture-only-key-1234567890';
 let app,browser,builds=0,plans=0,chats=0,releaseFirst,releaseArtifact,releaseBuild;
 let correctionMode=null,correctionAttempts=0,releaseCorrection,proseOnly=false,releaseProse;
 let holdChat=false,heldChats=0,closedChats=0,signalHeld,signalClosed;
+let cancelBuild=false,partialBuilds=0,closedBuilds=0,signalBuildClosed;
 let signalBuild;const buildStarted=new Promise(resolve=>{signalBuild=resolve});
 const artifact={version:1,name:'Core-Regler',html:'<label for="amt">Wert</label><input id="amt" type="number"><p id="out"></p>',css:'p{color:#d4ef8b}',js:'ui.value("amt",String(state.value));function draw(){ui.text("out","Wert: "+state.value)}ui.on("amt","input",e=>{state.value=Number(e.value);draw();ui.persist()});draw();',state:{value:3}};
 const mock=http.createServer(async(req,res)=>{
@@ -27,6 +28,7 @@ const mock=http.createServer(async(req,res)=>{
  else if(system.includes('warm, concise conversational')&&proseOnly){chats++;put('Ein VPN ist ein Virtual Private Network. ');await new Promise(r=>{releaseProse=r;res.once('close',r)});if(res.destroyed)return;put('Es verschlüsselt die Verbindung zum VPN-Anbieter.');}
  else if(system.includes('warm, concise conversational')&&correctionMode){chats++;put('Wir besprechen den nächsten Regler. '+JSON.stringify({forms:[],planningOffer:{title:'Regler'}}));}
  else if(system.includes('warm, concise conversational')){chats++;put('Erster sichtbarer Abschnitt. ');await new Promise(r=>{releaseFirst=r;res.once('close',r)});if(res.destroyed)return;put('Zweiter sichtbarer Abschnitt. ');await new Promise(r=>{releaseArtifact=r;res.once('close',r)});if(res.destroyed)return;put(JSON.stringify({forms:[],planningOffer:{title:'Regler'}}));}
+ else if(cancelBuild){builds++;partialBuilds++;put('```json\n'+JSON.stringify(artifact).slice(0,120));await new Promise(r=>res.once('close',()=>{closedBuilds++;signalBuildClosed?.();r()}));return;}
  else if(correctionMode){builds++;correctionAttempts++;assert.ok(correctionAttempts<=2,'no unbounded correction');if(correctionAttempts===2){assert.match(d.messages.at(-1).content,/CSS capability preflight/);await new Promise(r=>{releaseCorrection=r;res.once('close',r)});if(res.destroyed)return;}const value=correctionAttempts===1||correctionMode==='fail'?{...artifact,css:'p::before{content:"unsupported";position:absolute}'}:artifact;put('```json\n'+JSON.stringify(value)+'\n```');}
  else{builds++;signalBuild();await new Promise(r=>{releaseBuild=r;res.once('close',r)});if(res.destroyed)return;put('```json\n'+JSON.stringify(artifact)+'\n```');}
  res.end('data: [DONE]\n\n');
@@ -244,5 +246,42 @@ try{
    check('logout/relogin '+width+': revoked cookie, independent session retained, data restored without generation');
   }finally{await fresh.close()}
  }
- assert.deepEqual(errors,[]);console.log('PASS browser-core: 20 checks; source='+root);
+ // Legacy7: cancel after actual artifact bytes, not just before upstream output.
+ cancelBuild=true;
+ for(const width of [1280,390]){
+  await p.setViewportSize({width,height:844});
+  if(width===390)await p.locator('#mobile').click();
+  await p.locator('#new').click();
+  await p.locator('#prompt').fill('Besprechen wir einen abbrechbaren Regler');await p.locator('#prompt').press('Enter');
+  await p.locator('.planning-offer-start').waitFor();await p.waitForFunction(()=>!document.querySelector('.live'));
+  const beforeBuilds=builds,beforePartial=partialBuilds,beforeClosed=closedBuilds;
+  await p.locator('.planning-offer-start').click();await p.locator('.blueprint-execute:not([disabled])').waitFor({state:'attached'});
+  if(await p.locator('.blueprint-toggle').getAttribute('aria-expanded')==='false')await p.locator('.blueprint-toggle').click();
+  await p.locator('.blueprint-execute').click();
+  await p.waitForFunction(async()=>{const d=await(await fetch('/api/jobs')).json();return d.jobs.some(j=>j.state==='building'&&j.kind==='create'&&j.phase==='artifact')});
+  const job=(await api('/api/jobs')).jobs.find(j=>j.state==='building'&&j.kind==='create'&&j.phase==='artifact');
+  assert.ok(job,JSON.stringify({jobs:await api('/api/jobs'),partialBuilds,closedBuilds,builds}));const site=p.locator('.site[data-jobid="'+job.id+'"]');
+  await site.waitFor();
+  // The mock writes a fenced JSON prefix before waiting; no complete artifact can publish.
+  assert.equal(partialBuilds,beforePartial+1);assert.equal(closedBuilds,beforeClosed);assert.equal(builds,beforeBuilds+1);
+  assert.equal(await p.locator('iframe.render').count(),0);assert.equal(await site.locator('svg.crane').count(),1);
+  await p.reload();await site.waitFor();
+  assert.equal((await api('/api/jobs')).jobs.find(j=>j.id===job.id).state,'building');
+  assert.equal(builds,beforeBuilds+1);assert.equal(closedBuilds,beforeClosed);
+  const closed=new Promise(r=>{signalBuildClosed=r});
+  await site.getByRole('button',{name:'Elementbau abbrechen'}).click();
+  await Promise.race([closed,new Promise((_,reject)=>{const t=setTimeout(()=>reject(Error('build cancel did not abort artifact stream')),5000);t.unref()})]);
+  await p.waitForFunction(async id=>{const d=await(await fetch('/api/jobs')).json();return d.jobs.some(j=>j.id===id&&j.state==='cancelled')},job.id);
+  assert.equal(closedBuilds,beforeClosed+1);assert.equal(builds,beforeBuilds+1);
+  assert.equal(await p.locator('iframe.render').count(),0);
+  const saved=(await api('/api/conversations')).conversations.find(c=>c.id===job.conversationId);
+  assert.equal(saved.messages.filter(m=>m.render).length,0,'partial artifact never persisted');
+  await p.reload();await p.locator('.message[data-mid="'+job.messageId+'"] .notice').filter({hasText:'Abgebrochen.'}).waitFor();
+  assert.equal(await p.locator('.site[data-jobid="'+job.id+'"]').count(),0,'cancelled build becomes an honest terminal notice');
+  assert.equal((await api('/api/jobs')).jobs.find(j=>j.id===job.id).state,'cancelled');
+  assert.equal(await p.locator('iframe.render').count(),0);assert.equal(builds,beforeBuilds+1);
+  assert.deepEqual((await api('/api/conversations')).conversations.find(c=>c.id===job.conversationId).messages,saved.messages);
+  check('artifact-phase cancel '+width+': real upstream abort, no partial publication, durable reload, no retry');
+ }
+ assert.deepEqual(errors,[]);console.log('PASS browser-core: 22 checks; source='+root);
 }finally{releaseProse?.();releaseCorrection?.();releaseFirst?.();releaseArtifact?.();releaseBuild?.();await browser?.close();if(app&&app.exitCode===null){app.kill('SIGTERM');await once(app,'exit')}mock.closeAllConnections();await new Promise(r=>mock.close(r));fs.rmSync(dir,{recursive:true,force:true});}
