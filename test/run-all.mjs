@@ -30,6 +30,7 @@ step('guided planning metadata',run('node',['--test','test/planning-offer.test.m
 step('build (esbuild + bridge hash + wasm)', run('node', ['build.mjs']));
 step('current-contract browser core (login, settings, approval, streaming, persistence)',run('node',['test/browser-core.test.mjs']));
 step('editor lifecycle (pin, overlay, version restore, sanitizer)',run('node',['test/editor-lifecycle.test.mjs']));
+step('cross-conversation collection, state ownership and mobile surfaces',run('node',['test/collection-browser.test.mjs']));
 step('approved in-place refinement browser',run('node',['test/refinement-browser.test.mjs']));
 step('refinement transactional conflict and writer locking',run('node',['--test','test/refinement-cas.test.mjs']));
 step('ping callback bridge (mocked success, denial, rate limit)',run('node',['test/ping-browser.test.mjs']));

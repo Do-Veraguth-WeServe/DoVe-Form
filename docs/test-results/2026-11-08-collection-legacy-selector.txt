@@ -1,0 +1,18 @@
+PASS 1280 cross-conversation Alpha element: exact owner context/state request, other data unchanged, reload, surface and overflow
+PASS 1280 cross-conversation Beta element: exact owner context/state request, other data unchanged, reload, surface and overflow
+PASS 390 cross-conversation Alpha element: exact owner context/state request, other data unchanged, reload, surface and overflow
+PASS 390 cross-conversation Beta element: exact owner context/state request, other data unchanged, reload, surface and overflow
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.boundingBox: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator('#settingsbtn')
+
+    at /root/.openclaw/workspace/projects/form/test/collection-browser.test.mjs:40:112 {
+  log: [ "  - waiting for locator('#settingsbtn')" ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.22.2

@@ -1,0 +1,22 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
++ actual - expected
+
++ undefined
+- '82c2009a-17d0-403b-b90b-f17ec3e2e620'
+
+    at file:///root/.openclaw/workspace/projects/form/test/collection-browser.test.mjs:31:56
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at process.processImmediate (node:internal/timers:541:9) {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: undefined,
+  expected: '82c2009a-17d0-403b-b90b-f17ec3e2e620',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.22.2
