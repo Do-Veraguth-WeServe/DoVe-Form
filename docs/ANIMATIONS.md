@@ -1,0 +1,11 @@
+# Form animation capability v1
+
+Optional artifact field `animations:{version:1,clips:{name:node}}`; shared validation in animation-policy.mjs and contract.mjs. Existing artifacts are not rewritten. The trusted renderer prepares numeric frames and executes native Web Animations through the private iframe MessageChannel. QuickJS guests have only ui.animate(name, callback) and ui.cancelAnimation(token), no DOM or native animation objects.
+
+Nodes: tween (numeric opacity/x/y/rotate/scaleX/scaleY), sequence, parallel, and crumple (3–8 separate surfaces converging on their common centre with independently folding transforms). Crumple needs authored panels, not a single target; this is an abstract panel-fold effect, not physical paper simulation. Bounds: 16 named clips; 16 leaves per clip; depth 4; up to 8 concurrent targets, 2 active clips, 2 seconds per tween and 8 seconds per sequence. Conflicting/duplicate targets, unsupported versions/fields/values, missing targets, undeclared clips and excessive activity fail explicitly.
+
+Callbacks report finished/cancelled/error. Reduced motion completes asynchronously without movement. Hide/page teardown and worker failure cancel native work; no infinite iterations. Effects reset their temporary styles on completion. Persist application data only on successful completion, then redraw; keep the busy guard until persistence returns, restore recoverable UI on errors. User storage is never modified by platform acceptance fixtures.
+
+Verification: test/animation-policy.test.mjs validates limits and backward compatibility. test/animation.test.mjs executes the actual QuickJS -> renderer -> opaque iframe pipeline, observes three distinct intermediate transforms, completion, cancellation, missing targets, reduced motion, mobile view and database-error recovery. Screenshots are isolated fixtures.
+
+Remaining limitation: there is not yet a general automated browser acceptance gate for every arbitrary newly generated artifact. The contract validates animation structure; runtime validates target existence and execution. Passing these does not certify arbitrary visual intent. No claim that every generated animation will satisfy its visual brief.

@@ -9,8 +9,11 @@ let state = __state;
 let pingc = 0;
 let dbc = 0;
 let actionc = 0;
+let animationc = 0;
 const handlers = Object.create(null);
 const ui = Object.freeze({
+  animate: (name,fn) => {const ref='n'+(++animationc); if(typeof fn==='function')handlers['__animation:'+ref+':animation']=v=>{delete handlers['__animation:'+ref+':animation'];fn(v);};__emit(JSON.stringify({op:'animate',name,ref}));return ref;},
+  cancelAnimation: ref => __emit(JSON.stringify({op:'cancel-animation',ref})),
   every: (ms, fn) => { if(typeof fn!=='function')throw Error('ui.every requires callback'); handlers['__clock:tick']=fn; __emit(JSON.stringify({op:'clock',ms:Math.max(50,Math.min(1000,Number(ms)||50))})); },
   text: (id, value) => __emit(JSON.stringify({op:"text", id, value:String(value)})),
   value: (id, value) => __emit(JSON.stringify({op:"value", id, value:String(value)})),

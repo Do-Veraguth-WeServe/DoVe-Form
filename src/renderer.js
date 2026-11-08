@@ -1,3 +1,4 @@
+import {validateAnimations,prepareAnimation} from '../animation-policy.mjs';
 import {safeHTML,safeCSS,safeFragment} from './sanitize.js';
 
 const HOST_OK=/^[a-z0-9.-]{1,253}$/i;
@@ -6,6 +7,32 @@ export function bridge(){
   const channel=document.currentScript.dataset.channel;
   const send=(type,data={})=>parent.postMessage({channel,type,...data},'*');
   let port,scrollParent=false,touch=null;
+  const animations=new Map(),locked=new Set();
+  const finish=(r,status,error)=>{if(r.done)return;r.done=true;clearTimeout(r.timer);for(const a of r.native)a.cancel();for(const t of r.targets)locked.delete(t);animations.delete(r.ref);port?.postMessage({type:'animation-result',ref:r.ref,ok:status==='finished',status,...(error?{error}:{})});};
+  const stopAll=()=>{for(const r of animations.values())finish(r,'cancelled');};
+  addEventListener('pagehide',stopAll);
+  addEventListener('visibilitychange',()=>{if(document.hidden)stopAll();});
+  const startAnimation=o=>{
+    const r={ref:o.ref,name:o.name,native:[],targets:new Set(),done:false};
+    const collect=n=>{if(n.type==='tween'){if(!document.getElementById(n.target))throw Error('Animation target missing');r.targets.add(n.target);}else n.children.forEach(collect);};
+    try{
+      collect(o.clip);
+      const gather=n=>{if(n.gather){const boxes=n.children.map(c=>document.getElementById(c.target).getBoundingClientRect());const cx=boxes.reduce((s,b)=>s+b.x+b.width/2,0)/boxes.length,cy=boxes.reduce((s,b)=>s+b.y+b.height/2,0)/boxes.length;n.children.forEach((c,i)=>{const dx=cx-boxes[i].x-boxes[i].width/2,dy=cy-boxes[i].y-boxes[i].height/2;c.frames=c.frames.map((f,j)=>({...f,transform:'translate('+(dx*j/(c.frames.length-1))+'px,'+(dy*j/(c.frames.length-1))+'px) '+f.transform}));});}if(n.children)n.children.forEach(gather);};gather(o.clip);
+      if(document.hidden||animations.size>=2||[...animations.values()].some(a=>a.name===o.name)||[...r.targets].some(t=>locked.has(t))||locked.size+r.targets.size>8)throw Error('Animation busy or hidden');
+      for(const t of r.targets)locked.add(t);animations.set(r.ref,r);
+      r.timer=setTimeout(()=>finish(r,'error','Animation deadline'),8500);
+      const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const run=async n=>{
+        if(r.done)throw Error('cancelled');
+        if(n.type==='sequence'){for(const c of n.children)await run(c);return;}
+        if(n.type==='parallel'){await Promise.all(n.children.map(run));return;}
+        const el=document.getElementById(n.target);if(!el)throw Error('Animation target missing');
+        if(reduced){await Promise.resolve();return;}
+        const a=el.animate(n.frames,{duration:n.duration,easing:n.easing,fill:'forwards'});r.native.push(a);await a.finished;
+      };
+      run(o.clip).then(()=>finish(r,'finished'),()=>finish(r,'error','Animation interrupted'));
+    }catch(e){port?.postMessage({type:'animation-result',ref:o.ref,ok:false,status:'error',error:e.message});}
+  };
   // Only app-owned bootstrap sees real touch events; guest JS has no scrolling API.
   addEventListener('touchstart',e=>{
     if(!scrollParent||!e.isTrusted||e.touches.length!==1){touch=null;return;}
@@ -29,6 +56,9 @@ export function bridge(){
     port.onmessage=({data:ops})=>{
       if(!Array.isArray(ops)||ops.length>250)return;
       for(const o of ops){
+        if(o?.op==='animate'){startAnimation(o);continue;}
+        if(o?.op==='cancel-animation'){const r=animations.get(o.ref);if(r)finish(r,'cancelled');continue;}
+        if(o?.op==='stop-animations'){stopAll();continue;}
         if(!o||typeof o.id!=='string'||o.id.length>100)continue;
         const el=document.getElementById(o.id);
         if(!el)continue;
@@ -73,6 +103,8 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction}={
   const channel=crypto.randomUUID(),nonce=crypto.randomUUID();
   let worker,port,timer,clock,inflight=false,stopped=false;
   const asyncQ=[]; // pending synthetic-event deliveries (ping/db results)
+  const declarations=data.animations?validateAnimations(data.animations):null;
+  const prepare=prepareAnimation;
   const html=safeHTML(data.html),css=safeCSS(data.css);
   const listener=e=>{
     if(e.source!==f.contentWindow||e.origin!=='null'||e.data?.channel!==channel)return;
@@ -87,7 +119,7 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction}={
       if(inflight){if(d.type==='event'&&asyncQ.length<32)asyncQ.push({id:d.id,event:d.event,value:d.value});return;}
       inflight=true;
       clearTimeout(timer);
-      timer=setTimeout(()=>{stopped=true;clearInterval(clock);worker.terminate();onError(d.type==='init'?'Interaktions-Engine konnte nicht rechtzeitig geladen werden. Bitte erneut öffnen.':'Interaktion angehalten (Zeitlimit).');},d.type==='init'?30000:3000);
+      timer=setTimeout(()=>{stopped=true;port?.postMessage([{op:'stop-animations'}]);clearInterval(clock);worker.terminate();onError(d.type==='init'?'Interaktions-Engine konnte nicht rechtzeitig geladen werden. Bitte erneut öffnen.':'Interaktion angehalten (Zeitlimit).');},d.type==='init'?30000:3000);
       worker.postMessage(d);
     };
     const deliver=(id,event,value)=>{
@@ -99,7 +131,7 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction}={
         const j=asyncQ.shift();
         inflight=true;
         clearTimeout(timer);
-        timer=setTimeout(()=>{stopped=true;clearInterval(clock);worker.terminate();onError('Interaktion angehalten (Zeitlimit).');},3000);
+        timer=setTimeout(()=>{stopped=true;port?.postMessage([{op:'stop-animations'}]);clearInterval(clock);worker.terminate();onError('Interaktion angehalten (Zeitlimit).');},3000);
         worker.postMessage({type:'event',id:j.id,event:j.event,value:j.value});
       }
     };
@@ -108,21 +140,28 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction}={
       if(d?.type==='scroll-parent'&&Number.isFinite(d.delta)&&Math.abs(d.delta)<=160){
         const feed=f.closest('#feed');if(feed&&f.isConnected)feed.scrollTop+=d.delta;
       }
+      if(d?.type==='animation-result'&&/^n[0-9]{1,8}$/.test(d.ref)&&['finished','cancelled','error'].includes(d.status))deliver('__animation:'+d.ref,'animation',{ok:d.ok===true,status:d.status,error:typeof d.error==='string'?d.error.slice(0,120):undefined});
       if(d?.type==='event')dispatch(d);
       if(d?.type==='misuse')onError('Hinweis: ui.value gilt nur für Eingabefelder — dynamische Inhalte gehören in ui.html.');
     };
     worker.onmessage=({data:d})=>{
       if(d.type==='engine-ready'){
         clearTimeout(timer);
-        timer=setTimeout(()=>{stopped=true;clearInterval(clock);worker.terminate();onError('Interaktion angehalten (Zeitlimit).');},3000);
+        timer=setTimeout(()=>{stopped=true;port?.postMessage([{op:'stop-animations'}]);clearInterval(clock);worker.terminate();onError('Interaktion angehalten (Zeitlimit).');},3000);
         return;
       }
       inflight=false;clearTimeout(timer);
-      if(d.type==='error'){stopped=true;clearInterval(clock);return onError(d.message);}
+      if(d.type==='error'){stopped=true;port?.postMessage([{op:'stop-animations'}]);clearInterval(clock);return onError(d.message);}
       if(d.type!=='ops'||!Array.isArray(d.ops)||d.ops.length>250){pumpAsync();return;}
       const dom=[];
       for(const o of d.ops){
-        if(o.op==='clock'){
+        if(o.op==='animate'){
+          if(!/^n[0-9]{1,8}$/.test(o.ref))continue;
+          if(typeof o.name!=='string'||!Object.hasOwn(declarations?.clips||{},o.name))deliver('__animation:'+o.ref,'animation',{ok:false,status:'error',error:'Undeclared animation'});
+          else dom.push({op:'animate',ref:o.ref,name:o.name,clip:prepare(declarations.clips[o.name])});
+        }else if(o.op==='cancel-animation'){
+          if(/^n[0-9]{1,8}$/.test(o.ref))dom.push({op:'cancel-animation',ref:o.ref});
+        }else if(o.op==='clock'){
           clearInterval(clock);if(Number.isFinite(o.ms))clock=setInterval(()=>{if(!stopped&&f.isConnected&&!document.hidden&&!inflight&&!asyncQ.length)dispatch({type:'event',id:'__clock',event:'tick',value:{dt:Math.max(50,Math.min(1000,o.ms))}});},Math.max(50,Math.min(1000,o.ms)));
         }else if(o.op==='state'){
           if(o.state&&typeof o.state==='object'&&!Array.isArray(o.state)&&JSON.stringify(o.state).length<=4096)onState(o.state);
@@ -177,7 +216,7 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction}={
       port.postMessage(dom);
       pumpAsync();
     };
-    worker.onerror=()=>{stopped=true;clearInterval(clock);clearTimeout(timer);onError('Interaktion konnte nicht gestartet werden.');};
+    worker.onerror=()=>{stopped=true;port?.postMessage([{op:'stop-animations'}]);clearInterval(clock);clearTimeout(timer);onError('Interaktion konnte nicht gestartet werden.');};
     dispatch({type:'init',js:data.js,state:data.state});
   };
   addEventListener('message',listener);
@@ -187,8 +226,9 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction}={
     destroy(){
       removeEventListener('message',listener);
       clearTimeout(timer);
-      stopped=true;clearInterval(clock);
+      stopped=true;port?.postMessage([{op:'stop-animations'}]);clearInterval(clock);
       worker?.terminate();
+      port?.postMessage([{op:'stop-animations'}]);
       port?.close();
       asyncQ.length=0;
     }

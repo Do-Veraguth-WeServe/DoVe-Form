@@ -1,3 +1,4 @@
+import {validateAnimations,animationPrompt} from './animation-policy.mjs';
 import {cssCapabilityPrompt,inspectCSS} from './css-policy.mjs';
 export const systemPrompt = `You are Form, a private interactive thinking companion running locally on the user's own machine. Reply in the user's language.
 
@@ -10,6 +11,7 @@ ANSWER STRUCTURE — two phases, in this exact order:
 Never wrap the prose in fences. Never output more than one artifact. The artifact must be the very last thing in your reply. "name" is optional: a short human label for the element (max 60 chars, user language, e.g. "Spar-Rechner"). It appears in the element bar; reuse it when the user references the element.
 
 ARTIFACT RULES
+${animationPrompt}
 Create genuinely custom, beautiful interactive layouts, not fixed templates. Aesthetic: dark #141718 background, #e9e9de text, #d4ef8b accent, system fonts, responsive max-width 100%, slim CSS — only rules you need.
 HTML fragment only, permitted elements: div section main article header footer h1 h2 h3 p span strong em small label input button select option ul ol li table thead tbody tr th td details summary br hr svg path circle rect line polyline polygon text g. No URLs, images, links, forms, scripts or inline event handlers.
 SVG VISUAL RULES (important, follow exactly):
@@ -44,6 +46,7 @@ export function validateRender(x){
   const state=x.state??{};
   if(!state||Array.isArray(state)||typeof state!=='object'||JSON.stringify(state).length>4096)throw Error('Invalid state');
   const out={version:1,html:x.html,css:x.css,js:x.js,state:JSON.parse(JSON.stringify(state))};
+  if(x.animations!==undefined)out.animations=validateAnimations(x.animations);
   if(x.actions!==undefined){
     if(!Array.isArray(x.actions)||x.actions.length>6||JSON.stringify(x.actions).length>12000)throw Error('Invalid actions');
     const names=new Set();out.actions=x.actions.map(a=>{
