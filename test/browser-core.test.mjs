@@ -16,6 +16,7 @@ let app,browser,builds=0,plans=0,chats=0,releaseFirst,releaseArtifact,releaseBui
 let correctionMode=null,correctionAttempts=0,releaseCorrection,proseOnly=false,releaseProse;
 let holdChat=false,heldChats=0,closedChats=0,signalHeld,signalClosed;
 let cancelBuild=false,partialBuilds=0,closedBuilds=0,signalBuildClosed;
+let reverseMode=false;const reverseBuilds=[];
 let signalBuild;const buildStarted=new Promise(resolve=>{signalBuild=resolve});
 const artifact={version:1,name:'Core-Regler',html:'<label for="amt">Wert</label><input id="amt" type="number"><p id="out"></p>',css:'p{color:#d4ef8b}',js:'ui.value("amt",String(state.value));function draw(){ui.text("out","Wert: "+state.value)}ui.on("amt","input",e=>{state.value=Number(e.value);draw();ui.persist()});draw();',state:{value:3}};
 const mock=http.createServer(async(req,res)=>{
@@ -28,6 +29,7 @@ const mock=http.createServer(async(req,res)=>{
  else if(system.includes('warm, concise conversational')&&proseOnly){chats++;put('Ein VPN ist ein Virtual Private Network. ');await new Promise(r=>{releaseProse=r;res.once('close',r)});if(res.destroyed)return;put('Es verschlüsselt die Verbindung zum VPN-Anbieter.');}
  else if(system.includes('warm, concise conversational')&&correctionMode){chats++;put('Wir besprechen den nächsten Regler. '+JSON.stringify({forms:[],planningOffer:{title:'Regler'}}));}
  else if(system.includes('warm, concise conversational')){chats++;put('Erster sichtbarer Abschnitt. ');await new Promise(r=>{releaseFirst=r;res.once('close',r)});if(res.destroyed)return;put('Zweiter sichtbarer Abschnitt. ');await new Promise(r=>{releaseArtifact=r;res.once('close',r)});if(res.destroyed)return;put(JSON.stringify({forms:[],planningOffer:{title:'Regler'}}));}
+ else if(reverseMode){builds++;const entry={name:"Reverse-"+reverseBuilds.length,active:true};reverseBuilds.push(entry);await new Promise(r=>{entry.release=r;res.once("close",r)});entry.active=false;if(res.destroyed)return;put("```json\n"+JSON.stringify({...artifact,name:entry.name})+"\n```");}
  else if(cancelBuild){builds++;partialBuilds++;put('```json\n'+JSON.stringify(artifact).slice(0,120));await new Promise(r=>res.once('close',()=>{closedBuilds++;signalBuildClosed?.();r()}));return;}
  else if(correctionMode){builds++;correctionAttempts++;assert.ok(correctionAttempts<=2,'no unbounded correction');if(correctionAttempts===2){assert.match(d.messages.at(-1).content,/CSS capability preflight/);await new Promise(r=>{releaseCorrection=r;res.once('close',r)});if(res.destroyed)return;}const value=correctionAttempts===1||correctionMode==='fail'?{...artifact,css:'p::before{content:"unsupported";position:absolute}'}:artifact;put('```json\n'+JSON.stringify(value)+'\n```');}
  else{builds++;signalBuild();await new Promise(r=>{releaseBuild=r;res.once('close',r)});if(res.destroyed)return;put('```json\n'+JSON.stringify(artifact)+'\n```');}
@@ -283,5 +285,48 @@ try{
   assert.deepEqual((await api('/api/conversations')).conversations.find(c=>c.id===job.conversationId).messages,saved.messages);
   check('artifact-phase cancel '+width+': real upstream abort, no partial publication, durable reload, no retry');
  }
- assert.deepEqual(errors,[]);console.log('PASS browser-core: 22 checks; source='+root);
-}finally{releaseProse?.();releaseCorrection?.();releaseFirst?.();releaseArtifact?.();releaseBuild?.();await browser?.close();if(app&&app.exitCode===null){app.kill('SIGTERM');await once(app,'exit')}mock.closeAllConnections();await new Promise(r=>mock.close(r));fs.rmSync(dir,{recursive:true,force:true});}
+ // Legacy7d: two independently approved builds complete in reverse order.
+ cancelBuild=false;reverseMode=true;
+ for(const width of [1280,390]){
+  await p.setViewportSize({width,height:844});
+  if(width===390&&!await p.locator('#new').isVisible())await p.locator('#mobile').click();
+  await p.locator('#new').click();
+  const start=reverseBuilds.length,before=builds,jobs=[];
+  for(const label of ['first','second']){
+   await p.locator('#prompt').fill('Neuer unabhängiger Regler '+label);await p.locator('#prompt').press('Enter');
+   await p.waitForFunction(()=>!document.querySelector('.live'));
+   await p.locator('.planning-offer-start').last().click();
+   const execute=p.locator('.blueprint-execute:not([disabled])').last();await execute.waitFor({state:'attached'});
+   // Use the current plan's own toggle, never approve a previous plan twice.
+   const toggle=p.locator('.blueprint-toggle').last();
+   if(await toggle.getAttribute('aria-expanded')==='false')await toggle.click();
+   await execute.click();
+   await p.waitForFunction(async count=>{const d=await(await fetch('/api/jobs')).json();return d.jobs.filter(j=>j.kind==='create'&&j.state==='building').length===count},jobs.length+1);
+   const active=(await api('/api/jobs')).jobs.filter(j=>j.kind==='create'&&j.state==='building');
+   const job=active.find(j=>!jobs.some(old=>old.id===j.id));assert.ok(job);jobs.push(job);
+   await p.locator('.site[data-jobid="'+job.id+'"]').waitFor();
+  }
+  const deadline=Date.now()+10000;while(reverseBuilds.length<start+2&&Date.now()<deadline)await new Promise(r=>setTimeout(r,50));
+  const [a,b]=reverseBuilds.slice(start);assert.ok(a?.active&&b?.active,'both real upstreams held concurrently');
+  assert.equal(builds,before+2);assert.notEqual(jobs[0].id,jobs[1].id);assert.notEqual(jobs[0].messageId,jobs[1].messageId);
+  assert.equal(jobs[0].conversationId,jobs[1].conversationId);
+  const siteA=p.locator('.site[data-jobid="'+jobs[0].id+'"]');
+  const boxA=p.locator('.message[data-mid="'+jobs[0].messageId+'"]');
+  const boxB=p.locator('.message[data-mid="'+jobs[1].messageId+'"]');
+  b.release();await boxB.frameLocator('iframe.render[data-ready=true]').locator('#out').filter({hasText:'Wert: 3'}).waitFor();
+  assert.equal(a.active,true,'first upstream remains open after second publication');await siteA.waitFor();
+  assert.equal(await boxA.locator('iframe.render').count(),0);assert.equal(await boxB.locator('.elname').innerText(),b.name);
+  assert.equal((await api('/api/jobs')).jobs.find(j=>j.id===jobs[0].id).state,'building');
+  a.release();await boxA.frameLocator('iframe.render[data-ready=true]').locator('#out').filter({hasText:'Wert: 3'}).waitFor();
+  assert.equal(await boxA.locator('.elname').innerText(),a.name);assert.equal(await boxB.locator('.elname').innerText(),b.name);
+  const saved=(await api('/api/conversations')).conversations.find(c=>c.id===jobs[0].conversationId);
+  for(const [i,entry] of [a,b].entries())assert.equal(saved.messages.find(m=>m.id===jobs[i].messageId).render.name,entry.name);
+  assert.equal(saved.messages.filter(m=>m.render).length,2);assert.equal(builds,before+2);
+  await p.reload();
+  for(const job of jobs)await p.locator('.message[data-mid="'+job.messageId+'"]').frameLocator('iframe.render[data-ready=true]').locator('#out').filter({hasText:'Wert: 3'}).waitFor();
+  assert.equal(await p.locator('iframe.render').count(),2);assert.equal(builds,before+2);
+  assert.deepEqual((await api('/api/conversations')).conversations.find(c=>c.id===saved.id).messages,saved.messages);
+  check('reverse concurrent builds '+width+': second publishes first, exact message placement, persisted reload, no regeneration');
+ }
+ assert.deepEqual(errors,[]);console.log('PASS browser-core: 24 checks; source='+root);
+}finally{for(const entry of reverseBuilds)entry.release?.();releaseProse?.();releaseCorrection?.();releaseFirst?.();releaseArtifact?.();releaseBuild?.();await browser?.close();if(app&&app.exitCode===null){app.kill('SIGTERM');await once(app,'exit')}mock.closeAllConnections();await new Promise(r=>mock.close(r));fs.rmSync(dir,{recursive:true,force:true});}

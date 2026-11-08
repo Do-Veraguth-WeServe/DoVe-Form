@@ -1,0 +1,6 @@
+15005561a995bcac2b2cbc71ce34bd4cf8d7c0b81791e2e309bc6a7803766c98  test/browser-core.test.mjs
+0ff726dae8c66988269135bb078839d3d5c2a7eec8a530e9d558a1700e7fafc7  docs/BROWSER-CORE-ACCEPTANCE.md
+aee7f58319057ad34d1bf773314934f96347943aea05cdfb969f12972cbf2b59  docs/test-results/2026-11-08-core-reverse-source.txt
+5558a006a6ca9c5849b8f5db540e84dc99a1964395f2604c6ab16681654d6a0f  docs/test-results/2026-11-08-core-reverse-deployed.txt
+fd7ce46a8c43f909eea0a5d1a8a4dc60a1a12ef43576449512a832fa286b817c  dist/app.js
+fd7ce46a8c43f909eea0a5d1a8a4dc60a1a12ef43576449512a832fa286b817c  /opt/form/dist/app.js
