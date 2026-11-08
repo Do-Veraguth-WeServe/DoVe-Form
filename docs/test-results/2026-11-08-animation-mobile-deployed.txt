@@ -1,0 +1,1 @@
+PASS schema, three independently moving surfaces, completion, cancellation, missing target, desktop/mobile real touch duplicate guard, restored transforms, reduced motion and reload persistence in real QuickJS iframe bridge
