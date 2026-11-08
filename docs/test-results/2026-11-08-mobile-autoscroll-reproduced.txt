@@ -1,0 +1,75 @@
+opening geometry 390 { x: 171.015625, y: -52.5, width: 30.90625, height: 31.5 }
+opening trace []
+post-click hit test {
+  rect: {
+    x: 171.015625,
+    y: 142.5,
+    width: 30.90625,
+    height: 31.5,
+    top: 142.5,
+    right: 201.921875,
+    bottom: 174,
+    left: 171.015625
+  },
+  feedScroll: 0,
+  hits: [
+    'BUTTON:icon',
+    'DIV:elhead',
+    'DIV:elwrap',
+    'ARTICLE:message assistant',
+    'DIV:feed',
+    'MAIN:',
+    'DIV:app',
+    'BODY:',
+    'HTML:'
+  ],
+  frames: [
+    {
+      x: 20,
+      y: 186.5,
+      width: 350,
+      height: 200,
+      top: 186.5,
+      right: 370,
+      bottom: 386.5,
+      left: 20
+    }
+  ]
+}
+frame input http://127.0.0.1:4782/ [
+  { type: 'pointerdown', target: 'BUTTON', x: 195, y: 529.5 },
+  { type: 'pointerup', target: 'BUTTON', x: 195, y: 529.5 },
+  { type: 'click', target: 'BUTTON', x: 195, y: 529 }
+]
+frame input  [
+  {
+    type: 'pointerdown',
+    target: 'HTML',
+    x: 166.4600067138672,
+    y: 166.25
+  },
+  {
+    type: 'pointerup',
+    target: 'HTML',
+    x: 166.4600067138672,
+    y: 166.25
+  },
+  { type: 'click', target: 'HTML', x: 166, y: 166 }
+]
+overlay diagnostic  [] 0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.waitFor: Timeout 6000ms exceeded.
+Call log:
+  - waiting for locator('#overlay iframe[data-ready=true]') to be visible
+
+    at /root/.openclaw/workspace/projects/form/test/live-diagnostics-browser.mjs:21:952 {
+  log: [
+    "  - waiting for locator('#overlay iframe[data-ready=true]') to be visible"
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.22.2

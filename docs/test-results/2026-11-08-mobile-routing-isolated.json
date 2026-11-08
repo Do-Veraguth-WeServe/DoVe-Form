@@ -1,0 +1,83 @@
+{
+  "browser": "153.0.8010.36",
+  "results": [
+    {
+      "mode": "automatic",
+      "before": {
+        "x": 160,
+        "y": -53,
+        "width": 51.609375,
+        "height": 32
+      },
+      "after": {
+        "x": 160,
+        "y": 142,
+        "width": 51.609375,
+        "height": 32
+      },
+      "parent": [],
+      "frames": [
+        [
+          {
+            "target": "HTML",
+            "x": 165,
+            "y": 179
+          }
+        ]
+      ],
+      "opened": false
+    },
+    {
+      "mode": "settled",
+      "before": {
+        "x": 160,
+        "y": -53,
+        "width": 51.609375,
+        "height": 32
+      },
+      "after": {
+        "x": 160,
+        "y": 142,
+        "width": 51.609375,
+        "height": 32
+      },
+      "parent": [
+        {
+          "target": "BUTTON",
+          "x": 185,
+          "y": 158
+        }
+      ],
+      "frames": [
+        []
+      ],
+      "opened": true
+    },
+    {
+      "mode": "wheel",
+      "before": {
+        "x": 160,
+        "y": -53,
+        "width": 51.609375,
+        "height": 32
+      },
+      "after": {
+        "x": 160,
+        "y": 142,
+        "width": 51.609375,
+        "height": 32
+      },
+      "parent": [
+        {
+          "target": "BUTTON",
+          "x": 185,
+          "y": 158
+        }
+      ],
+      "frames": [
+        []
+      ],
+      "opened": true
+    }
+  ]
+}
