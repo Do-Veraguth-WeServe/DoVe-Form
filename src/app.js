@@ -225,7 +225,15 @@ function ownerView(m,callbacks){
 }
 function stateCallback(m){
   const writer=persistence(m);
-  return state=>{m.render.state=state;save();void writer.save({state});};
+  return state=>{
+    // This sandbox already applied its own state. Advance only a still-matching
+    // cache entry; never bless unrelated code, job, UI or canonical changes.
+    const cached=[...feedCache.values()].find(c=>c.element===m);
+    const matches=cached&&cached.signature===feedSignature(cached.message,m);
+    m.render.state=state;
+    if(matches)cached.signature=feedSignature(cached.message,m);
+    save();void writer.save({state});
+  };
 }
 async function syncRender(m,next){
   if(!await persistence(m).save({render:next}))return false;
@@ -536,6 +544,7 @@ function renderChip(){
 // Rotating a last-12 window on submit removes content above the viewport.
 const visibleStarts=new Map();
 let feedCache=new Map();
+function feedSignature(message,element){return JSON.stringify([message,element,pendingJobFor(message.id),pendingJobFor(element.id),marked,isPinned(element)]);}
 function render(){stopEntry();
   const previousViews=views;views=[];
   const nextCache=new Map(),nodes=[];
@@ -559,7 +568,7 @@ function render(){stopEntry();
       if([...pending].some(r=>r.conversationId===s.id&&jobs.get(r.jobId)?.messageId===m.id))continue; // live relay owns this placeholder
       // Never reuse across canonical objects, revisions, conversations or changed UI inputs.
       const key=s.id+':'+m.id;
-      const signature=entry.element&&!m.forms?JSON.stringify([m,entry.element,pendingJobFor(m.id),pendingJobFor(entry.element.id),marked,isPinned(entry.element)]):null;
+      const signature=entry.element&&!m.forms?feedSignature(m,entry.element):null;
       const cached=feedCache.get(key);
       if(signature&&cached?.signature===signature&&cached.message===m&&cached.element===entry.element&&cached.article.isConnected&&cached.views.every(v=>previousViews.includes(v))){
         nodes.push(cached.article);views.push(...cached.views);nextCache.set(key,cached);continue;

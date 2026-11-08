@@ -1,0 +1,1 @@
+PASS desktop/mobile: background/repeated/terminal/empty snapshots and unrelated updates after ui.persist preserve frame+draft; selection/overlay invalidate; browser reload initializes once/restores state; scrolling stable; failed save recovers canonical snapshot.

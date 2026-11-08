@@ -1,0 +1,3 @@
+PASS desktop/mobile: background/repeated/terminal/empty snapshots preserve iframe identity and unsaved input.
+PASS desktop/mobile: background/repeated/terminal/empty snapshots preserve iframe identity and unsaved input.
+PASS no remount/scroll jump on desktop/mobile; explicit missing-animation notice
