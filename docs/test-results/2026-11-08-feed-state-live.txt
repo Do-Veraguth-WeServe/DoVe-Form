@@ -1,0 +1,2 @@
+{"base":"http://127.0.0.1:5177","health":200,"appSHA256":"736028981b73a19f067a8344772293d963e5d2592c3f9018188dc69e480b86d6","csp":true}
+{"base":"https://fhisling.tail11036c.ts.net:9444","health":200,"appSHA256":"736028981b73a19f067a8344772293d963e5d2592c3f9018188dc69e480b86d6","csp":true}
