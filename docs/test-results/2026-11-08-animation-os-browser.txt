@@ -1,0 +1,9 @@
+PASS non-root, empty capabilities, no-new-privileges, separate network/mount namespaces; configured cgroup ceilings
+PASS third concurrent socket rejected; max two isolated probe workers
+Observed Chromium descendants in owned probe cgroup: 1
+PASS stopped worker killed by systemd timeout, elapsedMs=33441, Result=timeout
+PASS owned cgroup empty after OS timeout; Chromium mode=true
+PASS real sandboxed Chromium request succeeds after capacity recovery
+LIMIT: memory/CPU limits inspected, not destructive exhaustion stress-tested
+Failed to reset failed state of unit form-verifier-probe-3956465@2-3956465-0.service: Unit form-verifier-probe-3956465@2-3956465-0.service not loaded.
+CLEAN temporary probe units/socket; production service unchanged

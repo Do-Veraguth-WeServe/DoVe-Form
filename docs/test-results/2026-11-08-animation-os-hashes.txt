@@ -1,0 +1,6 @@
+d558527b6262a964ce60851dbc003e09d638cc2640842bd41ae1ab0234728ee5  /etc/systemd/system/form-verifier@.service
+1172e591768c9edbfb7092d4ca91463feeba6400384b7c3924cc6901efc74dfc  /etc/systemd/system/form-verifier.socket
+07e22b6069213cc2d5df3890ec6fe9898c608865cf16ef16006e6699e25482a8  /opt/form/animation-verifier-client.mjs
+7451a8f0ed979de74debd15e30773c1f82da98f58a18b34d8de68aa357f07959  /opt/form/animation-verification-errors.mjs
+fb97950e1a6f26720543fab0b66d74a38691a21b006de9f98478ee5a87f12c69  /opt/form-verifier/animation-verifier-worker.mjs
+6b493a45ff88a43f969e356d2deea00f091f42f2dbdf9b2005df2d708828a713  /opt/form-verifier/animation-verification.mjs

@@ -1,0 +1,9 @@
+PASS non-root, empty capabilities, no-new-privileges, separate network/mount namespaces; configured cgroup ceilings
+PASS third concurrent socket rejected; max two isolated probe workers
+PASS stopped worker killed by systemd timeout, elapsedMs=34956, Result=timeout
+LIMIT: stalled input worker tested, not a Chromium descendant or memory-exhaustion stress test
+Warning: Stopping form-verifier-probe-3954773@0-3954773-0.service, but it can still be activated by:
+  form-verifier-probe-3954773.socket
+Warning: Stopping form-verifier-probe-3954773@1-3954773-0.service, but it can still be activated by:
+  form-verifier-probe-3954773.socket
+CLEAN temporary probe units/socket; production service unchanged

@@ -1,0 +1,132 @@
+Failed to reset failed state of unit form-verifier-probe-3954011@0-3954011-0.service: Unit form-verifier-probe-3954011@0-3954011-0.service not loaded.
+CLEAN temporary probe units/socket; production service unchanged
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: The input was expected to not match the regular expression /Uid:\s+0\s/. Input:
+
+'Name:\t(node)\n' +
+  'Umask:\t0000\n' +
+  'State:\tR (running)\n' +
+  'Tgid:\t3954051\n' +
+  'Ngid:\t0\n' +
+  'Pid:\t3954051\n' +
+  'PPid:\t1\n' +
+  'TracerPid:\t0\n' +
+  'Uid:\t0\t0\t0\t0\n' +
+  'Gid:\t0\t0\t0\t0\n' +
+  'FDSize:\t256\n' +
+  'Groups:\t988 \n' +
+  'NStgid:\t3954051\n' +
+  'NSpid:\t3954051\n' +
+  'NSpgid:\t3954051\n' +
+  'NSsid:\t3954051\n' +
+  'VmPeak:\t  176516 kB\n' +
+  'VmSize:\t  176480 kB\n' +
+  'VmLck:\t       0 kB\n' +
+  'VmPin:\t       0 kB\n' +
+  'VmHWM:\t   10416 kB\n' +
+  'VmRSS:\t   10416 kB\n' +
+  'RssAnon:\t    5324 kB\n' +
+  'RssFile:\t    5092 kB\n' +
+  'RssShmem:\t       0 kB\n' +
+  'VmData:\t   28516 kB\n' +
+  'VmStk:\t    1036 kB\n' +
+  'VmExe:\t     896 kB\n' +
+  'VmLib:\t    9264 kB\n' +
+  'VmPTE:\t      96 kB\n' +
+  'VmSwap:\t       0 kB\n' +
+  'HugetlbPages:\t       0 kB\n' +
+  'CoreDumping:\t0\n' +
+  'THP_enabled:\t1\n' +
+  'Threads:\t1\n' +
+  'SigQ:\t0/95948\n' +
+  'SigPnd:\t0000000000000000\n' +
+  'ShdPnd:\t0000000000000000\n' +
+  'SigBlk:\t0000000000000000\n' +
+  'SigIgn:\t0000000000001000\n' +
+  'SigCgt:\t0000000100000000\n' +
+  'CapInh:\t0000000000000000\n' +
+  'CapPrm:\t000001ffffffffff\n' +
+  'CapEff:\t000001ffffffffff\n' +
+  'CapBnd:\t000001ffffffffff\n' +
+  'CapAmb:\t0000000000000000\n' +
+  'NoNewPrivs:\t0\n' +
+  'Seccomp:\t0\n' +
+  'Seccomp_filters:\t0\n' +
+  'Speculation_Store_Bypass:\tthread vulnerable\n' +
+  'SpeculationIndirectBranch:\tconditional enabled\n' +
+  'Cpus_allowed:\tff\n' +
+  'Cpus_allowed_list:\t0-7\n' +
+  'Mems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\n' +
+  'Mems_allowed_list:\t0\n' +
+  'voluntary_ctxt_switches:\t5\n' +
+  'nonvoluntary_ctxt_switches:\t10\n'
+
+    at file:///root/.openclaw/workspace/projects/form/test/animation-os-isolation.test.mjs:32:71 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'Name:\t(node)\n' +
+    'Umask:\t0000\n' +
+    'State:\tR (running)\n' +
+    'Tgid:\t3954051\n' +
+    'Ngid:\t0\n' +
+    'Pid:\t3954051\n' +
+    'PPid:\t1\n' +
+    'TracerPid:\t0\n' +
+    'Uid:\t0\t0\t0\t0\n' +
+    'Gid:\t0\t0\t0\t0\n' +
+    'FDSize:\t256\n' +
+    'Groups:\t988 \n' +
+    'NStgid:\t3954051\n' +
+    'NSpid:\t3954051\n' +
+    'NSpgid:\t3954051\n' +
+    'NSsid:\t3954051\n' +
+    'VmPeak:\t  176516 kB\n' +
+    'VmSize:\t  176480 kB\n' +
+    'VmLck:\t       0 kB\n' +
+    'VmPin:\t       0 kB\n' +
+    'VmHWM:\t   10416 kB\n' +
+    'VmRSS:\t   10416 kB\n' +
+    'RssAnon:\t    5324 kB\n' +
+    'RssFile:\t    5092 kB\n' +
+    'RssShmem:\t       0 kB\n' +
+    'VmData:\t   28516 kB\n' +
+    'VmStk:\t    1036 kB\n' +
+    'VmExe:\t     896 kB\n' +
+    'VmLib:\t    9264 kB\n' +
+    'VmPTE:\t      96 kB\n' +
+    'VmSwap:\t       0 kB\n' +
+    'HugetlbPages:\t       0 kB\n' +
+    'CoreDumping:\t0\n' +
+    'THP_enabled:\t1\n' +
+    'Threads:\t1\n' +
+    'SigQ:\t0/95948\n' +
+    'SigPnd:\t0000000000000000\n' +
+    'ShdPnd:\t0000000000000000\n' +
+    'SigBlk:\t0000000000000000\n' +
+    'SigIgn:\t0000000000001000\n' +
+    'SigCgt:\t0000000100000000\n' +
+    'CapInh:\t0000000000000000\n' +
+    'CapPrm:\t000001ffffffffff\n' +
+    'CapEff:\t000001ffffffffff\n' +
+    'CapBnd:\t000001ffffffffff\n' +
+    'CapAmb:\t0000000000000000\n' +
+    'NoNewPrivs:\t0\n' +
+    'Seccomp:\t0\n' +
+    'Seccomp_filters:\t0\n' +
+    'Speculation_Store_Bypass:\tthread vulnerable\n' +
+    'SpeculationIndirectBranch:\tconditional enabled\n' +
+    'Cpus_allowed:\tff\n' +
+    'Cpus_allowed_list:\t0-7\n' +
+    'Mems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\n' +
+    'Mems_allowed_list:\t0\n' +
+    'voluntary_ctxt_switches:\t5\n' +
+    'nonvoluntary_ctxt_switches:\t10\n',
+  expected: /Uid:\s+0\s/,
+  operator: 'doesNotMatch',
+  diff: 'simple'
+}
+
+Node.js v24.22.2
