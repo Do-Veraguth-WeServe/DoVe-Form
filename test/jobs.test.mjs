@@ -26,7 +26,7 @@ let server = null;
 
 function startServer() {
   const proc = spawn('node', ['server.mjs'], {
-    cwd: root,
+    cwd: process.env.FORM_TEST_ROOT || root,
     env: {
       ...process.env, PORT,
       FORM3_DATA: dataDir, FORM3_MODELS: modelsFile,
@@ -77,10 +77,10 @@ function api(p, { method = 'GET', body } = {}) {
 // start a chat and consume its SSE until `until(event)` fires (or 'done');
 // returns { events, detach } where detach closes the connection like a
 // reload / tab close would.
-async function chatStream(text, { until = () => false, refineTarget } = {}) {
+async function chatStream(text, { until = () => false, refineTarget, mode = 'chat' } = {}) {
   const r = await api('/api/chat', {
     method: 'POST',
-    body: { version: 1, sessionId: convId, requestId: uid(), text, history: [], states: [], ...(refineTarget ? { refineTarget } : {}) }
+    body: { version: 1, mode, sessionId: convId, requestId: uid(), text, history: [], states: [], ...(refineTarget ? { refineTarget } : {}) }
   });
   assert.equal(r.status, 200, 'chat accepted');
   const reader = r.body.getReader();
@@ -113,8 +113,43 @@ async function chatStream(text, { until = () => false, refineTarget } = {}) {
   return {
     events,
     finished: pump(),
-    detach() { stopped = true; try { reader.cancel(); } catch {} }
+    detach() { stopped = true; void reader.cancel().catch(()=>{}); }
   };
+}
+// Exercise the real plan -> explicit approval -> durable build protocol.
+async function approvedBuild(text) {
+  const before = (await convs()).conversations.find(c => c.id === convId).messages.filter(m => m.render).length;
+  const plan = await chatStream(text, {mode:'plan'}); await plan.finished;
+  assert.ok(!plan.events.some(e => e.event === 'error'), 'planning succeeds');
+  const conversation = (await convs()).conversations.find(c => c.id === convId);
+  assert.equal(conversation.messages.filter(m => m.render).length, before, 'planning does not build');
+  const bp = conversation.blueprint;
+  assert.ok(bp?.ready && !bp.executedJobId, 'fresh unexecuted plan ready');
+  const stream = await api('/api/jobs/stream');
+  assert.equal(stream.status,200);
+  const reader=stream.body.getReader(), dec=new TextDecoder(), events=[];
+  let stopped=false;
+  const detach=()=>{stopped=true;void reader.cancel().catch(()=>{});};
+  const started=await api('/api/blueprints/execute',{method:'POST',body:{sessionId:convId,blueprintId:bp.id,revision:bp.revision}});
+  assert.equal(started.status,200,'explicit revision-bound approval accepted');
+  const {job}=await started.json();events.push({event:'element-job',data:{job}});
+  const finished=(async()=>{
+    let buf='';
+    try{while(!stopped){
+      const {done,value}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});let index;
+      while((index=buf.indexOf('\n\n'))!==-1){
+        const block=buf.slice(0,index);buf=buf.slice(index+2);
+        const lines=block.split('\n'),kind=lines.find(l=>l.startsWith('event:'))?.slice(6).trim();
+        const data=lines.filter(l=>l.startsWith('data:')).map(l=>l.slice(5).trim()).join('');
+        if(kind!=='job'||!data)continue;
+        const observed=JSON.parse(data);if(observed.id!==job.id)continue;
+        events.push({event:'element-job',data:{job:observed}});
+        if(observed.phase==='artifact')events.push({event:'artifact-start',data:{}});
+        if(['ready','failed','cancelled'].includes(observed.state))return;
+      }
+    }}finally{detach();}
+  })();
+  return {events,finished,detach};
 }
 const jobOf = events => events.find(e => e.event === 'element-job')?.data.job;
 const mockStats = async () => (await (await fetch(MOCK + '/admin/stats')).json());
@@ -151,6 +186,7 @@ test('setup: dedicated server, owner, model, conversation', async () => {
 test('(1) second chat answers while the FIRST provider response is still streaming', async () => {
   const first = await chatStream('erste antwort holdprose bitte');
   await waitFor(() => first.events.some(e => e.event === 'element-job'), 8000, 'element-job');
+  await waitFor(async()=>((await mockStats()).active.holdprose||0)>=1,8000,'first chat provider connected');
   const st0 = await mockStats();
   assert.ok((st0.active.holdprose || 0) >= 1, 'first provider connection is OPEN (held)');
   // the chat turn returned; a second message must be accepted AND answered now
@@ -176,7 +212,7 @@ test('(1) second chat answers while the FIRST provider response is still streami
 test('(2) closing the connection (tab close) does NOT abort the provider; result persists with zero subscribers', async () => {
   const callsBefore = (await mockStats()).calls.sitehold || 0;
   const discBefore = (await mockStats()).disconnects;
-  const s = await chatStream('baue ein element sitehold bitte', { until: d => d.job?.phase === 'artifact' || false });
+  const s = await approvedBuild('baue ein element sitehold bitte');
   // wait until the artifact phase is live (fence seen by the parser)
   await waitFor(async () => {
     const ev = s.events.find(e => e.event === 'element-job');
@@ -201,7 +237,7 @@ test('(2) closing the connection (tab close) does NOT abort the provider; result
 });
 
 test('(3) reload during the upstream stream: same job, completion lands exactly once', async () => {
-  const s = await chatStream('nochmal sitehold element bauen', { until: () => false });
+  const s = await approvedBuild('nochmal sitehold element bauen');
   await waitFor(() => s.events.some(e => e.event === 'element-job'), 8000, 'job created');
   const jobId = jobOf(s.events).id;
   // reload DURING the artifact stream: wait until the fence has been parsed
@@ -214,8 +250,7 @@ test('(3) reload during the upstream stream: same job, completion lands exactly 
   assert.equal(snap.id, jobId, 'SAME job id after reload');
   assert.equal(snap.phase, 'artifact', 'honest artifact phase restored');
   await release('sitehold');
-  const done = await waitFor(async () => (await jobById(jobId)) === null, 12000, 'job ready');
-  assert.ok(done === null || true);
+  await waitFor(async () => (await jobById(jobId)) === null, 12000, 'job ready');
   const list = await convs();
   const msgs = list.conversations[0].messages.filter(m => m.render?.name === 'Baustellen-Element');
   assert.equal(msgs.length, 2, 'both sitehold elements present, no duplicates from the reload');
@@ -226,6 +261,7 @@ test('(4) explicit cancel DOES abort the upstream provider call', async () => {
   const s = await chatStream('dieses holdprose element abbrechen');
   await waitFor(() => s.events.some(e => e.event === 'element-job'), 8000, 'job created');
   const job = jobOf(s.events);
+  await waitFor(async () => ((await mockStats()).active.holdprose || 0) >= 1, 8000, 'provider connected before cancel');
   const c = await api('/api/jobs/cancel', { method: 'POST', body: { jobId: job.id } });
   assert.equal(c.status, 200);
   s.detach();
@@ -244,18 +280,15 @@ test('(4) explicit cancel DOES abort the upstream provider call', async () => {
 });
 
 test('(5) reverse provider completion: two held jobs land on their own containers', async () => {
-  const a = await chatStream('erstes element holda');
+  const a = await approvedBuild('erstes element holda');
   await waitFor(() => a.events.some(e => e.event === 'element-job'), 8000, 'job A');
-  const b = await chatStream('zweites element holdb');
+  const b = await approvedBuild('zweites element holdb');
   await waitFor(() => b.events.some(e => e.event === 'element-job'), 8000, 'job B');
+  await waitFor(async () => {const st=await mockStats();return (st.active.holda||0)>=1&&(st.active.holdb||0)>=1;},8000,'both provider connections open');
   const st = await mockStats();
   assert.ok((st.active.holda || 0) >= 1 && (st.active.holdb || 0) >= 1, 'BOTH upstreams open concurrently (bounded parallel generation)');
   const jobA = jobOf(a.events), jobB = jobOf(b.events);
   assert.notEqual(jobA.id, jobB.id);
-  await waitFor(async () => {
-    const st = await mockStats();
-    return (st.active.holda || 0) >= 1 && (st.active.holdb || 0) >= 1;
-  }, 8000, 'both upstreams connected');
   await release('holdb'); // second finishes FIRST
   await waitFor(async () => (await jobById(jobB.id)) === null, 12000, 'B ready');
   const stMid = await mockStats();
@@ -272,7 +305,7 @@ test('(5) reverse provider completion: two held jobs land on their own container
 });
 
 test('deletion race: conversation deleted while the provider streams — nothing resurrects', async () => {
-  const s = await chatStream('sitehold im gleich geloeschten gespraech');
+  const s = await approvedBuild('sitehold im gleich geloeschten gespraech');
   await waitFor(() => s.events.some(e => e.event === 'element-job'), 8000, 'job created');
   s.detach();
   const del = await api('/api/conversations/' + convId, { method: 'DELETE' });
@@ -290,10 +323,10 @@ test('deletion race: conversation deleted while the provider streams — nothing
 
 test('server restart honestly fails running provider jobs; explicit retry MAY re-call the provider and then succeeds', async () => {
   const callsBefore = (await mockStats()).calls.sitehold || 0;
-  const s = await chatStream('sitehold ueber den neustart');
+  const s = await approvedBuild('sitehold ueber den neustart');
   await waitFor(() => s.events.some(e => e.event === 'element-job'), 8000, 'job created');
   const job = jobOf(s.events);
-  await waitFor(async () => ['building'].includes((await jobById(job.id))?.state), 8000, 'building');
+  await waitFor(async () => ((await mockStats()).calls.sitehold || 0) === callsBefore + 1, 8000, 'first provider connected before restart');
   s.detach();
   await stopServer();
   await sleep(500); // let the listener socket settle before rebinding
@@ -317,6 +350,19 @@ test('server restart honestly fails running provider jobs; explicit retry MAY re
   assert.equal(msg.render.name, 'Baustellen-Element');
 });
 
+test('approved build cancellation aborts the connected provider and never publishes', async()=>{
+  const before=(await mockStats()).disconnects;
+  const s=await approvedBuild('sitehold explicit build cancellation');
+  const job=jobOf(s.events);
+  await waitFor(async()=>((await jobById(job.id))?.phase==='artifact')&&((await mockStats()).active.sitehold||0)>=1,8000,'approved build upstream open');
+  assert.equal((await api('/api/jobs/cancel',{method:'POST',body:{jobId:job.id}})).status,200);
+  await s.finished;
+  await waitFor(async()=>(await mockStats()).disconnects>before,8000,'approved build upstream disconnected');
+  assert.equal((await jobById(job.id)).state,'cancelled');
+  assert.ok(!(await convs()).conversations.find(c=>c.id===convId).messages.find(m=>m.id===job.messageId).render);
+  assert.equal((await api('/api/jobs/retry',{method:'POST',body:{jobId:job.id}})).status,409);
+});
+
 test('ownership: a foreign user never sees or touches the job', async () => {
   const s = await chatStream('holdprose fremdzugriff');
   await waitFor(() => s.events.some(e => e.event === 'element-job'), 8000, 'job created');
@@ -327,15 +373,16 @@ test('ownership: a foreign user never sees or touches the job', async () => {
     body: JSON.stringify({ username: 'jobsstranger', password: 'password123456' })
   });
   assert.equal(r2.status, 200);
+  const strangerCsrf=(await r2.json()).csrf;
   const m2 = (r2.headers.get('set-cookie') || '').match(/form3sess=([^;]+)/);
   const stranger = 'form3sess=' + m2[1];
   const snap = await fetch(BASE + '/api/jobs', { headers: { Cookie: stranger } }).then(x => x.json());
   assert.ok(!snap.jobs.some(x => x.id === job.id), "stranger's snapshot lacks the owner's job");
   const cancel = await fetch(BASE + '/api/jobs/cancel', {
-    method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: stranger, 'X-Form-CSRF': 'x', Origin: BASE },
+    method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: stranger, 'X-Form-CSRF': strangerCsrf, Origin: BASE },
     body: JSON.stringify({ jobId: job.id })
   });
-  assert.ok([403, 404].includes(cancel.status), 'stranger cannot cancel');
+  assert.equal(cancel.status,404,'authenticated stranger with valid CSRF cannot cancel foreign job');
   await api('/api/jobs/cancel', { method: 'POST', body: { jobId: job.id } }); // cleanup
   s.detach();
 });

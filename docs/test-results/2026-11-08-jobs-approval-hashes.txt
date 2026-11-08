@@ -1,0 +1,4 @@
+8f9ccffb7eb1e1954205dd6243d035a2ae00dfc78a55b95ad473ad228310da0d  test/jobs.test.mjs
+095895063fb58a50bdcab33e7785ca2472543557f7f131e3bcd035191488710d  docs/test-results/2026-11-08-jobs-approval-before.txt
+3ebe4c6089a44baf0cfbae6eabeab2daaa817b7d6b08d279422a42c84d012cd2  docs/test-results/2026-11-08-jobs-approval-source.txt
+b47887b1eb6d53ce7119435c139bef9c80091999260f93407a262232fa92d7da  docs/test-results/2026-11-08-jobs-approval-deployed.txt

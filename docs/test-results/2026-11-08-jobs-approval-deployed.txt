@@ -1,0 +1,19 @@
+✔ setup: dedicated server, owner, model, conversation (980.142995ms)
+✔ (1) second chat answers while the FIRST provider response is still streaming (459.773888ms)
+✔ (2) closing the connection (tab close) does NOT abort the provider; result persists with zero subscribers (1514.706656ms)
+✔ (3) reload during the upstream stream: same job, completion lands exactly once (532.202439ms)
+✔ (4) explicit cancel DOES abort the upstream provider call (935.858569ms)
+✔ (5) reverse provider completion: two held jobs land on their own containers (2297.49735ms)
+✔ deletion race: conversation deleted while the provider streams — nothing resurrects (1679.753934ms)
+✔ server restart honestly fails running provider jobs; explicit retry MAY re-call the provider and then succeeds (1833.516727ms)
+✔ approved build cancellation aborts the connected provider and never publishes (563.354968ms)
+✔ ownership: a foreign user never sees or touches the job (226.846734ms)
+✔ teardown (17.260454ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11207.946335
