@@ -1,0 +1,10 @@
+✔ static CSS evidence is scoped, revision-bound, read-only and independent of stored counts (302.861687ms)
+✔ oversized CSS is explicitly unavailable; unchanged source hashes are deterministic (2.282393ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 654.181639

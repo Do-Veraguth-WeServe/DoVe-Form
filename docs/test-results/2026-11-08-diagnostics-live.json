@@ -1,0 +1,22 @@
+{
+  "commit": "f47b12d27b860d6252bf1625cc9208cea54938e1",
+  "rollback": "/opt/form/.rollback/20261108-static-diagnostics",
+  "files": {
+    "element-diagnostics.mjs": "fa684fcf3ede44866a28df5367f02d9e186f04f11363dafe7c15dbe2151fca45",
+    "element-context.mjs": "78100144f427faba0104fbbdd99cf2f9a13a3a4ee9885882702fb97d8d4f41c4",
+    "docs/form-diagnostics-findings.md": "61f2d335a704e114008b4a32db59e165b4612995d48d7b1805f6d11780ea1d68"
+  },
+  "appHash": "6a31c6582197b479db1593a6b0cef7bde3565156f27443e9f92e645a6670d7a1",
+  "checks": [
+    {
+      "base": "http://127.0.0.1:5177",
+      "health": 200,
+      "unchangedApp": "6a31c6582197b479db1593a6b0cef7bde3565156f27443e9f92e645a6670d7a1"
+    },
+    {
+      "base": "https://fhisling.tail11036c.ts.net:9444",
+      "health": 200,
+      "unchangedApp": "6a31c6582197b479db1593a6b0cef7bde3565156f27443e9f92e645a6670d7a1"
+    }
+  ]
+}
