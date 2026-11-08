@@ -545,6 +545,7 @@ function renderChip(){
 // Rotating a last-12 window on submit removes content above the viewport.
 const visibleStarts=new Map();
 let feedCache=new Map();
+let blueprintCache=null; // unchanged approval controls must survive job-driven renders
 function feedSignature(message,element){return JSON.stringify([message,element,pendingJobFor(message.id),pendingJobFor(element.id),marked,isPinned(element)]);}
 function render(){stopEntry();
   const previousViews=views;views=[];
@@ -638,7 +639,11 @@ function render(){stopEntry();
       if(signature)nextCache.set(key,{signature,message:m,element:entry.element,article,views:views.slice(viewStart)});
     }
   }
-  if(s?.blueprint)nodes.push(blueprintEl(s));
+  if(s?.blueprint){
+    const signature=JSON.stringify([me?.id,s.id,s.blueprint,models.map(m=>[m.id,m.label]),[...jobs.values()].some(j=>j.conversationId===s.id&&j.kind==='plan'&&ACTIVE_JOB.includes(j.state))]);
+    if(blueprintCache?.signature!==signature||!blueprintCache.node.isConnected)blueprintCache={signature,node:blueprintEl(s)};
+    nodes.push(blueprintCache.node);
+  }else blueprintCache=null;
   for(const [request,article] of liveTurns)if(request.conversationId===s?.id)nodes.push(article);
   // Keep retained iframes connected; detach/reinsert would reset their browsing contexts.
   const wanted=new Set(nodes);
@@ -1128,10 +1133,11 @@ function blueprintEl(s){
   const start=document.createElement('button');start.className='blueprint-execute';start.type='button';start.textContent=bp.executedJobId?'Plan gestartet':'Plan starten';
   start.disabled=!!bp.executedJobId||!bp.ready||questions.length>0||[...jobs.values()].some(j=>j.conversationId===s.id&&j.kind==='plan'&&ACTIVE_JOB.includes(j.state));
   start.onclick=async()=>{
+    if(start.disabled||db.current!==s.id||current()?.blueprint?.id!==bp.id||current()?.blueprint?.revision!==bp.revision)return;
     start.disabled=true;
     try{
       const r=await fetch('/api/blueprints/execute',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify({sessionId:s.id,blueprintId:bp.id,revision:bp.revision,model:buildModel.value})});const t=await r.json();if(!r.ok)throw Error(t.error);
-      fold.close();s.blueprint=t.blueprint;if(t.job)applyJob(t.job);const currentId=db.current;await loadFromServer();if(db.sessions.some(c=>c.id===currentId))db.current=currentId;renderPreservingScroll();
+      fold.close();const session=db.sessions.find(c=>c.id===s.id);if(session)session.blueprint=t.blueprint;if(t.job)applyJob(t.job);const currentId=db.current;await loadFromServer();if(db.sessions.some(c=>c.id===currentId))db.current=currentId;renderPreservingScroll();
     }catch(e){start.disabled=false;toast(e.message)}
   };
   const update=document.createElement('button');update.type='button';update.className='blueprint-update';update.textContent='Gespräch in Plan übernehmen';update.disabled=[...jobs.values()].some(j=>j.conversationId===s.id&&j.kind==='plan'&&ACTIVE_JOB.includes(j.state));update.onclick=async()=>{if(db.current!==s.id||update.disabled)return;update.disabled=true;try{await send($('#prompt').value.trim()||'Aktualisiere den Blueprint anhand unserer bisherigen Besprechung.','plan')}finally{if(update.isConnected)update.disabled=false;}};

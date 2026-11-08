@@ -1,0 +1,1 @@
+PASS desktop/mobile: model offer persisted on reload; no automatic planning/build; double click one plan; separate explicit build; old offer hidden after planning; sandbox ready; contextual targeted refinement on both viewports; global Plan absent.

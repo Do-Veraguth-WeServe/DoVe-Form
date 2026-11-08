@@ -11,7 +11,7 @@ const wait=async fn=>{for(let i=0;i<150;i++){if(await fn())return;await new Prom
 try{app=spawn('node',['server.mjs'],{cwd:process.env.FORM_TEST_ROOT||process.cwd(),env:{...process.env,PORT:'4796',FORM3_DATA:dir,FORM3_MODELS:path.join(dir,'models.json'),FORM3_JOB_CONCURRENCY:'1'},stdio:['ignore','pipe','inherit']});await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('startup')),10000);app.stdout.on('data',d=>{if(String(d).includes('ready')){clearTimeout(t);resolve()}})});
  await api(null,'/api/auth/register',{username:'dominik',password:PASS});const a=await login('dominik');for(const [username,role]of [['bob','user'],['helper','admin'],['carol','user']])assert.equal((await api(a,'/api/admin/users',{username,password:PASS,role})).status,200);let b=await login('bob'),admin=await login('helper');
  const list=async user=>(await(await api(user,'/api/forms')).json()).forms;const af=await list(a),bf=await list(b);assert.equal(af.length,6);assert.equal(bf.length,6);assert.ok(!bf.some(f=>af.some(x=>x.id===f.id)));assert.equal((await api(b,'/api/forms/save',{...af[0],name:'Hack'})).status,400);assert.equal((await api(b,'/api/forms/remove',{id:af[0].id})).status,400);assert.equal((await api(b,'/api/admin/users/action',{id:a.user.id,action:'delete',confirm:'dominik'})).status,403);assert.equal((await api(admin,'/api/admin/users/action',{id:a.user.id,action:'reset',password:'newpassword'})).status,403);
- browser=await chromium.launch({executablePath:'/root/.cache/puppeteer/chrome/linux-153.0.8010.36/chrome-linux64/chrome',headless:true,args:['--no-sandbox']});const p=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];p.on('pageerror',e=>errors.push(e.message));await p.goto(BASE);await p.locator('#loginform [name=username]').fill('dominik');await p.locator('#loginform [name=password]').fill(PASS);await p.locator('#loginform button').click();await p.locator('#login[open]').waitFor({state:'detached'});await p.locator('.session-open[aria-current=true]').waitFor();await p.waitForFunction(()=>!document.querySelector('#send').disabled);
+ browser=await chromium.launch({executablePath:'/root/.cache/puppeteer/chrome/linux-153.0.8010.36/chrome-linux64/chrome',headless:true,args:['--no-sandbox']});const p=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];p.on('pageerror',e=>errors.push(e.message));await p.addInitScript(()=>{const Native=window.EventSource;window.EventSource=class extends Native{constructor(...args){super(...args);if(String(args[0]).includes('/api/jobs/stream'))window.fixtureStream=this;}}});await p.goto(BASE);await p.locator('#loginform [name=username]').fill('dominik');await p.locator('#loginform [name=password]').fill(PASS);await p.locator('#loginform button').click();await p.locator('#login[open]').waitFor({state:'detached'});await p.locator('.session-open[aria-current=true]').waitFor();await p.waitForFunction(()=>!document.querySelector('#send').disabled);
 
  for(const width of [1280,390]){
  await p.setViewportSize({width,height:844});assert.equal(await p.locator('#planbtn').count(),0);
@@ -24,10 +24,25 @@ try{app=spawn('node',['server.mjs'],{cwd:process.env.FORM_TEST_ROOT||process.cwd
  await p.locator('.planning-offer-start').dblclick();await p.locator('.blueprint-execute:not([disabled])').waitFor({state:'attached'});
  assert.equal(plans,beforePlans+1);assert.equal(builds,beforeBuilds);assert.equal(await p.locator('.planning-offer-start').count(),0);
  if(await p.locator('.blueprint-toggle').getAttribute('aria-expanded')==='false')await p.locator('.blueprint-toggle').click();
- await p.locator('.blueprint-execute').click();await p.locator('iframe.render[data-ready=true]').waitFor();assert.equal(builds,beforeBuilds+1);
+ // A concurrent job update between pointer-down and pointer-up must not eat approval.
+ await p.waitForFunction(()=>document.querySelector('.blueprint-body').getAnimations().length===0);
+ const start=await p.locator('.blueprint-execute').elementHandle();await start.scrollIntoViewIfNeeded();
+ const point=await start.boundingBox();await p.mouse.move(point.x+point.width/2,point.y+point.height/2);await p.mouse.down();
+ const sid=await p.locator('.session-open[aria-current=true]').locator('..').getAttribute('data-sid');
+ await p.evaluate(sid=>window.fixtureStream.dispatchEvent(new MessageEvent('job',{data:JSON.stringify({id:'fixture-completed-chat-'+sid,conversationId:sid,kind:'chat',state:'failed',rev:1})})),sid);
+ assert.equal(await start.evaluate(e=>e.isConnected),true,'unchanged Blueprint survives concurrent job rendering');
+ await p.locator('.blueprint').screenshot({path:'docs/screenshots/blueprint-click-'+width+'.png'});
+ await p.mouse.up();await p.locator('iframe.render[data-ready=true]').waitFor();assert.equal(builds,beforeBuilds+1);
  await p.getByRole('button',{name:'Element markieren: Eigene Karte',exact:true}).click();await p.locator('#prompt').fill('Lass uns die Karte verbessern.');await p.locator('#prompt').press('Enter');await p.locator('.planning-offer-start').waitFor();await p.waitForFunction(()=>!document.querySelector('.live'));
  await p.locator('.planning-offer-start').dblclick();await p.locator('.blueprint-execute:not([disabled])').waitFor({state:'attached'});assert.equal(plans,beforePlans+2);assert.equal(builds,beforeBuilds+1);
  const snapshot=await(await api(a,'/api/conversations')).json();const currentId=await p.locator('.session-open[aria-current=true]').locator('..').getAttribute('data-sid');const selected=snapshot.conversations.find(c=>c.id===currentId&&c.blueprint?.targetMessageId);assert.ok(selected?.messages.some(m=>m.id===selected.blueprint.targetMessageId&&m.render),'guided refinement retains target');
+ const prior=await p.locator('.blueprint-execute').elementHandle();
+ const planning={id:'fixture-active-plan-'+width,conversationId:currentId,kind:'plan',state:'building',rev:1};
+ await p.evaluate(job=>window.fixtureStream.dispatchEvent(new MessageEvent('job',{data:JSON.stringify(job)})),planning);
+ assert.equal(await prior.evaluate(e=>e.isConnected),false,'active planning invalidates approval controls');
+ assert.equal(await p.locator('.blueprint-execute').isDisabled(),true);
+ await p.evaluate(job=>window.fixtureStream.dispatchEvent(new MessageEvent('job',{data:JSON.stringify({...job,state:'failed',rev:2})})),planning);
+ assert.equal(await p.locator('.blueprint-execute').isEnabled(),true);
  }
- assert.deepEqual(errors,[]);console.log('PASS desktop/mobile: model offer persisted on reload; no automatic planning/build; double click one plan; separate explicit build; old offer hidden after planning; sandbox ready; contextual targeted refinement on both viewports; global Plan absent.');
+ assert.deepEqual(errors,[]);console.log('PASS desktop/mobile: pointer approval survives concurrent job event; active planning invalidates/disables stale controls; model offer persisted on reload; no automatic planning/build; double click one plan; separate explicit build; old offer hidden after planning; sandbox ready; contextual targeted refinement on both viewports; global Plan absent.');
 }finally{release?.();await browser?.close();if(app){app.kill();await new Promise(r=>app.exitCode!==null?r():app.once('exit',r))}mock.closeAllConnections();await new Promise(r=>mock.close(r));fs.rmSync(dir,{recursive:true,force:true});}
