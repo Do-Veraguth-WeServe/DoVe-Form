@@ -1,0 +1,61 @@
+PASS wrong password rejected
+PASS registration and model-free composer gate
+PASS current settings navigation, model add, masked key and Escape
+PASS two visible prose stages before structured chat offer
+PASS ordinary imperative chat cannot build
+PASS explicit approval and real held build before artifact
+PASS real server persistence and reload without duplicate build
+PASS 390px interaction and persisted reload
+PASS prose-only 1280: no build, no live iframe remount, unchanged persisted Element and reload
+PASS prose-only 390: no build, no live iframe remount, unchanged persisted Element and reload
+PASS explicit Stop 1280: upstream aborted, durable cancellation, static reduced motion, Element preserved
+PASS explicit Stop 390: upstream aborted, durable cancellation, static reduced motion, Element preserved
+PASS approved correction correct: exactly two rounds, durable mobile reload, honest terminal state
+PASS approved correction fail: exactly two rounds, durable mobile reload, honest terminal state
+PASS fresh device 1280: all conversations, exact saved messages and functioning Element
+PASS logout/relogin 1280: revoked cookie, independent session retained, data restored without generation
+PASS fresh device 390: all conversations, exact saved messages and functioning Element
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator('#preferencesbtn')
+    - locator resolved to <button id="preferencesbtn">Einstellungen</button>
+  - attempting click action
+    2 × waiting for element to be visible, enabled and stable
+      - element is not visible
+    - retrying click action
+    - waiting 20ms
+    2 × waiting for element to be visible, enabled and stable
+      - element is not visible
+    - retrying click action
+      - waiting 100ms
+    58 × waiting for element to be visible, enabled and stable
+       - element is not visible
+     - retrying click action
+       - waiting 500ms
+
+    at /root/.openclaw/workspace/projects/form/test/browser-core.test.mjs:191:42 {
+  log: [
+    "  - waiting for locator('#preferencesbtn')",
+    '    - locator resolved to <button id="preferencesbtn">Einstellungen</button>',
+    '  - attempting click action',
+    '    2 × waiting for element to be visible, enabled and stable',
+    '      - element is not visible',
+    '    - retrying click action',
+    '    - waiting 20ms',
+    '    2 × waiting for element to be visible, enabled and stable',
+    '      - element is not visible',
+    '    - retrying click action',
+    '      - waiting 100ms',
+    '    58 × waiting for element to be visible, enabled and stable',
+    '       - element is not visible',
+    '     - retrying click action',
+    '       - waiting 500ms'
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.22.2

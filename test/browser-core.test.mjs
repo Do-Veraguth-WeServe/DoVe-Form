@@ -152,5 +152,52 @@ try{
   else{await p.locator('.site').filter({hasText:'Bau fehlgeschlagen'}).waitFor();assert.equal(await p.locator('iframe.render').count(),0);await p.reload();await p.locator('.site').filter({hasText:'Bau fehlgeschlagen'}).waitFor();assert.equal(correctionAttempts,2);assert.equal(await p.locator('iframe.render').count(),0);}
   check('approved correction '+outcome+': exactly two rounds, durable mobile reload, honest terminal state');
  }
- assert.deepEqual(errors,[]);console.log('PASS browser-core: 14 checks; source='+root);
+ // Legacy sections 10/12: fresh device and logout use current settings navigation.
+ const canonical=await api('/api/conversations');
+ const original=canonical.conversations.find(c=>c.messages.some(m=>m.render?.state?.value===9));
+ assert.ok(original);assert.ok(canonical.conversations.length>=3);
+ const expectedIds=canonical.conversations.map(c=>c.id).sort();
+ const counts={builds,plans,chats};
+ for(const width of [1280,390]){
+  const fresh=await browser.newContext({viewport:{width,height:844},reducedMotion:'reduce'});
+  try{
+   assert.deepEqual(await fresh.cookies(),[]);
+   const page=await fresh.newPage();page.on('pageerror',e=>errors.push(e.message));
+   await page.goto(base);await page.locator('#login[open]').waitFor();
+   assert.equal(await page.evaluate(()=>localStorage.length),0,'fresh device has no cached account data');
+   assert.equal((await fresh.request.get(base+'/api/conversations')).status(),401);
+   const login=async()=>{
+    await page.locator('#loginform [name=username]').fill('coreowner');
+    await page.locator('#loginform [name=password]').fill('password123');
+    await page.locator('#loginform button').last().click();
+    await page.locator('#login[open]').waitFor({state:'detached'});
+    await page.locator('#sessions .session-open').first().waitFor({state:'attached'});
+   };
+   const verify=async()=>{
+    const restored=await (await fresh.request.get(base+'/api/conversations')).json();
+    assert.deepEqual(restored.conversations.map(c=>c.id).sort(),expectedIds);
+    assert.deepEqual(restored.conversations.find(c=>c.id===original.id).messages,original.messages);
+    assert.deepEqual((await page.locator('.session-row').evaluateAll(rows=>rows.map(r=>r.dataset.sid))).sort(),expectedIds);
+    if(width===390)await page.locator('#mobile').click();
+    await page.locator('.session-row[data-sid="'+original.id+'"] .session-open').click();
+    await page.frameLocator('iframe.render').locator('#out').filter({hasText:'Wert: 9'}).waitFor();
+    assert.equal(await page.frameLocator('iframe.render').locator('#amt').inputValue(),'9');
+    assert.equal(await page.locator('iframe.render').count(),1);
+    assert.deepEqual({builds,plans,chats},counts,'login does not generate or rebuild');
+   };
+   await login();await verify();check('fresh device '+width+': all conversations, exact saved messages and functioning Element');
+   const oldCookies=await fresh.cookies(base);
+   assert.ok(oldCookies.length>0);
+   if(width===390)await page.locator('#mobile').click();
+   await page.locator('#preferencesbtn').click();await page.locator('#logout').click();
+   await page.locator('#login[open]').waitFor();
+   assert.equal((await fresh.request.get(base+'/api/conversations')).status(),401);
+   const replay=await fetch(base+'/api/conversations',{headers:{Cookie:oldCookies.map(c=>c.name+'='+c.value).join('; ')}});
+   assert.equal(replay.status,401,'logged-out session cookie is revoked server-side');
+   assert.equal((await context.request.get(base+'/api/conversations')).status(),200,'other device remains authenticated');
+   await login();await verify();
+   check('logout/relogin '+width+': revoked cookie, independent session retained, data restored without generation');
+  }finally{await fresh.close()}
+ }
+ assert.deepEqual(errors,[]);console.log('PASS browser-core: 18 checks; source='+root);
 }finally{releaseProse?.();releaseCorrection?.();releaseFirst?.();releaseArtifact?.();releaseBuild?.();await browser?.close();if(app&&app.exitCode===null){app.kill('SIGTERM');await once(app,'exit')}mock.closeAllConnections();await new Promise(r=>mock.close(r));fs.rmSync(dir,{recursive:true,force:true});}
