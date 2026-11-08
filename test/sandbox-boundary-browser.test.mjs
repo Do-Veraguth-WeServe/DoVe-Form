@@ -48,7 +48,17 @@ try{
   assert.equal(statuses[0],403);assert.equal(statuses[1],404);assert.ok(!statuses[2].includes(key));assert.match(statuses[2],/Synthetic only/);
   assert.equal(submits.length,1,'only explicit CSRF probe, no suggestion submission');assert.equal(store.db.prepare('SELECT count(*) n FROM jobs WHERE conversation_id=?').get(conv.id).n,0);
   await p.waitForFunction(async id=>{const d=await(await fetch('/api/conversations')).json();return d.conversations?.some(s=>s.messages?.some(m=>m.id===id&&m.render?.state?.amount===7))},mid);
-  await p.getByRole('button',{name:'Element öffnen',exact:true}).focus();await p.keyboard.press('Enter');
+  const open=p.getByRole('button',{name:'Element öffnen',exact:true});
+  // Keep automatic-scroll reproduction available; normal path waits for compositing.
+  await p.evaluate(()=>{window.__boundaryClicks=[];document.addEventListener('click',e=>window.__boundaryClicks.push(e.target.closest('button')?.getAttribute('title')||e.target.tagName),true)});
+  if(process.env.FORM_BOUNDARY_AUTOCLICK!=='1'){
+    await open.scrollIntoViewIfNeeded();
+    await p.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  }
+  await open.click();
+  const pointerClicks=await p.evaluate(()=>window.__boundaryClicks);
+  console.log('overlay pointer trace',width,JSON.stringify(pointerClicks));
+  assert.equal(pointerClicks.length,1,'exactly one pointer click reaches the parent document');
   await p.frameLocator('#overlay iframe.render').locator('#dyn3 rect').waitFor({state:'attached',timeout:5000});
   await p.locator('#overlay .notice.error').filter({hasText:'ui.value'}).waitFor();
   await p.locator('#overlay').screenshot({path:'docs/screenshots/boundary-error-'+width+'.png'});

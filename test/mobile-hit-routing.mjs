@@ -4,8 +4,8 @@ import {chromium} from 'playwright-core';
 const browser=await chromium.launch({executablePath:'/root/.cache/puppeteer/chrome/linux-153.0.8010.36/chrome-linux64/chrome',headless:true,args:['--no-sandbox']});
 const results=[];
 try {
- for(const mode of ['automatic','settled','wheel']) {
-  const page=await browser.newPage({viewport:{width:390,height:844},hasTouch:true});
+ for(const width of [1280,390]) for(const mode of ['automatic','settled','wheel']) {
+  const page=await browser.newPage({viewport:{width,height:844},hasTouch:width===390});
   await page.addInitScript(()=>{window.inputs=[];document.addEventListener('click',e=>window.inputs.push({target:e.target.tagName,x:e.clientX,y:e.clientY}),true);});
   await page.goto('data:text/html,'+encodeURIComponent('<style>body{margin:0}#feed{margin-top:100px;height:450px;overflow:auto}button{display:block;height:32px;margin-left:160px}iframe{display:block;width:350px;height:200px;border:0;margin-left:20px}</style><div id="feed"><div style="height:42px"></div><button>Open</button><iframe sandbox="allow-scripts" srcdoc="<html><body>synthetic frame</body></html>"></iframe><div style="height:371px"></div></div>'));
   await page.locator('iframe').waitFor();
@@ -18,11 +18,14 @@ try {
   await button.click();
   const parent=await page.evaluate(()=>window.inputs);
   const frames=[];for(const f of page.frames().slice(1))frames.push(await f.evaluate(()=>window.inputs||[]));
-  results.push({mode,before,after:await button.boundingBox(),parent,frames,opened:parent.some(e=>e.target==='BUTTON')});
+  results.push({width,mode,before,after:await button.boundingBox(),parent,frames,opened:parent.some(e=>e.target==='BUTTON')});
   await page.close();
  }
  console.log(JSON.stringify({browser:browser.version(),results},null,2));
- assert.ok(results.find(r=>r.mode==='settled').opened,'settled explicit scroll routes one click');
- assert.ok(results.find(r=>r.mode==='wheel').opened,'user wheel scroll routes one click');
+ for(const width of [1280,390]) for(const mode of ['settled','wheel']) {
+  const result=results.find(r=>r.width===width&&r.mode===mode);
+  assert.equal(result.parent.filter(e=>e.target==='BUTTON').length,1,`${width} ${mode} routes exactly one click`);
+  assert.ok(result.frames.every(events=>events.length===0),'no click misrouted to iframe');
+ }
  // Automatic result is evidence, not a required failure: browser fixes may change it.
 } finally {await browser.close();}
