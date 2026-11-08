@@ -1,0 +1,24 @@
+PASS wrong password rejected
+PASS registration and model-free composer gate
+PASS current settings navigation, model add, masked key and Escape
+PASS two visible prose stages before structured chat offer
+PASS ordinary imperative chat cannot build
+PASS explicit approval and real held build before artifact
+PASS real server persistence and reload without duplicate build
+PASS 390px interaction and persisted reload
+PASS prose-only 1280: no build, no live iframe remount, unchanged persisted Element and reload
+PASS prose-only 390: no build, no live iframe remount, unchanged persisted Element and reload
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.waitFor: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator('.live .site') to be visible
+
+    at /root/.openclaw/workspace/projects/form/test/browser-core.test.mjs:109:34 {
+  log: [ "  - waiting for locator('.live .site') to be visible" ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.22.2

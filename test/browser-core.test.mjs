@@ -13,6 +13,7 @@ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'form-browser-core-'));
 const base='http://127.0.0.1:4826',key='fixture-only-key-1234567890';
 let app,browser,builds=0,plans=0,chats=0,releaseFirst,releaseArtifact,releaseBuild;
 let correctionMode=null,correctionAttempts=0,releaseCorrection,proseOnly=false,releaseProse;
+let holdChat=false,heldChats=0,closedChats=0,signalHeld,signalClosed;
 let signalBuild;const buildStarted=new Promise(resolve=>{signalBuild=resolve});
 const artifact={version:1,name:'Core-Regler',html:'<label for="amt">Wert</label><input id="amt" type="number"><p id="out"></p>',css:'p{color:#d4ef8b}',js:'ui.value("amt",String(state.value));function draw(){ui.text("out","Wert: "+state.value)}ui.on("amt","input",e=>{state.value=Number(e.value);draw();ui.persist()});draw();',state:{value:3}};
 const mock=http.createServer(async(req,res)=>{
@@ -21,6 +22,7 @@ const mock=http.createServer(async(req,res)=>{
  const put=t=>res.write('data: '+JSON.stringify({choices:[{delta:{content:t}}]})+'\n\n');
  const system=d.messages[0].content;
  if(system.includes('fast conversational planner')){plans++;put('<reply>Wir planen den Regler.</reply><title>Regler</title><summary>Ein Regler mit gespeichertem Zahlenwert.</summary><questions></questions><ready>true</ready>');}
+ else if(system.includes('warm, concise conversational')&&holdChat){chats++;heldChats++;signalHeld?.();await new Promise(r=>res.once('close',()=>{heldChats--;closedChats++;signalClosed?.();r()}));return;}
  else if(system.includes('warm, concise conversational')&&proseOnly){chats++;put('Ein VPN ist ein Virtual Private Network. ');await new Promise(r=>{releaseProse=r;res.once('close',r)});if(res.destroyed)return;put('Es verschlüsselt die Verbindung zum VPN-Anbieter.');}
  else if(system.includes('warm, concise conversational')&&correctionMode){chats++;put('Wir besprechen den nächsten Regler. '+JSON.stringify({forms:[],planningOffer:{title:'Regler'}}));}
  else if(system.includes('warm, concise conversational')){chats++;put('Erster sichtbarer Abschnitt. ');await new Promise(r=>{releaseFirst=r;res.once('close',r)});if(res.destroyed)return;put('Zweiter sichtbarer Abschnitt. ');await new Promise(r=>{releaseArtifact=r;res.once('close',r)});if(res.destroyed)return;put(JSON.stringify({forms:[],planningOffer:{title:'Regler'}}));}
@@ -87,6 +89,48 @@ try{
   check('prose-only '+width+': no build, no live iframe remount, unchanged persisted Element and reload');
  }
  proseOnly=false;
+ // Legacy section 7: explicit Stop aborts a genuinely open provider connection.
+ // No sleeps or mock release can masquerade as server cancellation.
+ for(const width of [1280,390]){
+  await p.setViewportSize({width,height:844});holdChat=true;
+  const before=await api('/api/conversations'),beforeJobs=await api('/api/jobs');
+  const owner=before.conversations.find(c=>c.messages.some(m=>m.render?.name==='Core-Regler'));
+  const element=owner.messages.find(m=>m.render?.name==='Core-Regler');
+  const frame=await p.locator('iframe.render').elementHandle();
+  const oldIds=beforeJobs.jobs.map(j=>j.id),closedBefore=closedChats,chatBefore=chats;
+  const held=new Promise(r=>{signalHeld=r});
+  await p.locator('#prompt').fill('Bitte warte auf meine nächste Nachricht');await p.locator('#prompt').press('Enter');
+  await Promise.race([held,new Promise((_,reject)=>{const t=setTimeout(()=>reject(Error('held chat upstream not reached')),10000);t.unref()})]);
+  await p.locator('#stop').waitFor({state:'visible'});
+  assert.equal(heldChats,1);assert.equal(closedChats,closedBefore);
+  assert.equal(await frame.evaluate(el=>el.isConnected),true,'held chat retains the original Element');
+  const pending=(await api('/api/jobs')).jobs.filter(j=>!oldIds.includes(j.id));assert.equal(pending.length,1);const jobId=pending[0].id;
+  assert.equal(pending[0].kind,'chat');assert.equal(pending[0].state,'building');
+  // Reduced-motion activity must not move, while retaining an honest live status.
+  await p.locator('.activity[data-phase=thinking]').waitFor();
+  assert.equal(await p.locator('.activity').count(),1);assert.equal(await p.locator('.site').count(),0);
+  assert.equal(await p.locator('.activity').evaluate(el=>el.getAnimations({subtree:true}).filter(a=>a.playState==='running').length),0);
+  const closed=new Promise(r=>{signalClosed=r});
+  await p.locator('#stop').click();await p.locator('#stop').waitFor({state:'hidden'});
+  await Promise.race([closed,new Promise((_,reject)=>{const t=setTimeout(()=>reject(Error('Stop did not abort upstream')),5000);t.unref()})]);
+  await p.waitForFunction(async id=>{const d=await(await fetch('/api/jobs')).json();return d.jobs.some(j=>j.id===id&&j.state==='cancelled')},jobId);
+  // A fulfilled browser wait does not prove provider abort; observe the server-side socket too.
+  assert.equal(heldChats,0);assert.equal(closedChats,closedBefore+1);assert.equal(chats,chatBefore+1);
+  assert.equal(await p.locator('#send').isVisible(),true);assert.equal(await p.locator('#send').isDisabled(),false);
+  // Stop performs canonical server recovery: old callbacks must not retain stale message objects.
+  await p.waitForFunction(()=>!document.querySelector('.live'));
+  assert.equal(await frame.evaluate(el=>el.isConnected),false,'canonical recovery deliberately replaces old snapshot');
+  assert.equal(await p.locator('iframe.render').count(),1);
+  await p.frameLocator('iframe.render').locator('#out').filter({hasText:'Wert: 9'}).waitFor();
+  assert.equal(builds,1);assert.equal(plans,1);
+  const after=(await api('/api/conversations')).conversations.find(c=>c.id===owner.id);
+  assert.deepEqual(after.messages.find(m=>m.id===element.id),element);
+  await p.reload();await p.frameLocator('iframe.render').locator('#out').filter({hasText:'Wert: 9'}).waitFor();
+  assert.equal((await api('/api/jobs')).jobs.find(j=>j.id===jobId).state,'cancelled');
+  assert.equal(heldChats,0);assert.equal(chats,chatBefore+1);assert.equal(await p.locator('#stop').isVisible(),false);
+  check('explicit Stop '+width+': upstream aborted, durable cancellation, static reduced motion, Element preserved');
+ }
+ holdChat=false;
  // Migrated legacy section 5: correction belongs to an explicitly approved durable build,
  // never to ordinary chat. Hold round two so UI/reload assertions are deterministic.
  for(const outcome of ['correct','fail']){
@@ -108,5 +152,5 @@ try{
   else{await p.locator('.site').filter({hasText:'Bau fehlgeschlagen'}).waitFor();assert.equal(await p.locator('iframe.render').count(),0);await p.reload();await p.locator('.site').filter({hasText:'Bau fehlgeschlagen'}).waitFor();assert.equal(correctionAttempts,2);assert.equal(await p.locator('iframe.render').count(),0);}
   check('approved correction '+outcome+': exactly two rounds, durable mobile reload, honest terminal state');
  }
- assert.deepEqual(errors,[]);console.log('PASS browser-core: 12 checks; source='+root);
+ assert.deepEqual(errors,[]);console.log('PASS browser-core: 14 checks; source='+root);
 }finally{releaseProse?.();releaseCorrection?.();releaseFirst?.();releaseArtifact?.();releaseBuild?.();await browser?.close();if(app&&app.exitCode===null){app.kill('SIGTERM');await once(app,'exit')}mock.closeAllConnections();await new Promise(r=>mock.close(r));fs.rmSync(dir,{recursive:true,force:true});}
