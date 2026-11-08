@@ -1,0 +1,12 @@
+[Unit]
+Description=Form isolated animation verification admission
+[Socket]
+ListenStream=/run/form-verifier.sock
+SocketUser=form
+SocketGroup=form
+SocketMode=0600
+Accept=yes
+MaxConnections=2
+Backlog=2
+[Install]
+WantedBy=sockets.target

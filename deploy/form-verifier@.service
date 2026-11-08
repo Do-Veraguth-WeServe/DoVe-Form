@@ -1,0 +1,32 @@
+[Unit]
+Description=Form one-shot isolated browser verifier
+[Service]
+Type=exec
+User=form-verifier
+Group=form-verifier
+WorkingDirectory=/opt/form-verifier
+ExecStart=/usr/bin/node /opt/form-verifier/animation-verifier-worker.mjs
+StandardInput=socket
+StandardOutput=socket
+StandardError=null
+RuntimeMaxSec=35
+TimeoutStopSec=1
+KillMode=control-group
+MemoryMax=1G
+MemorySwapMax=0
+TasksMax=256
+CPUQuota=100%
+LimitNOFILE=1024
+PrivateNetwork=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+InaccessiblePaths=/opt/form
+PrivateDevices=yes
+NoNewPrivileges=yes
+RestrictSUIDSGID=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+CapabilityBoundingSet=
+UMask=0077

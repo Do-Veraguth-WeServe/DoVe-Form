@@ -1,0 +1,36 @@
+✔ new missing and mismatched declarations rejected; stored legacy still loads (4.770001ms)
+✔ bounded numeric versioned animation schema (5.111457ms)
+✔ old artifact remains valid, invalid animation rejected at contract (5.140163ms)
+✔ bounded private verifier protocol (74.921984ms)
+✔ new output rejects every reported unsupported variation, existing artifacts remain readable and unchanged (19.971915ms)
+✔ real SSE generation corrects unsupported CSS exactly once with policy evidence (127.364978ms)
+✔ second unsupported output fails honestly with no render and no third attempt (15.668724ms)
+[job] id=e3c9b130 failed after 2 round(s): invalid-artifact
+[job] id=069f4175 user=d661c386 kind=refine dur=24ms rounds=2 finish=stop/stop chars=323 render=yes fail=invalid-artifact
+✔ persisted failed refinement preserves original; corrected build becomes ready (293.76847ms)
+✔ supported output stays one round (9.208186ms)
+✔ clean round: prose parsed, finish_reason stop, actual content captured (no SSE envelopes) (85.255055ms)
+✔ finish_reason=length sets truncated; unterminated artifact reported as invalid (15.183205ms)
+✔ malformed SSE frames are ignored, valid frames still parsed (6.288054ms)
+✔ explicit provider error frame throws ProviderError (distinct from malformed frames) (6.081451ms)
+✔ final unterminated SSE line is parsed (5.163235ms)
+✔ UTF-8 multibyte char split across reads is reassembled (4.928436ms)
+✔ upstream 401 becomes ProviderError with status (permanent, caller must not retry) (5.301999ms)
+✔ content cap (accumulated deltas) throws SizeError (4.105479ms)
+✔ transport cap (raw SSE bytes) throws SizeError even with tiny visible content (5.71779ms)
+✔ round deadline expiry maps to abortKind timeout (311.378578ms)
+[provider] retry empty interrupted stream code=ECONNRESET
+[provider] retry empty interrupted stream code=ECONNRESET
+✔ external abort maps to abortKind external, not timeout (154.062931ms)
+✔ already-expired deadline fails fast with timeout kind (1.222096ms)
+✔ job generation has no default or zero-configured deadline (7.695564ms)
+✔ empty ECONNRESET retries once and completes, permanent reset stays bounded (2.915083ms)
+✔ connection reset after visible prose is not replayed (22.30994ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4083.942821

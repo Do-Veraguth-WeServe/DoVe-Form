@@ -24,6 +24,8 @@
 // discard stale events and reconcile gaplessly via snapshot + event stream.
 
 import crypto from 'node:crypto';
+import {initAnimationEvidence,saveAnimationEvidence} from './animation-evidence.mjs';
+import {animationPrompt} from './animation-policy.mjs';
 import {cssCapabilityPrompt} from './css-policy.mjs';
 import {parsePlan} from './blueprints.mjs';
 import {parseChat} from './forms.mjs';
@@ -74,7 +76,7 @@ export async function executeTurn(model, messages, opts, emit) {
       ? 'Your previous answer was cut off by the output token limit before it completed (the JSON artifact is truncated). Answer again, much more compact: FIRST a short prose answer, THEN exactly ONE fenced ```json artifact {"version":1,"html","css","js","state"} — valid JSON, well under 10KB, minimal HTML/CSS/JS, no truncation, ids matching between html and js.'
       : 'Your previous answer contained an invalid JSON artifact (' + (round1.error || 'parse error') + '). Answer again in the same language: FIRST a short prose answer, THEN exactly ONE corrected fenced ```json artifact {"version":1,"html","css","js","state"}. The JSON must be valid (no trailing commas, no comments, no truncation), under 20KB total, with ids matching between html and js.';
     // Provider diagnostics are capped; attach the trusted policy separately, not source CSS.
-    corrective += '\n' + cssCapabilityPrompt;
+    corrective += '\n' + cssCapabilityPrompt + '\n' + animationPrompt + '\nDeclared animations must execute with unique existing targets in the sanitized DOM. Startup must handle unavailable isolated data/actions without throwing. Browser smoke verification is mandatory; do not claim visual-intent certification.';
     round2 = await runRound(model,
       [...messages, { role: 'assistant', content: prev }, { role: 'user', content: corrective }],
       roundOpts, wrapProse, onArtifactStart);
@@ -89,6 +91,7 @@ export async function executeTurn(model, messages, opts, emit) {
   }
   return {
     render: finalRender || null,
+    animationEvidence: (round2 || round1).animationEvidence || null,
     prose: liveProse.slice(0, 8000),
     failure, failureCode,
     rounds: failureCode ? 2 : 1,
@@ -178,6 +181,7 @@ export class JobRunner {
   }
 
   async run(jobId) {
+    initAnimationEvidence(this.store.db);
     const ctrl = new AbortController();
     this.active.set(jobId, { ctrl, userId: null });
     try {
@@ -283,6 +287,7 @@ export class JobRunner {
       }
 
       const done = this.store.completeJob(jobId, j => {
+        saveAnimationEvidence(this.store.db,j,result.render,result.animationEvidence);
         if (j.kind === 'refine') {
           // original element stays untouched on failure — the job's failed
           // state (with retry) carries the error; no error onto the element

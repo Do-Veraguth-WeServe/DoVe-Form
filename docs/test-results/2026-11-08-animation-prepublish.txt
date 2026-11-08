@@ -1,0 +1,12 @@
+[job] id=f136f705 failed after 2 round(s): invalid-artifact
+[job] id=06db140c user=70c9bdff kind=refine dur=11355ms rounds=2 finish=stop/stop chars=483 render=yes fail=invalid-artifact
+✔ real isolated Chromium rejects missing target and corrects once, with scoped durable evidence (21831.16111ms)
+✔ valid animated output passes one real browser round (5758.166518ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 27926.010417
