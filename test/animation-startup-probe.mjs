@@ -16,6 +16,7 @@ try{
  await fs.mkdir(root);madeRoot=true;
  for(const entry of await fs.readdir('/opt/form-verifier'))if(entry.endsWith('.mjs'))await fs.copyFile('/opt/form-verifier/'+entry,root+'/'+entry);
  await fs.cp('/opt/form-verifier/dist',root+'/dist',{recursive:true});
+ if(process.env.FORM_PROBE_WORKER)await fs.copyFile(process.env.FORM_PROBE_WORKER,root+'/dist/worker.js');
  let bundle=await fs.readFile(root+'/dist/animation-verification.js','utf8');
  assert.ok(bundle.includes('onError: () => record.errors.push("runtime-error")'));
  bundle=bundle.replace('onError: () => record.errors.push("runtime-error")','onError: (error) => record.errors.push(String(error))');

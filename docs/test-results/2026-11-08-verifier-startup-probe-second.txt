@@ -1,0 +1,14 @@
+{"attempt":0,"elapsedMs":6509,"ok":true}
+{"attempt":1,"elapsedMs":5812,"ok":true}
+{"attempt":2,"elapsedMs":4991,"ok":false,"code":"STARTUP","diagnostic":"Animation browser verification failed (startup): [\"Interaktion angehalten: interrupted\"]"}
+{"attempt":3,"elapsedMs":6185,"ok":true}
+{"attempt":4,"elapsedMs":5596,"ok":true}
+{"attempt":5,"elapsedMs":5906,"ok":true}
+{"attempt":6,"elapsedMs":5898,"ok":true}
+{"attempt":7,"elapsedMs":5710,"ok":true}
+{"attempt":8,"elapsedMs":5587,"ok":true}
+{"attempt":9,"elapsedMs":5708,"ok":true}
+{"attempt":10,"elapsedMs":6018,"ok":true}
+{"attempt":11,"elapsedMs":6180,"ok":true}
+Failed to reset failed state of unit form-startup-probe-55094@11-55094-0.service: Unit form-startup-probe-55094@11-55094-0.service not loaded.
+CLEAN isolated synthetic probe; installed runtime unchanged

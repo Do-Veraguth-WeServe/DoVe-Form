@@ -1,0 +1,39 @@
+PASS trusted cold bootstrap tolerates injected 220ms scheduling delay
+PASS guest 400ms work/runaway/global denial, initial state compatibility, bounded trusted bootstrap, context cleanup
+✔ sandboxed service returns safe specific rejection categories (24104.426407ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 24246.970016
+[build-budget] {"round":1,"finish":"stop","visibleChars":236,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":260,"reasoningChars":0,"usage":{}}
+[job] id=775da4e1 failed after 2 round(s): invalid-artifact
+[build-budget] {"round":1,"finish":"stop","visibleChars":236,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":247,"reasoningChars":0,"usage":{}}
+[job] id=4955900a user=c133cff8 kind=refine dur=12661ms rounds=2 finish=stop/stop chars=483 render=yes fail=invalid-artifact
+✔ real isolated Chromium rejects missing target and corrects once, with scoped durable evidence (23672.355254ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":247,"reasoningChars":0,"usage":{}}
+✔ valid animated output passes one real browser round (5883.008513ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 29993.635372
+PASS wrong password rejected
+PASS registration and model-free composer gate
+PASS current settings navigation, model add, masked key and Escape
+PASS two visible prose stages before structured chat offer
+PASS ordinary imperative chat cannot build
+PASS explicit approval and real held build before artifact
+PASS real server persistence and reload without duplicate build
+PASS 390px interaction and persisted reload
+PASS approved correction correct: exactly two rounds, durable mobile reload, honest terminal state
+PASS approved correction fail: exactly two rounds, durable mobile reload, honest terminal state
+PASS browser-core: 10 checks; source=/opt/form

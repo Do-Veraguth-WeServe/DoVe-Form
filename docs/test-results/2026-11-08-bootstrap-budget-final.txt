@@ -1,0 +1,2 @@
+PASS trusted cold bootstrap tolerates injected 220ms scheduling delay
+PASS guest 400ms work/runaway/global denial, initial state compatibility, bounded trusted bootstrap, context cleanup

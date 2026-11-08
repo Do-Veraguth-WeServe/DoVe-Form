@@ -1,0 +1,60 @@
+PASS trusted cold bootstrap tolerates injected 220ms scheduling delay
+PASS guest runaway/global denial, initial state compatibility, context cleanup
+✔ bounded numeric versioned animation schema (5.90949ms)
+✔ old artifact remains valid, invalid animation rejected at contract (0.905538ms)
+[ping] session=s1 host=good.example ip=93.184.216.34 ok=true ms=23
+[ping] session= host=good.example ip=93.184.216.34 ok=false
+[ping] session= host=private.example blocked (resolved: 10.0.0.5)
+[ping] session= host=dual.example blocked (resolved: 93.184.216.34,fe80::1)
+[ping] session= host=nope.example error=dns
+[ping] session= host=good.example ip=93.184.216.34 ok=false
+config unreadable: Unexpected token 'o', "not json" is not valid JSON
+✔ render contract rejects malformed and oversized output (6.12706ms)
+✔ system prompt carries the v3 two-phase + SVG visual rules (0.795044ms)
+✔ render contract: optional name is sanitized as text (0.827553ms)
+✔ deriveName: heading, then prose snippet, then fallback (2.343916ms)
+✔ refine instruction demands a full in-place update (0.856483ms)
+✔ validHost: strict hostnames only, no literals/URLs/private forms (1.693041ms)
+✔ ipBlocked: every private/reserved range is caught, public passes (14.739836ms)
+✔ runPing: ok / blocked / dual-stack / dns-fail / timeout with injected backend (8.632273ms)
+﹣ optional: real /bin/ping binary probe (skip when absent or offline) (0.516284ms) # SKIP
+✔ element db: lifecycle, where semantics, scoping, persistence, quotas (62.959878ms)
+✔ element db: hard quotas — 10 tables, 5000 rows, 2 MB element (2463.392894ms)
+✔ stream parser: prose-only answer relays everything (1.074581ms)
+✔ stream parser: marker split across chunks is not emitted as prose (0.725753ms)
+✔ stream parser: artifact in same chunk as marker, unterminated fence (0.516842ms)
+✔ stream parser: partial-marker suffix is held back, not lost (0.291317ms)
+✔ model registry: validation, masking, persistence, ENOENT safety (2.093223ms)
+✔ store: passwords scrypt-hashed, salted, timing-safe verify (307.924812ms)
+✔ store: first user is owner, second is user; sessions bound to users (536.355617ms)
+✔ store: conversations, messages, elements are user-scoped (186.243999ms)
+✔ store: import validation rejects malformed archives, regenerates ids (101.656155ms)
+✔ config: defaults to registration off, env forces on, ENOENT safe (1.396791ms)
+✔ system prompt documents ui.db for data-driven elements (0.207354ms)
+✔ QuickJS has no browser capabilities or host Function escape (55.204992ms)
+✔ QuickJS interrupts CPU exhaustion (52.854755ms)
+✔ generated interaction validation catches DOM event and value getter mistakes without hiding stored elements (2.127919ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 4282.699597
+PASS schema, three independently moving surfaces, completion, cancellation, missing target and reduced motion in real QuickJS iframe bridge
+valid clip passed
+missing target
+abort cleanup
+PASS isolated startup + declared clips, missing/duplicate targets, runaway/global escape, abort cleanup, unavailable DB; original workflow NOT certified
+PASS wrong password rejected
+PASS registration and model-free composer gate
+PASS current settings navigation, model add, masked key and Escape
+PASS two visible prose stages before structured chat offer
+PASS ordinary imperative chat cannot build
+PASS explicit approval and real held build before artifact
+PASS real server persistence and reload without duplicate build
+PASS 390px interaction and persisted reload
+PASS approved correction correct: exactly two rounds, durable mobile reload, honest terminal state
+PASS approved correction fail: exactly two rounds, durable mobile reload, honest terminal state
+PASS browser-core: 10 checks; source=/root/.openclaw/workspace/projects/form

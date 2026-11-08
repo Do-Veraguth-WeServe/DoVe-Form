@@ -1,0 +1,2 @@
+{"base":"http://127.0.0.1:5177","status":200,"registration":false,"anonymous":401,"workerSHA256":"670ba0f9abb800a165180d85463ca7d8152847467d1cb0b75b930fa77101f2b0"}
+{"base":"https://fhisling.tail11036c.ts.net:9444","status":200,"registration":false,"anonymous":401,"workerSHA256":"670ba0f9abb800a165180d85463ca7d8152847467d1cb0b75b930fa77101f2b0"}

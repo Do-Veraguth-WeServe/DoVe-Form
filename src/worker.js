@@ -5,7 +5,7 @@ const ready=newQuickJSWASMModule(newVariant(RELEASE_SYNC,{wasmLocation:'/quickjs
 // Guest code runs per event/init with a hard interrupt deadline and an
 // operation budget; every ui.* call becomes a JSON op for the host bridge.
 const INIT = `
-let state = __state;
+let state = {};
 let pingc = 0;
 let dbc = 0;
 let actionc = 0;
@@ -78,7 +78,15 @@ onmessage=async({data:d})=>{
         ops.push(o);
       });
       ctx.setProp(ctx.global,'__emit',emit);emit.dispose();
-      run('const __state='+JSON.stringify(d.state??{})+';'+INIT+d.js);
+      // Only fixed app-owned bridge declarations run in this bootstrap window.
+      // Cold WASM compilation / cgroup scheduling must not consume the guest's
+      // 150ms allowance. No artifact source or state enters this evaluation.
+      deadline=Date.now()+1500;count=0;ops=[];
+      const bootstrap=ctx.evalCode(INIT);
+      if(bootstrap.error){const error=ctx.dump(bootstrap.error);bootstrap.error.dispose();throw Error(error.message||'Bootstrap error');}
+      bootstrap.value.dispose();
+      // State decoding AND all guest source remain under the original deadline.
+      run('const __state='+JSON.stringify(d.state??{})+';state=__state;'+d.js);
     } else if(d.type==='event'&&ctx){
       run('handlers['+JSON.stringify(d.id+':'+d.event)+']?.('+JSON.stringify(d.value)+')');
     }

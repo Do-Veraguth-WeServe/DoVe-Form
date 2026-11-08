@@ -1,0 +1,12 @@
+file:///root/.openclaw/workspace/projects/form/animation-verification-errors.mjs:16
+ return Object.assign(new Error(message), {verificationCode:verificationFailure(code).code});
+                      ^
+
+Error: Animation browser verification failed (startup): Runtime startup rejected
+    at verificationError (file:///root/.openclaw/workspace/projects/form/animation-verification-errors.mjs:16:23)
+    at verifyAnimationArtifact (file:///root/.openclaw/workspace/projects/form/animation-verification.mjs:67:18)
+    at async file:///root/.openclaw/workspace/projects/form/test/worker-bootstrap-budget.mjs:21:16 {
+  verificationCode: 'STARTUP'
+}
+
+Node.js v24.22.2

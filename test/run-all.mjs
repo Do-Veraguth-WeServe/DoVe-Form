@@ -57,6 +57,7 @@ step('animation verifier private transport',run('node',['--test','test/animation
 step('provider budget and reasoning metadata',run('node',['--test','test/provider-budget.test.mjs']));
 step('build recovery and animation correction',run('node',['--test','--test-concurrency=1','test/build-recovery.test.mjs']));
 step('build failure UX',run('node',['test/build-recovery-browser.mjs']));
+step('trusted bootstrap and unchanged guest execution budget',run('node',['test/worker-bootstrap-budget.mjs']));
 step('animation schema and budgets',run('node',['--test','test/animation-policy.test.mjs']));
 step('animation stack interaction and persistence recovery',run('node',['test/animation.test.mjs']));
 step('isolated animation startup and declared-clip verifier',run('node',['test/animation-verification.test.mjs']));
