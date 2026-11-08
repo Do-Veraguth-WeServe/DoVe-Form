@@ -1,0 +1,1 @@
+PASS three-account opt-in UI, desktop/mobile, shared state and rows live, reload, owner-only code, revocation clears sandbox

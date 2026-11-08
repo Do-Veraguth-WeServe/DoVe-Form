@@ -535,7 +535,10 @@ function renderChip(){
 // Keep the visible history start stable while a conversation is open.
 // Rotating a last-12 window on submit removes content above the viewport.
 const visibleStarts=new Map();
-function render(){stopEntry();  views.forEach(v=>v.destroy());views=[];
+let feedCache=new Map();
+function render(){stopEntry();
+  const previousViews=views;views=[];
+  const nextCache=new Map(),nodes=[];
   $('#sessions').replaceChildren();
   for(const s of db.sessions){
     const row=document.createElement('div');row.className='session-row';row.dataset.sid=s.id;
@@ -544,16 +547,24 @@ function render(){stopEntry();  views.forEach(v=>v.destroy());views=[];
     row.append(b,del);$('#sessions').append(row);
   }
   const feed=$('#feed');
-  feed.innerHTML=current()?.messages.length?'':'<section class="intro"><h1>Was möchtest du machen?</h1></section>';
-  if(!models.length)feed.insertAdjacentHTML('beforeend','<section class="empty" id="emptystate"><h2>Modell verbinden</h2><button id="emptyadd">Modell hinzufügen</button></section>');
+  if(!current()?.messages.length){const intro=document.createElement('section');intro.className='intro';intro.innerHTML='<h1>Was möchtest du machen?</h1>';nodes.push(intro);}
+  if(!models.length){const empty=document.createElement('section');empty.className='empty';empty.id='emptystate';empty.innerHTML='<h2>Modell verbinden</h2><button id="emptyadd">Modell hinzufügen</button>';nodes.push(empty);}
   const s=current();
   if(s){
     if(!visibleStarts.has(s.id))visibleStarts.set(s.id,Math.max(0,s.messages.length-12));
     const visibleStart=Math.min(visibleStarts.get(s.id),s.messages.length);
-    if(visibleStart>0){const h=document.createElement('p');h.className='notice';h.textContent='Ältere Nachrichten ausgeblendet.';feed.append(h)}
+    if(visibleStart>0){const h=document.createElement('p');h.className='notice';h.textContent='Ältere Nachrichten ausgeblendet.';nodes.push(h)}
     for(const entry of elementTimeline(s.messages,[...jobs.values()].filter(j=>j.conversationId===s.id)).slice(visibleStart)){
       const m=entry.message;
       if([...pending].some(r=>r.conversationId===s.id&&jobs.get(r.jobId)?.messageId===m.id))continue; // live relay owns this placeholder
+      // Never reuse across canonical objects, revisions, conversations or changed UI inputs.
+      const key=s.id+':'+m.id;
+      const signature=entry.element&&!m.forms?JSON.stringify([m,entry.element,pendingJobFor(m.id),pendingJobFor(entry.element.id),marked,isPinned(entry.element)]):null;
+      const cached=feedCache.get(key);
+      if(signature&&cached?.signature===signature&&cached.message===m&&cached.element===entry.element&&cached.article.isConnected&&cached.views.every(v=>previousViews.includes(v))){
+        nodes.push(cached.article);views.push(...cached.views);nextCache.set(key,cached);continue;
+      }
+      const viewStart=views.length;
       const article=document.createElement('article');article.className='message '+(m.role==='user'?'user':'assistant');article.dataset.mid=m.id;
       if(m.role==='user'){const b=document.createElement('div');b.className='bubble';b.textContent=m.text;article.append(b)}
       else{
@@ -611,11 +622,19 @@ function render(){stopEntry();  views.forEach(v=>v.destroy());views=[];
           if(job&&job.kind==='refine'&&entry.element){article.append(siteEl(job))}
         }
       }
-      feed.append(article);
+      nodes.push(article);
+      if(signature)nextCache.set(key,{signature,message:m,element:entry.element,article,views:views.slice(viewStart)});
     }
   }
-  if(s?.blueprint)feed.append(blueprintEl(s));
-  for(const [request,article] of liveTurns)if(request.conversationId===s?.id&&!article.isConnected)feed.append(article);
+  if(s?.blueprint)nodes.push(blueprintEl(s));
+  for(const [request,article] of liveTurns)if(request.conversationId===s?.id)nodes.push(article);
+  // Keep retained iframes connected; detach/reinsert would reset their browsing contexts.
+  const wanted=new Set(nodes);
+  for(const child of [...feed.children])if(!wanted.has(child))child.remove();
+  let cursor=feed.firstChild;
+  for(const node of nodes){if(node===cursor)cursor=cursor.nextSibling;else feed.insertBefore(node,cursor);}
+  for(const view of previousViews)if(!views.includes(view))view.destroy();
+  feedCache=nextCache;
   feed.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>send(b.dataset.p));
   const add=$('#emptyadd');if(add)add.onclick=openSettings;
   renderElementList();

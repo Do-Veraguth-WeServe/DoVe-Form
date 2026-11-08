@@ -1,0 +1,9 @@
+PASS desktop/mobile: background/repeated/terminal/empty snapshots preserve iframe identity and unsaved input.
+PASS desktop/mobile: background/repeated/terminal/empty snapshots preserve iframe identity and unsaved input.
+PASS navigation chat/plan/new/existing/reload: no cancellation, no foreign live content, completion preserves selection, one provider call
+initial 1280 0
+initial 390 0
+PASS session entry desktop/mobile/login/sidebar/reload, iframe settling/cancel/deadline, Enter/button middle/bottom submit and completion preservation
+{ released: 144, coasted: 223 }
+{"feed":272,"inner":0}
+PASS mobile touch scroll, taps, forged-message rejection, overlay native scroll and desktop controls
