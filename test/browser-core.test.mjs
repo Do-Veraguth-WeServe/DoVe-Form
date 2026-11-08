@@ -12,7 +12,7 @@ const root=process.env.FORM_TEST_ROOT||process.cwd();
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'form-browser-core-'));
 const base='http://127.0.0.1:4826',key='fixture-only-key-1234567890';
 let app,browser,builds=0,plans=0,chats=0,releaseFirst,releaseArtifact,releaseBuild;
-let correctionMode=null,correctionAttempts=0,releaseCorrection;
+let correctionMode=null,correctionAttempts=0,releaseCorrection,proseOnly=false,releaseProse;
 let signalBuild;const buildStarted=new Promise(resolve=>{signalBuild=resolve});
 const artifact={version:1,name:'Core-Regler',html:'<label for="amt">Wert</label><input id="amt" type="number"><p id="out"></p>',css:'p{color:#d4ef8b}',js:'ui.value("amt",String(state.value));function draw(){ui.text("out","Wert: "+state.value)}ui.on("amt","input",e=>{state.value=Number(e.value);draw();ui.persist()});draw();',state:{value:3}};
 const mock=http.createServer(async(req,res)=>{
@@ -21,6 +21,7 @@ const mock=http.createServer(async(req,res)=>{
  const put=t=>res.write('data: '+JSON.stringify({choices:[{delta:{content:t}}]})+'\n\n');
  const system=d.messages[0].content;
  if(system.includes('fast conversational planner')){plans++;put('<reply>Wir planen den Regler.</reply><title>Regler</title><summary>Ein Regler mit gespeichertem Zahlenwert.</summary><questions></questions><ready>true</ready>');}
+ else if(system.includes('warm, concise conversational')&&proseOnly){chats++;put('Ein VPN ist ein Virtual Private Network. ');await new Promise(r=>{releaseProse=r;res.once('close',r)});if(res.destroyed)return;put('Es verschlüsselt die Verbindung zum VPN-Anbieter.');}
  else if(system.includes('warm, concise conversational')&&correctionMode){chats++;put('Wir besprechen den nächsten Regler. '+JSON.stringify({forms:[],planningOffer:{title:'Regler'}}));}
  else if(system.includes('warm, concise conversational')){chats++;put('Erster sichtbarer Abschnitt. ');await new Promise(r=>{releaseFirst=r;res.once('close',r)});if(res.destroyed)return;put('Zweiter sichtbarer Abschnitt. ');await new Promise(r=>{releaseArtifact=r;res.once('close',r)});if(res.destroyed)return;put(JSON.stringify({forms:[],planningOffer:{title:'Regler'}}));}
  else if(correctionMode){builds++;correctionAttempts++;assert.ok(correctionAttempts<=2,'no unbounded correction');if(correctionAttempts===2){assert.match(d.messages.at(-1).content,/CSS capability preflight/);await new Promise(r=>{releaseCorrection=r;res.once('close',r)});if(res.destroyed)return;}const value=correctionAttempts===1||correctionMode==='fail'?{...artifact,css:'p::before{content:"unsupported";position:absolute}'}:artifact;put('```json\n'+JSON.stringify(value)+'\n```');}
@@ -56,6 +57,36 @@ try{
  await p.setViewportSize({width:390,height:844});await f.locator('#amt').fill('9');await f.locator('#out').filter({hasText:'Wert: 9'}).waitFor();
  await p.waitForFunction(async()=>{const d=await(await fetch('/api/conversations')).json();return d.conversations.some(c=>c.messages.some(m=>m.render?.state?.value===9))});await p.reload();await p.frameLocator('iframe.render').locator('#out').filter({hasText:'Wert: 9'}).waitFor();check('390px interaction and persisted reload');
  assert.equal(builds,1);assert.equal(plans,1);
+ // Legacy section 6: prose-only follow-ups must not rebuild a live Element.
+ proseOnly=true;
+ for(const width of [1280,390]){
+  await p.setViewportSize({width,height:900});
+  const before=await api('/api/conversations');
+  const owner=before.conversations.find(c=>c.messages.some(m=>m.render?.name==='Core-Regler'));
+  const element=owner.messages.find(m=>m.render?.name==='Core-Regler');
+  const frame=await p.locator('iframe.render').elementHandle();
+  await frame.evaluate(el=>{el.dataset.acceptanceSentinel='same-frame'});
+  const framesBefore=p.frames().length,chatBefore=chats;
+  await p.locator('#prompt').fill('Erkläre mir kurz, was ein VPN macht — nur Text');await p.locator('#prompt').press('Enter');
+  await p.locator('.live .prose').filter({hasText:'Virtual Private Network'}).waitFor();
+  assert.equal(await frame.evaluate(el=>el.isConnected),true,'streaming retains original iframe');
+  await p.frameLocator('iframe.render').locator('#out').filter({hasText:'Wert: 9'}).waitFor();
+  assert.equal(builds,1);assert.equal(plans,1);releaseProse();
+  await p.waitForFunction(()=>!document.querySelector('.live'));
+  await p.locator('.message.assistant .prose').filter({hasText:'Es verschlüsselt die Verbindung'}).last().waitFor();
+  assert.equal(chats,chatBefore+1);assert.equal(builds,1);assert.equal(plans,1);
+  assert.equal(await frame.evaluate(el=>el.isConnected&&el.dataset.acceptanceSentinel==='same-frame'),true,'completed prose retains original iframe');
+  assert.equal(p.frames().length,framesBefore);assert.equal(await p.locator('iframe.render').count(),1);
+  const after=(await api('/api/conversations')).conversations.find(c=>c.id===owner.id);
+  assert.deepEqual(after.messages.find(m=>m.id===element.id),element,'follow-up does not modify Element message/state');
+  assert.equal(after.messages.length,owner.messages.length+2,'exactly one user/reply pair');
+  assert.equal(after.messages.filter(m=>m.blueprint).length,owner.messages.filter(m=>m.blueprint).length);
+  await p.reload();await p.frameLocator('iframe.render').locator('#out').filter({hasText:'Wert: 9'}).waitFor();
+  await p.locator('.message.assistant .prose').filter({hasText:'Es verschlüsselt die Verbindung'}).last().waitFor();
+  assert.equal(chats,chatBefore+1);assert.equal(builds,1);assert.equal(plans,1);
+  check('prose-only '+width+': no build, no live iframe remount, unchanged persisted Element and reload');
+ }
+ proseOnly=false;
  // Migrated legacy section 5: correction belongs to an explicitly approved durable build,
  // never to ordinary chat. Hold round two so UI/reload assertions are deterministic.
  for(const outcome of ['correct','fail']){
@@ -77,5 +108,5 @@ try{
   else{await p.locator('.site').filter({hasText:'Bau fehlgeschlagen'}).waitFor();assert.equal(await p.locator('iframe.render').count(),0);await p.reload();await p.locator('.site').filter({hasText:'Bau fehlgeschlagen'}).waitFor();assert.equal(correctionAttempts,2);assert.equal(await p.locator('iframe.render').count(),0);}
   check('approved correction '+outcome+': exactly two rounds, durable mobile reload, honest terminal state');
  }
- assert.deepEqual(errors,[]);console.log('PASS browser-core: 10 checks; source='+root);
-}finally{releaseCorrection?.();releaseFirst?.();releaseArtifact?.();releaseBuild?.();await browser?.close();if(app&&app.exitCode===null){app.kill('SIGTERM');await once(app,'exit')}mock.closeAllConnections();await new Promise(r=>mock.close(r));fs.rmSync(dir,{recursive:true,force:true});}
+ assert.deepEqual(errors,[]);console.log('PASS browser-core: 12 checks; source='+root);
+}finally{releaseProse?.();releaseCorrection?.();releaseFirst?.();releaseArtifact?.();releaseBuild?.();await browser?.close();if(app&&app.exitCode===null){app.kill('SIGTERM');await once(app,'exit')}mock.closeAllConnections();await new Promise(r=>mock.close(r));fs.rmSync(dir,{recursive:true,force:true});}
