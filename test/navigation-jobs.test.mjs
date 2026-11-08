@@ -1,3 +1,4 @@
+import {offeredPlan} from './planning-fixture.mjs';
 import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import http from 'node:http';import crypto from 'node:crypto';import assert from 'node:assert/strict';import {spawn} from 'node:child_process';import {chromium} from 'playwright-core';
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'form-activity-')),BASE='http://127.0.0.1:4756',id=crypto.randomUUID();let next,finish,calls=0,fail=false;
 const mock=http.createServer(async(req,res)=>{let raw='';for await(const c of req)raw+=c;const plan=JSON.parse(raw).messages[0].content.includes('fast conversational planner');calls++;if(fail){res.writeHead(400);res.end('fixture failure');return;}res.writeHead(200,{'Content-Type':'text/event-stream'});res.flushHeaders();const put=t=>res.write('data: '+JSON.stringify({choices:[{delta:{content:t}}]})+'\n\n');await new Promise(r=>{next=r;res.on('close',r)});if(res.destroyed)return;put(plan?'<reply>Eine **Antwort** wächst. ':'Eine **Antwort** wächst. ');await new Promise(r=>{finish=r;res.on('close',r)});if(res.destroyed)return;put(plan?'Fertig.</reply><title>Testplan</title><summary>Test.</summary><ready>true</ready>':'Fertig.');res.end('data: [DONE]\n\n');});
@@ -8,7 +9,7 @@ try{app=spawn('node',['server.mjs'],{cwd:process.env.FORM_TEST_ROOT||process.cwd
  const cancel=[];p.on('request',r=>{if(r.url().endsWith('/api/jobs/cancel'))cancel.push(r.url())});
  for(const mode of ['chat','plan']){
  await p.locator('#new').click();
- await p.locator('#prompt').fill('Navigation '+mode);await p.locator(mode==='plan'?'#planbtn':'#send').click();await p.locator('.activity[data-phase=thinking]').waitFor();
+ await p.locator('#prompt').fill('Navigation '+mode);if(mode==='plan')await offeredPlan(p,dir);else await p.locator('#send').click();await p.locator('.activity[data-phase=thinking]').waitFor();
  const origin=await p.locator('.session-open[aria-current=true]').locator('..').getAttribute('data-sid');
  await p.locator('#new').click();await p.waitForTimeout(200);
  assert.equal(cancel.length,0,'navigation must not cancel server job');

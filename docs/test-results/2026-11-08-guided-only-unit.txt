@@ -1,0 +1,12 @@
+✔ bounded inert offer rejects commands and malformed values (4.357119ms)
+✔ metadata-only fenced and chunked offers do not leak into prose (5.668755ms)
+✔ clear legacy prose offers have fallback but ordinary discussion does not (1.562474ms)
+✔ prompt requires contextual offers and separate explicit build approval (0.671604ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 183.262443

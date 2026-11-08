@@ -14,7 +14,7 @@ try{app=spawn('node',['server.mjs'],{cwd:process.env.FORM_TEST_ROOT||process.cwd
  browser=await chromium.launch({executablePath:'/root/.cache/puppeteer/chrome/linux-153.0.8010.36/chrome-linux64/chrome',headless:true,args:['--no-sandbox']});const p=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];p.on('pageerror',e=>errors.push(e.message));await p.goto(BASE);await p.locator('#loginform [name=username]').fill('dominik');await p.locator('#loginform [name=password]').fill(PASS);await p.locator('#loginform button').click();await p.locator('#login[open]').waitFor({state:'detached'});await p.locator('.session-open[aria-current=true]').waitFor();await p.waitForFunction(()=>!document.querySelector('#send').disabled);
 
  for(const width of [1280,390]){
- await p.setViewportSize({width,height:844});
+ await p.setViewportSize({width,height:844});assert.equal(await p.locator('#planbtn').count(),0);
  if(width===390)await p.locator('#new').evaluate(e=>e.click());
  await p.locator('#prompt').fill('Ich möchte eine Aufgabenliste besprechen.');await p.locator('#prompt').press('Enter');
  await p.locator('.planning-offer-start').waitFor();await p.waitForFunction(()=>!document.querySelector('.live'));
@@ -25,6 +25,9 @@ try{app=spawn('node',['server.mjs'],{cwd:process.env.FORM_TEST_ROOT||process.cwd
  assert.equal(plans,beforePlans+1);assert.equal(builds,beforeBuilds);assert.equal(await p.locator('.planning-offer-start').count(),0);
  if(await p.locator('.blueprint-toggle').getAttribute('aria-expanded')==='false')await p.locator('.blueprint-toggle').click();
  await p.locator('.blueprint-execute').click();await p.locator('iframe.render[data-ready=true]').waitFor();assert.equal(builds,beforeBuilds+1);
+ await p.getByRole('button',{name:'Element markieren: Eigene Karte',exact:true}).click();await p.locator('#prompt').fill('Lass uns die Karte verbessern.');await p.locator('#prompt').press('Enter');await p.locator('.planning-offer-start').waitFor();await p.waitForFunction(()=>!document.querySelector('.live'));
+ await p.locator('.planning-offer-start').dblclick();await p.locator('.blueprint-execute:not([disabled])').waitFor({state:'attached'});assert.equal(plans,beforePlans+2);assert.equal(builds,beforeBuilds+1);
+ const snapshot=await(await api(a,'/api/conversations')).json();const currentId=await p.locator('.session-open[aria-current=true]').locator('..').getAttribute('data-sid');const selected=snapshot.conversations.find(c=>c.id===currentId&&c.blueprint?.targetMessageId);assert.ok(selected?.messages.some(m=>m.id===selected.blueprint.targetMessageId&&m.render),'guided refinement retains target');
  }
- assert.deepEqual(errors,[]);console.log('PASS desktop/mobile: model offer persisted on reload; no automatic planning/build; double click one plan; separate explicit build; old offer hidden after planning; sandbox ready.');
+ assert.deepEqual(errors,[]);console.log('PASS desktop/mobile: model offer persisted on reload; no automatic planning/build; double click one plan; separate explicit build; old offer hidden after planning; sandbox ready; contextual targeted refinement on both viewports; global Plan absent.');
 }finally{release?.();await browser?.close();if(app){app.kill();await new Promise(r=>app.exitCode!==null?r():app.once('exit',r))}mock.closeAllConnections();await new Promise(r=>mock.close(r));fs.rmSync(dir,{recursive:true,force:true});}

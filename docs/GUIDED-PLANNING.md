@@ -9,3 +9,12 @@ IMPORTANT remaining acceptance: the legacy composer Plan control remains in this
 Source test logs: docs/test-results/2026-11-08-guided-planning-unit.txt, guided-planning-browser.txt and guided-planning-release.txt with same date prefix. The existing full Blueprint gate passed (130 pass, one optional skip, integration/browser); generic npm test backlog is not claimed fixed.
 
 Verified release: source491cae0, evidencebe3372a. Zero active jobs before form-user restart/save; rollback /opt/form/.rollback/20261108-guided-planning, manifest /opt/form/guided-planning-release.json. No schema, registration, secrets or user product changes. CSP unchanged. Both live routes health200 and exact app SHA256 9e733df403993879faf8c1b2b7eaf6c104736c114825cbdeb80a98836a07cedc verified. Deployed-code disposable desktop/mobile acceptance PASS; screenshots inspected. Report remains working for retiring global Plan and guided refinement acceptance.
+
+
+## Guided-only entry (2026-11-08, release candidate)
+
+The global composer Plan button and its event handler/style are removed. A new plan starts from the latest assistant's contextual offer. The offer accepts an optional composer draft; existing Blueprints keep their explicit “Gespräch in Plan übernehmen” action, now preserving that draft and the selected refinement target. Both actions guard duplicate clicks and stale conversations. Separate build approval is unchanged. Existing saved plans remain usable; no stored user artifacts are migrated.
+
+Dedicated desktop/mobile browser acceptance covers offer -> plan -> explicit build, then selecting the existing Element -> conversational offer -> targeted refinement with no automatic rebuild. Existing Blueprint coverage retains revision/CAS, concurrent planning during an active build and explicit refinement approval. Legacy downstream-focused browser fixtures now seed a persisted assistant offer in their disposable SQLite stores (helper rejects paths outside form-* temp directories); this is not represented as model-generation coverage. The dedicated guided test still obtains the actual offer through mock provider streaming and server persistence.
+
+This does not promise every provider always follows the offer contract. An omitted offer can still require asking Form to propose planning; arbitrary intent is not inferred and no unapproved build is introduced. Generic full-suite baseline failures are outside this slice. Deployment evidence follows only after release gates pass.
