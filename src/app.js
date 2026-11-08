@@ -625,7 +625,7 @@ function render(){stopEntry();
       onState:stateCallback(m),
               onSuggest:text=>{$('#prompt').value=text;toast('Vorschlag eingefügt — nur du sendest ihn.')},
               onError:text=>{note.textContent=text;note.className='notice error'},
-              onWarning:text=>{note.textContent=text;note.className='notice'},
+              onWarning:text=>{if(note.classList.contains('error'))return;note.textContent=text;note.className='notice'},
               onPing:doPing,
               onDb:p=>doDb(m.id,p)
             });
@@ -869,7 +869,7 @@ function fillOverlay(){
       onState:stateCallback(m),
       onSuggest:text=>{$('#prompt').value=text;toast('Vorschlag eingefügt — nur du sendest ihn.')},
       onError:tx=>{note.textContent=tx;note.className='notice error'},
-      onWarning:tx=>{note.textContent=tx;note.className='notice'},
+      onWarning:tx=>{if(note.classList.contains('error'))return;note.textContent=tx;note.className='notice'},
       onPing:doPing,
       onDb:p=>doDb(m.id,p)
     });

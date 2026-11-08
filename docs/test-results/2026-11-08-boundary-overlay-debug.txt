@@ -1,0 +1,46 @@
+OVERLAY
+FRAMES [
+  {
+    url: 'http://127.0.0.1:4832/',
+    body: '⌑form\n' +
+      '＋ Neuer Chat\n' +
+      'Bibliothek\n' +
+      'Elemente\n' +
+      'Chats\n' +
+      'Neuer Gedankengang\n' +
+      '×\n' +
+      'boundaryowner · Owner\n' +
+      'Einstellungen\n' +
+      'Form\n' +
+      'Synthetic only · fixture\n' +
+      '● ANGEMELDET · BOUNDARYOWNE\n' +
+      'Form\n' +
+      'Element\n' +
+      '☆\n' +
+      '↗\n' +
+      'Als Form\n' +
+      'Hinweis: ui.value gilt nur für Eingabefelder — dynamische Inhalte gehören in ui.html.\n' +
+      'Werte übernehmen\n' +
+      '↑'
+  },
+  {
+    url: '',
+    body: 'link\nX\n\nundefined/undefined/undefined\n\nok\n\nSuggest'
+  }
+]
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.waitFor: Timeout 5000ms exceeded.
+Call log:
+  - waiting for locator('#overlay iframe.render').contentFrame().locator('#dyn3 rect')
+
+    at /root/.openclaw/workspace/projects/form/test/sandbox-boundary-browser.test.mjs:53:76 {
+  log: [
+    "  - waiting for locator('#overlay iframe.render').contentFrame().locator('#dyn3 rect')"
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.22.2

@@ -1,0 +1,3 @@
+PASS 1280: guest globals, dynamic HTML/SVG, suggestion without submit, opaque parent/network denial, forged resize, masked key/cache/CSRF, persisted state and overflow
+PASS 390: guest globals, dynamic HTML/SVG, suggestion without submit, opaque parent/network denial, forged resize, masked key/cache/CSRF, persisted state and overflow
+PASS sandbox boundary browser source=/root/.openclaw/workspace/projects/form

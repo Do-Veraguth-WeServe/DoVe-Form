@@ -34,6 +34,7 @@ step('approved in-place refinement browser',run('node',['test/refinement-browser
 step('refinement transactional conflict and writer locking',run('node',['--test','test/refinement-cas.test.mjs']));
 step('ping callback bridge (mocked success, denial, rate limit)',run('node',['test/ping-browser.test.mjs']));
 step('real database CRUD bridge, scope, quotas and reload',run('node',['test/db-crud-browser.test.mjs']));
+step('sandbox boundary, safe fragments and cache secrets',run('node',['test/sandbox-boundary-browser.test.mjs']));
 step('initial static-only HTML preflight',run('node',['test/html-preflight.mjs']));
 step('HTML removal diagnostics (bounded reasons, trusted desktop/mobile feedback)',run('node',['test/html-diagnostics.test.mjs']));
 step('dynamic namespace-aware HTML diagnostics',run('node',['test/dynamic-html-diagnostics.mjs']));

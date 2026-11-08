@@ -1,0 +1,3 @@
+PASS HTML diagnostic reasons, redaction, cap, no stale DOMPurify state, SVG/table/input/scrub compatibility
+PASS 1280 dynamic trusted feed/overlay warning, namespace-correct SVG/table, forged public event ignored, reload reset, unchanged artifact, zero egress/page errors
+PASS 390 dynamic trusted feed/overlay warning, namespace-correct SVG/table, forged public event ignored, reload reset, unchanged artifact, zero egress/page errors

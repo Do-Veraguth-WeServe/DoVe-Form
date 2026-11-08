@@ -1,0 +1,3 @@
+PASS HTML diagnostic reasons, redaction, cap, no stale DOMPurify state, SVG/table/input/scrub compatibility
+PASS 1280 trusted feed/overlay/reload warning, working allowed interaction, unchanged artifact, zero egress/page errors
+PASS 390 trusted feed/overlay/reload warning, working allowed interaction, unchanged artifact, zero egress/page errors
