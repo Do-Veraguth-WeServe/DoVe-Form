@@ -91,3 +91,14 @@ Verified: all eight combinations pass against source and installed /opt/form app
 The first explicitly approved build now remains genuinely held before its artifact while a second ordinary chat streams and completes. Browser-core asserts one build request, the original durable building job, no premature iframe, then reloads desktop1280 and mobile390 and requires exactly one construction crane with the same job ID. Only after those checks is the provider released; the existing interaction/state/reload gates still apply. The suite now has 19 checks. This is bounded legacy7c coverage, not tab-close/reverse-order browser acceptance or a full-suite pass.
 
 The parallel expanded navigation fixture reproduced a real reconnected background-result display bug and motivated the small selected-conversation ready reconciliation fix documented in NAVIGATION-JOBS.md. No production user artifact/data repair or new animation capability is involved. Existing legacy suite stays intact. Reports #a3daf406 and #e89344ad remain unresolved.
+
+
+## Actual tab closure during approved build — 2026-11-08
+
+Legacy7b now closes the only browser tab while the approved build provider is held before any artifact bytes. The authenticated context has no pages; bounded read-only observation of the isolated fixture database verifies the same job completes ready after provider release without an attached page or SSE viewer. Exactly one persisted Element and one build request are required. Fresh desktop1280/mobile390 pages restore unchanged canonical messages and the same ready job without regeneration; existing interactive persistence checks continue.
+
+Test-only lifecycle acceptance, not a runtime fix or browser-process shutdown test. No production data/artifact/configuration changes. Synthetic fixtures are isolated and cleaned. Legacy assertions remain intact. Artifact-phase cancellation, reverse concurrent browser completion and sandbox/cache/account/mobile migration audit remain open; full npm test is not certified. Reports #a3daf406 and #e89344ad remain unresolved for their recorded reasons. Results: dated core-tab-close source/deployed logs.
+
+Initial fixture failure expected ready jobs in the active HTTP snapshot; canonical store.listJobs intentionally omits ready. The retained failure is a harness error. The corrected fixture checks the exact durable job in its own read-only temporary database AND absence from the active HTTP snapshot, without lowering the ready/publication/no-regeneration assertions. One documentation CodeMode syntax error dispatched no tools.
+
+Verified: all 20 browser-core checks pass on source and installed /opt/form modules, including closed-tab completion and desktop/mobile reopening. Syntax/diff checks pass. Only test/docs synchronized; application bundle byte-identical, no runtime restart or production writes. Test hash and initial/passing logs retained. Fixtures cleaned. Full-suite certification remains open.

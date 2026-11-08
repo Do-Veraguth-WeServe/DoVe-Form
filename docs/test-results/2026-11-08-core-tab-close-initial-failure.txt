@@ -1,0 +1,26 @@
+PASS wrong password rejected
+PASS registration and model-free composer gate
+PASS current settings navigation, model add, masked key and Escape
+PASS two visible prose stages before structured chat offer
+PASS ordinary imperative chat cannot build
+PASS concurrent chat completes before held build; desktop/mobile reload retain one identical job
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: build completes with no browser tab
++ actual - expected
+
++ undefined
+- 'ready'
+
+    at file:///root/.openclaw/workspace/projects/form/test/browser-core.test.mjs:81:9 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: undefined,
+  expected: 'ready',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.22.2

@@ -1,6 +1,7 @@
 // Current-contract migration of legacy browser acceptance sections 0–4.
 // Independent fixture; never accesses production accounts, models or data.
 import assert from 'node:assert/strict';
+import {DatabaseSync} from 'node:sqlite';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -38,7 +39,7 @@ try{
  app=spawn(process.execPath,['server.mjs'],{cwd:root,env:{...process.env,PORT:'4826',FORM3_DATA:dir,FORM3_MODELS:path.join(dir,'models.json'),FORM3_CONFIG:path.join(dir,'config.json'),FORM3_REGISTRATION:'1'},stdio:['ignore','pipe','inherit']});
  await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('server startup timeout')),15000);app.stdout.on('data',d=>{if(String(d).includes('ready')){clearTimeout(t);resolve()}});app.once('exit',c=>{clearTimeout(t);reject(Error('early server exit '+c))})});
  browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'/root/.cache/puppeteer/chrome/linux-153.0.8010.36/chrome-linux64/chrome',headless:true,args:['--no-sandbox']});
- const context=await browser.newContext({viewport:{width:1280,height:900},reducedMotion:'reduce'}),p=await context.newPage(),errors=[];
+ const context=await browser.newContext({viewport:{width:1280,height:900},reducedMotion:'reduce'}),errors=[];let p=await context.newPage();
  p.on('pageerror',e=>errors.push(e.message));await p.goto(base);
  await p.locator('#loginform [name=username]').fill('coreowner');await p.locator('#loginform [name=password]').fill('wrong-password');await p.locator('#loginform button').last().click();
  await p.locator('#loginerr').filter({hasText:'Ungültiger Benutzername oder Passwort'}).waitFor();check('wrong password rejected');
@@ -71,7 +72,32 @@ try{
   assert.equal(await p.locator(heldSelector+' svg.crane').count(),1);
  }
  check('concurrent chat completes before held build; desktop/mobile reload retain one identical job');
- releaseBuild();await p.locator('iframe.render[data-ready=true]').waitFor();check('explicit approval and real held build before artifact');
+ // Legacy7b: close the only tab before releasing any artifact bytes.
+ await p.close();assert.equal(context.pages().length,0);
+ assert.equal((await api('/api/jobs')).jobs.find(j=>j.id===heldJob.id).state,'building');
+ assert.equal(builds,1);releaseBuild();
+ // Ready jobs leave the public active snapshot: inspect only our isolated fixture DB.
+ const fixtureDB=new DatabaseSync(path.join(dir,'form.db'),{readOnly:true});
+ const jobState=()=>fixtureDB.prepare('SELECT state FROM jobs WHERE id=?').get(heldJob.id);
+ try{
+ const deadline=Date.now()+20000;let completed;
+ do{completed=jobState();if(completed?.state==='ready'||completed?.state==='failed')break;await new Promise(r=>setTimeout(r,100));}while(Date.now()<deadline);
+ assert.equal(completed?.state,'ready','build completes with no browser tab');
+ assert.equal(context.pages().length,0);assert.equal(builds,1);
+ const saved=(await api('/api/conversations')).conversations.find(c=>c.id===heldJob.conversationId);
+ assert.equal(saved.messages.filter(m=>m.render?.name==='Core-Regler').length,1,'one publication while detached');
+ for(const width of [1280,390]){
+  p=await context.newPage();p.on('pageerror',e=>errors.push(e.message));await p.setViewportSize({width,height:844});await p.goto(base);
+  await p.frameLocator('iframe.render[data-ready=true]').locator('#out').filter({hasText:'Wert: 3'}).waitFor();
+  assert.equal(await p.locator('iframe.render').count(),1);assert.equal(builds,1);
+  assert.equal(jobState().state,'ready');
+  assert.equal((await api('/api/jobs')).jobs.some(j=>j.id===heldJob.id),false,'ready job leaves active snapshot');
+  assert.deepEqual((await api('/api/conversations')).conversations.find(c=>c.id===saved.id).messages,saved.messages);
+  if(width===1280)await p.close();
+ }
+ }finally{fixtureDB.close()}
+ check('tab-close build completion without viewer; desktop/mobile reopen one persisted Element, no regeneration');
+ check('explicit approval and real held build before artifact');
  let f=p.frameLocator('iframe.render');await f.locator('#out').filter({hasText:'Wert: 3'}).waitFor();await f.locator('#amt').fill('7');await f.locator('#out').filter({hasText:'Wert: 7'}).waitFor();
  await p.waitForFunction(async()=>{const d=await(await fetch('/api/conversations')).json();return d.conversations.some(c=>c.messages.some(m=>m.render?.state?.value===7))});
  await p.reload();f=p.frameLocator('iframe.render');await f.locator('#out').filter({hasText:'Wert: 7'}).waitFor();assert.equal(await f.locator('#amt').inputValue(),'7');assert.equal(builds,1);assert.equal(await p.locator('iframe.render').count(),1);check('real server persistence and reload without duplicate build');
@@ -218,5 +244,5 @@ try{
    check('logout/relogin '+width+': revoked cookie, independent session retained, data restored without generation');
   }finally{await fresh.close()}
  }
- assert.deepEqual(errors,[]);console.log('PASS browser-core: 19 checks; source='+root);
+ assert.deepEqual(errors,[]);console.log('PASS browser-core: 20 checks; source='+root);
 }finally{releaseProse?.();releaseCorrection?.();releaseFirst?.();releaseArtifact?.();releaseBuild?.();await browser?.close();if(app&&app.exitCode===null){app.kill('SIGTERM');await once(app,'exit')}mock.closeAllConnections();await new Promise(r=>mock.close(r));fs.rmSync(dir,{recursive:true,force:true});}
