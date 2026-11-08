@@ -1,6 +1,6 @@
 import net from 'node:net';
 import {verificationFailure} from './animation-verification-errors.mjs';
-export function requestAnimationVerification(artifact,{socketPath='/run/form-verifier.sock',signal,timeoutMs=34000}={}){
+function requestAnimationVerificationOnce(artifact,{socketPath='/run/form-verifier.sock',signal,timeoutMs=34000}={}){
  if(signal?.aborted)return Promise.reject(Error('Animation verification cancelled'));
  const payload=JSON.stringify({artifact})+'\n';
  if(Buffer.byteLength(payload)>220000)return Promise.reject(Error('Animation verification request too large'));
@@ -19,4 +19,14 @@ export function requestAnimationVerification(artifact,{socketPath='/run/form-ver
    try{const result=JSON.parse(data.slice(0,data.indexOf('\n')));if(result.ok!==true||result.evidence?.status!=='passed')return finish(Error(verificationFailure(result.code).message));finish(null,result.evidence);}catch{finish(Error(verificationFailure('INTERNAL').message));}
   });
  });
+}
+
+export async function requestAnimationVerification(artifact,opts={}){
+ const end=Date.now()+(opts.timeoutMs??34000);
+ for(let attempt=0;;attempt++){
+  try{return await requestAnimationVerificationOnce(artifact,{...opts,timeoutMs:end-Date.now()});}
+  catch(e){if(attempt>=2||opts.signal?.aborted||!/^Animation verification (unavailable|incomplete)$/.test(e.message)||end-Date.now()<600)throw e;
+   await new Promise((resolve,reject)=>{const abort=()=>{clearTimeout(timer);reject(Error('Animation verification cancelled'));};const timer=setTimeout(()=>{opts.signal?.removeEventListener('abort',abort);resolve();},250*(attempt+1));opts.signal?.addEventListener('abort',abort,{once:true});if(opts.signal?.aborted)abort();});
+  }
+ }
 }

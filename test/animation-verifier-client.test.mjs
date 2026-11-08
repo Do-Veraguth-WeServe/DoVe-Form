@@ -23,3 +23,5 @@ test('only trusted correction hints cross the verifier boundary',async()=>{
   });
  }
 });
+
+test('admission retries bounded; target rejection never retried',async()=>{let count=0;await fixture(s=>{count++;if(count===1)s.end();else s.end(JSON.stringify({ok:true,evidence:{status:'passed'}})+String.fromCharCode(10));},async socketPath=>assert.equal((await verify({},{socketPath})).status,'passed'));assert.equal(count,2);count=0;await fixture(s=>{count++;s.end(JSON.stringify({ok:false,code:'TARGET'})+String.fromCharCode(10));},async socketPath=>assert.rejects(verify({},{socketPath}),/TARGET/));assert.equal(count,1);});

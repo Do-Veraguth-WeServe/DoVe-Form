@@ -72,7 +72,7 @@ async function runRoundAttempt(cfg, messages, opts, onProse, onArtifactStart) {
       redirect: 'error',
       method: 'POST',
       headers: { Authorization: 'Bearer ' + cfg.apiKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: cfg.model, stream: true, max_tokens: opts?.maxTokens || 16384, messages, ...(tools.length ? {tools,tool_choice:"auto"} : {}) }),
+      body: JSON.stringify({ model: cfg.model, stream: true, max_tokens: opts?.maxTokens || 16384, ...(['low','high','max'].includes(opts?.reasoningEffort)?{reasoning_effort:opts.reasoningEffort}:{}), messages, ...(tools.length ? {tools,tool_choice:"auto"} : {}) }),
       signal: round.signal
     });
     if (!resp.ok) {
@@ -83,7 +83,8 @@ async function runRoundAttempt(cfg, messages, opts, onProse, onArtifactStart) {
     if (!resp.body) throw new ProviderError('Modell-Endpunkt lieferte keinen Stream');
 
     const reader = resp.body.getReader(), dec = new TextDecoder();
-    let sseBuf = '', total = 0, content = 0, contentText = '', finishReason = null;
+    let sseBuf = '', total = 0, content = 0, contentText = '', finishReason = null,reasoningChars=0;
+    const usage={};
 
     const toolCalls=new Map();
     let toolBytes=0;
@@ -97,6 +98,7 @@ async function runRoundAttempt(cfg, messages, opts, onProse, onArtifactStart) {
         const msg = String((j.error && typeof j.error === 'object' && j.error.message) || j.error).slice(0, 180);
         throw new ProviderError('Modellfehler beim Streaming: ' + msg);
       }
+      if(j?.usage){for(const k of ['prompt_tokens','completion_tokens','total_tokens'])if(Number.isSafeInteger(j.usage[k])&&j.usage[k]>=0)usage[k]=j.usage[k];const n=j.usage.completion_tokens_details?.reasoning_tokens;if(Number.isSafeInteger(n)&&n>=0)usage.reasoning_tokens=n;}
       const ch = Array.isArray(j?.choices) && j.choices[0] ? j.choices[0] : null;
       if (ch && ch.finish_reason) finishReason = String(ch.finish_reason);
       for(const part of ch?.delta?.tool_calls||[]){
@@ -109,6 +111,7 @@ async function runRoundAttempt(cfg, messages, opts, onProse, onArtifactStart) {
         if(toolBytes>64000||tc.id.length>200||tc.function.name.length>100||tc.function.arguments.length>16000)throw new SizeError('Tool-Aufruf zu gross.');
         toolCalls.set(part.index,tc);
       }
+      if(typeof ch?.delta?.reasoning_content==='string')reasoningChars+=ch.delta.reasoning_content.length;
       const delta = ch?.delta?.content;
       if (typeof delta === 'string' && delta) {
         content += delta.length;
@@ -149,12 +152,12 @@ async function runRoundAttempt(cfg, messages, opts, onProse, onArtifactStart) {
     if (fin.hadArtifact) { try {
       render = validateGeneratedCSS(parseArtifact(fin.artifactRaw));
       if(render.animations)animationEvidence=await requestAnimationVerification(render,{signal:round.signal,timeoutMs:Math.min(34000,deadlineMs-Date.now())});
-    } catch (e) { render=null;error = String(e.message || e).slice(0, 160); } }
+    } catch (e) { if(/^Animation verification (unavailable|incomplete|deadline)$/.test(e.message)||/Animation browser verification rejected \[INTERNAL\]/.test(e.message))throw new ProviderError('Animationsprüfung vorübergehend nicht verfügbar. Der Entwurf wurde nicht veröffentlicht; bitte den Bau später erneut versuchen.');render=null;error = String(e.message || e).slice(0, 160); } }
     if(round.signal.aborted)throw abortErr(!!signal?.aborted);
     return {
       render, error, animationEvidence, hadArtifact: fin.hadArtifact,
       truncated: finishReason === 'length', finishReason,
-      toolCalls:[...toolCalls.values()], contentText, contentChars: content
+      toolCalls:[...toolCalls.values()], contentText, contentChars: content,reasoningChars,usage
     };
   } catch (e) {
     if (e && (e.name === 'AbortError' || e.name === 'RoundAbort')) {

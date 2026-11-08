@@ -47,12 +47,14 @@ export async function executeTurn(model, messages, opts, emit) {
   let liveProse = '';
   const wrapProse = t => { liveProse += t; onProse(t); };
 
-  const roundOpts = { signal, deadlineMs, onTransportRetry: ({code}) => emit({type:'retry',code:'transport',reason:'Verbindung zum Modellanbieter unterbrochen ('+code+') — erneuter Verbindungsversuch …'}) };
+  const roundOpts = { signal, deadlineMs, ...(/^glm-5\.3(?:-flashx?)?$/i.test(model.model)?{reasoningEffort:'low'}:{}), onTransportRetry: ({code}) => emit({type:'retry',code:'transport',reason:'Verbindung zum Modellanbieter unterbrochen ('+code+') — erneuter Verbindungsversuch …'}) };
   let round1;
   if(opts?.toolContext?.catalog.length){
     const out=await runToolLoop(model,messages,{...roundOpts,...opts.toolContext},ev=>{if(ev.type==='prose-chunk')wrapProse(ev.text);else emit(ev)});
     round1=out.result;messages=out.messages;
   }else round1 = await runRound(model, messages, roundOpts, wrapProse, onArtifactStart);
+  const logBudget=(r,n)=>console.info('[build-budget] '+JSON.stringify({round:n,finish:['stop','length','tool_calls','content_filter'].includes(r.finishReason)?r.finishReason:'other',visibleChars:r.contentChars,reasoningChars:r.reasoningChars||0,usage:r.usage||{}}));
+  logBudget(round1,1);
   let finalRender = round1.render;
   let failure = null;
   let failureCode = null; // 'truncated' | 'invalid-artifact'
@@ -82,6 +84,7 @@ export async function executeTurn(model, messages, opts, emit) {
     round2 = await runRound(model,
       [...messages, { role: 'assistant', content: prev }, { role: 'user', content: corrective }],
       roundOpts, wrapProse, onArtifactStart);
+    logBudget(round2,2);
     if (round2.render) {
       finalRender = round2.render;
       failure = null; // success on round2 clears round1's failure
