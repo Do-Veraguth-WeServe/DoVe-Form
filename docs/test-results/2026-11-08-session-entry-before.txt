@@ -1,0 +1,16 @@
+initial 1280 4939
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: login enters at bottom
+    at file:///root/.openclaw/workspace/projects/form/test/session-entry.test.mjs:8:165 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.22.2

@@ -26,6 +26,7 @@ const waitReady = (proc, tag, pattern = /ready/) => new Promise((resolve, reject
 });
 
 step('build (esbuild + bridge hash + wasm)', run('node', ['build.mjs']));
+step('session entry bottom without submit movement',run('node',['test/session-entry.test.mjs']));
 step('momentum bounds and teardown',run('node',['--test','test/feed-momentum.test.mjs']));
 step('mobile Element flick momentum and cancellation',run('node',['test/element-momentum.test.mjs']));
 step('navigation preserves background chat and plans',run('node',['test/navigation-jobs.test.mjs']));

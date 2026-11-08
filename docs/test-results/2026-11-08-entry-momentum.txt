@@ -1,0 +1,18 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+'0' !== 'clicked'
+
+    at file:///root/.openclaw/workspace/projects/form/test/element-momentum.test.mjs:9:87 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: '0',
+  expected: 'clicked',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.22.2

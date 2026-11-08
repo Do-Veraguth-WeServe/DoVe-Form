@@ -1,3 +1,4 @@
+import {sessionEntry} from './session-entry.js';
 import {settingsLayout} from './settings-layout.js';
 import {sharedElements} from './shared-elements.js';
 import {buildStatus,buildFailure} from '../build-recovery.mjs';
@@ -53,6 +54,8 @@ function restoreScroll(st){
   if(st.frac!=null&&f.scrollHeight>f.clientHeight){go(st.frac*(f.scrollHeight-f.clientHeight));return}
   go(st.top!=null?st.top:f.scrollTop);
 }
+let stopEntry=()=>{};
+function renderEntry(){render();stopEntry=sessionEntry($('#feed'));}
 function renderPreservingScroll(){const st=scrollState();render();restoreScroll(st)}
 function toast(t){$('#live').textContent=t;const n=document.createElement('div');n.className='toast';n.textContent=t;document.body.append(n);setTimeout(()=>n.remove(),4000)}
 function trimVersions(){
@@ -198,7 +201,7 @@ async function enter(){
   connectJobs();
   if(!db.sessions.length){
     await newSession();
-  } else render();
+  } else renderEntry();
 }
 // --- element helpers ---
 const elementName=m=>m.render.name||deriveName(m.render,m.prose);
@@ -525,11 +528,11 @@ function renderChip(){
 // Keep the visible history start stable while a conversation is open.
 // Rotating a last-12 window on submit removes content above the viewport.
 const visibleStarts=new Map();
-function render(){  views.forEach(v=>v.destroy());views=[];
+function render(){stopEntry();  views.forEach(v=>v.destroy());views=[];
   $('#sessions').replaceChildren();
   for(const s of db.sessions){
     const row=document.createElement('div');row.className='session-row';row.dataset.sid=s.id;
-    const b=document.createElement('button');b.className='session-open';b.textContent=s.title;b.setAttribute('aria-current',s.id===db.current);b.onclick=()=>{closeOverlay();db.current=s.id;marked=null;save();render();$('#sidebar').classList.remove('open')};
+    const b=document.createElement('button');b.className='session-open';b.textContent=s.title;b.setAttribute('aria-current',s.id===db.current);b.onclick=()=>{closeOverlay();db.current=s.id;marked=null;save();renderEntry();$('#sidebar').classList.remove('open')};
     const del=document.createElement('button');del.className='session-delete';del.type='button';del.textContent='×';del.setAttribute('aria-label','Chat löschen: '+s.title);del.title='Chat löschen';del.onclick=()=>deleteChat(s);
     row.append(b,del);$('#sessions').append(row);
   }
