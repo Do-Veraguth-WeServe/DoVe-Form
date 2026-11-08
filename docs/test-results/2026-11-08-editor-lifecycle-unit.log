@@ -1,0 +1,21 @@
+✔ serializes writes using acknowledged state, snapshots queued input (27.355393ms)
+✔ blocks queued writes without replay after 409 (4.37518ms)
+✔ blocks queued writes without replay after 401 (3.887974ms)
+✔ blocks queued writes without replay after 403 (2.594103ms)
+✔ blocks queued writes without replay after 503 (2.741929ms)
+✔ blocks queued writes without replay after network (3.249264ms)
+✔ blocks queued writes without replay after malformed (2.097369ms)
+✔ bounded queue fails closed without a request flood (7.965339ms)
+✔ stopped snapshot cannot dispatch queued work (0.790714ms)
+✔ code snapshot survives state writes and advances only after confirmed replacement (13.904082ms)
+✔ missing or invalid code acknowledgement blocks queue undefined (2.939687ms)
+✔ missing or invalid code acknowledgement blocks queue wrong (6.299546ms)
+✔ published frontend accepts backend receipt, CAS rejects stale state and foreign users (238.219159ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 651.354148

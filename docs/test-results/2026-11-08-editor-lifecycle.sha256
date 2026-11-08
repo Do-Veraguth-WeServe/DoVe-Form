@@ -1,0 +1,10 @@
+8987256fa864ec46e60e328342d4336ccc91200eedc36c0bc2c0f760357562da  test/editor-lifecycle.test.mjs
+7f40d98d862930514a10810d225e41ce26cbcaa4efe3683ddbbe78fb0d5e6b0a  test/run-all.mjs
+da210d99e2debe85b65a5acfe3fdd2ad18fd318a0bd768219dad11bac609ec64  TESTING.md
+aa70823153bb033b9d49cb35911c62a18eb0e22d81541e1cb1ec5282cf184abf  docs/screenshots/editor-lifecycle-1280.png
+8323831f94e3fe54f6c74c8d6254fa5f49577b8cffe569800cfcbd34647406f9  docs/screenshots/editor-lifecycle-390.png
+8c99033e04a17b379867303cdffe5d8854002ee95f2e8df46898af2f92f82c63  docs/test-results/2026-11-08-editor-lifecycle-deployed.log
+790e631606358ec2b973df396222ff131d732f6a64bbc79f93d12aa84bd858b8  docs/test-results/2026-11-08-editor-lifecycle-fixture-dom.log
+a93b2b7f067290f998dc60dadd6cccf24d66b18bb9deb508de6d41d7a8c1ae85  docs/test-results/2026-11-08-editor-lifecycle-initial.log
+4055760cfe8c284de725f7814fdf4f79deac9118d34fa297f70c8c5d4d54a4e9  docs/test-results/2026-11-08-editor-lifecycle-source.log
+39b0c8a36e0e749670f756c16b8ff2483628ace15f3506912c7e166376174527  docs/test-results/2026-11-08-editor-lifecycle-unit.log

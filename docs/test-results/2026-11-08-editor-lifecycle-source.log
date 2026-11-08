@@ -1,0 +1,7 @@
+PASS 1280 named pin persisted, overlay teardown and feed restoration
+PASS 1280 invalid JSON rejected, confirmed edit/reload and server version restore
+PASS 1280 editor injection sanitized on apply/reload, zero external requests or page errors
+PASS 390 named pin persisted, overlay teardown and feed restoration
+PASS 390 invalid JSON rejected, confirmed edit/reload and server version restore
+PASS 390 editor injection sanitized on apply/reload, zero external requests or page errors
+PASS editor lifecycle: source=/root/.openclaw/workspace/projects/form
