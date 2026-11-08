@@ -1,0 +1,18 @@
+{"requestPaths":[{"path":"/api/auth/login"}],"errors":[],"notices":["Interaktion angehalten: unexpected token in expression: ''",""]}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.waitFor: Timeout 10000ms exceeded.
+Call log:
+  - waiting for locator('#feed iframe').contentFrame().locator('#list').filter({ hasText: 'Synthetic Town' }) to be visible
+
+    at loaded (/root/.openclaw/workspace/projects/form/test/db-element-lifecycle.test.mjs:36:180)
+    at async file:///root/.openclaw/workspace/projects/form/test/db-element-lifecycle.test.mjs:37:3 {
+  log: [
+    "  - waiting for locator('#feed iframe').contentFrame().locator('#list').filter({ hasText: 'Synthetic Town' }) to be visible"
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.22.2

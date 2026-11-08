@@ -26,6 +26,8 @@ const waitReady = (proc, tag, pattern = /ready/) => new Promise((resolve, reject
 });
 
 step('build (esbuild + bridge hash + wasm)', run('node', ['build.mjs']));
+step('account-scoped conversation selection',run('node',['--test','test/session-selection.test.mjs']));
+step('DB-dependent Element initialization and reload',run('node',['test/db-element-lifecycle.test.mjs']));
 step('unchanged feed Elements survive real updates',run('node',['test/feed-stability.test.mjs']));
 step('job snapshots preserve unchanged Element frames',run('node',['test/snapshot-stability.test.mjs']));
 step('session entry bottom without submit movement',run('node',['test/session-entry.test.mjs']));

@@ -1,0 +1,1 @@
+{"result":"PASS","mode":"synthetic","artifactHash":"acb8b16477b338caf74816cf89b7560257a17711c1acc6e42e6878afb9768116","checks":["desktop/mobile","one initialization","real DB create-conflict/select","local persist and unrelated update retain frame/draft","scroll","browser reload","session leave/return","no actions or row mutations","no browser errors"]}

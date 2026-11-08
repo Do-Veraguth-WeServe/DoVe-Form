@@ -1,0 +1,17 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.waitFor: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator('#feed iframe[data-ready=true]') to be visible
+
+    at loaded (/root/.openclaw/workspace/projects/form/test/db-element-lifecycle.test.mjs:36:78)
+    at /root/.openclaw/workspace/projects/form/test/db-element-lifecycle.test.mjs:37:9 {
+  log: [
+    "  - waiting for locator('#feed iframe[data-ready=true]') to be visible"
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.22.2

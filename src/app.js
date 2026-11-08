@@ -1,3 +1,4 @@
+import {rememberSelection,restoreSelection} from './session-selection.js';
 import {sessionEntry} from './session-entry.js';
 import {settingsLayout} from './settings-layout.js';
 import {sharedElements} from './shared-elements.js';
@@ -71,7 +72,7 @@ function trimVersions(){
   }catch{}
 }
 // localStorage is a CACHE now — the server (SQLite) is the source of truth.
-function save(){try{trimVersions();localStorage.setItem(KEY,JSON.stringify(db))}catch{}}
+function save(){rememberSelection(localStorage,me?.id,db.current);try{trimVersions();localStorage.setItem(KEY,JSON.stringify(db))}catch{}}
 
 // --- schema: version 4 adds elements {pins, versions}; version 3 archives migrate lazily ---
 function normalize(x){
@@ -188,8 +189,7 @@ async function loadFromServer(){
     stopElementSaves();
     const selected=db.current;
     db=fromServer(data);
-    if(db.sessions.some(s=>s.id===selected))db.current=selected;
-    if(!current()&&db.sessions.length)db.current=db.sessions[0].id;
+    db.current=restoreSelection(localStorage,me?.id,db.sessions,selected);
     save();
     return true;
   }catch{return false}
