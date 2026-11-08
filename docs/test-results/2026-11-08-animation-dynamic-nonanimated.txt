@@ -1,0 +1,17 @@
+[build-budget] {"round":1,"finish":"stop","visibleChars":141,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":141,"reasoningChars":0,"usage":{}}
+[job] id=c48f2a56 failed after 2 round(s): invalid-artifact
+[build-budget] {"round":1,"finish":"stop","visibleChars":141,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":101,"reasoningChars":0,"usage":{}}
+[job] id=09417042 user=130b00ba kind=refine dur=8084ms rounds=2 finish=stop/stop chars=242 render=yes fail=invalid-artifact
+✔ initial HTML loss triggers one correction and double failure preserves the existing element (16714.090715ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":101,"reasoningChars":0,"usage":{}}
+✔ valid nonanimated output passes without claiming runtime evidence (4061.841065ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 21158.927227

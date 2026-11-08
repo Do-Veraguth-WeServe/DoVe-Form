@@ -1,0 +1,13 @@
+✔ bounded numeric versioned animation schema (4.727428ms)
+✔ old artifact remains valid, invalid animation rejected at contract (4.348449ms)
+✔ bounded private verifier protocol (1578.358953ms)
+✔ only trusted correction hints cross the verifier boundary (27.334435ms)
+✔ admission retries bounded; target rejection never retried (261.0395ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2046.595606

@@ -1,0 +1,1 @@
+PASS observed animated startup dynamic HTML: five rejections; safe HTML/SVG/table contexts; static-only no execution; privacy; cleanup

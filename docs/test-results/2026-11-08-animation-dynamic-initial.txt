@@ -1,0 +1,1 @@
+PASS initial animated HTML preflight: five rejected variants, supported SVG/table/input, privacy, legacy compatibility, cleanup

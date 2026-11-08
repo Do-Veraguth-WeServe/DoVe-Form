@@ -1,0 +1,30 @@
+[build-budget] {"round":1,"finish":"stop","visibleChars":236,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":260,"reasoningChars":0,"usage":{}}
+[job] id=52adf45b failed after 2 round(s): invalid-artifact
+[build-budget] {"round":1,"finish":"stop","visibleChars":236,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":247,"reasoningChars":0,"usage":{}}
+[job] id=7413aca4 user=7c574179 kind=refine dur=11254ms rounds=2 finish=stop/stop chars=483 render=yes fail=invalid-artifact
+✔ real isolated Chromium rejects missing target and corrects once, with scoped durable evidence (22603.421032ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":287,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":287,"reasoningChars":0,"usage":{}}
+[job] id=4d5f5b40 failed after 2 round(s): invalid-artifact
+[build-budget] {"round":1,"finish":"stop","visibleChars":287,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":247,"reasoningChars":0,"usage":{}}
+[job] id=89977a5c user=9daf1fa4 kind=refine dur=9612ms rounds=2 finish=stop/stop chars=534 render=yes fail=invalid-artifact
+[build-budget] {"round":1,"finish":"stop","visibleChars":311,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":311,"reasoningChars":0,"usage":{}}
+[job] id=c7fedc65 failed after 2 round(s): invalid-artifact
+[build-budget] {"round":1,"finish":"stop","visibleChars":311,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":247,"reasoningChars":0,"usage":{}}
+[job] id=d1b2b58c user=fb6cff9a kind=refine dur=10486ms rounds=2 finish=stop/stop chars=558 render=yes fail=invalid-artifact
+✔ initial and observed dynamic HTML loss trigger one correction and double failure preserves the existing element (39801.528687ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":247,"reasoningChars":0,"usage":{}}
+✔ valid animated output passes one real browser round (5717.006718ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 68742.320372

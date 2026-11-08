@@ -15,8 +15,11 @@ test('real isolated Chromium rejects missing target and corrects once, with scop
  }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
  });
 });
-test('initial HTML loss triggers one correction and double failure preserves the existing element',async()=>{
- const invalid={...artifact,html:artifact.html+'<div id="title">PRIVATE_SENTINEL</div>'};
+test('initial and observed dynamic HTML loss trigger one correction and double failure preserves the existing element',async()=>{
+ for(const invalid of [
+  {...artifact,html:artifact.html+'<div id="title">PRIVATE_SENTINEL</div>'},
+  {...artifact,js:'ui.html("a",'+JSON.stringify('<div id="title">PRIVATE_SENTINEL</div>')+');'}
+ ]){
  for(const correct of [false,true])await fixture([invalid,correct?artifact:invalid],async(model,count)=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'form-html-job-'));const store=new Store(dir);
   try{
@@ -30,5 +33,6 @@ test('initial HTML loss triggers one correction and double failure preserves the
    if(!correct){assert.match(store.getJob(job.id).error,/HTML/);assert.doesNotMatch(store.getJob(job.id).error,/PRIVATE_SENTINEL/);assert.equal(store.db.prepare('SELECT count(*) n FROM animation_evidence').get().n,0);}
   }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
  });
+ }
 });
 test('valid animated output passes one real browser round',async()=>{await fixture([artifact],async(model,count)=>{const result=await executeTurn(model,[],{},()=>{});assert.equal(count(),1);assert.equal(result.failure,null);assert.equal(result.animationEvidence?.status,'passed');});});

@@ -37,6 +37,9 @@ export async function verifyAnimationArtifact(browser,artifact,{root=process.cwd
   // artifacts remain compatible; only the generation verifier calls this gate.
   if(!await page.evaluate(html=>window.preflightVerificationHTML(html),artifact.html))throw verificationError('HTML','Initial HTML violates the supported sanitizer policy');
   if(htmlOnly)return {status:'passed',scope:'initial-html-only',sourceHash,limitations:['No guest execution','No runtime, layout or visual-intent certification']};
+  const checkHTMLWarnings=async()=>{
+   if(await page.evaluate(()=>window.verification.htmlWarning))throw verificationError('HTML','Observed dynamic HTML violates the supported sanitizer policy');
+  };
   const mount=async data=>{
    await page.evaluate(d=>window.mountVerification(d),data);
    await page.waitForFunction(()=>document.querySelector('iframe')?.dataset.ready==='true'||window.verification.errors.length);
@@ -44,6 +47,7 @@ export async function verifyAnimationArtifact(browser,artifact,{root=process.cwd
   };
   await mount(artifact);await page.waitForTimeout(150);
   if(await page.evaluate(()=>window.verification.errors.length))throw verificationError('STARTUP','Runtime startup rejected');
+  await checkHTMLWarnings();
   const effectiveHTML=await page.frameLocator('iframe').locator('body').evaluate(el=>{const clone=el.cloneNode(true);clone.querySelectorAll('script').forEach(s=>s.remove());return clone.innerHTML;});
   const evidence=[];
   for(const [index,[name,node]] of clips.entries()){
@@ -65,6 +69,7 @@ export async function verifyAnimationArtifact(browser,artifact,{root=process.cwd
    const result=await page.evaluate(key=>window.verification.states[0][key],stateKey);
    if(result.status!=='finished'||result.ok!==true)throw verificationError('EXECUTION','Declared animation execution failed');
    if(screenshotDir)await page.locator('iframe').screenshot({path:path.join(screenshotDir,'clip-'+index+'-end.png')});
+   await checkHTMLWarnings();
    evidence.push({clip:index,targets:ids.length,samples,status:'finished'});
   }
   return {status:'passed',scope:'startup-and-declared-clips',sourceHash,viewport:{width:390,height:844},clips:evidence,limitations:['No semantic visual-intent certification','No generated click/persistence workflow certification','Empty isolated data; no production actions']};
