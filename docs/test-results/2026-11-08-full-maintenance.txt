@@ -1,0 +1,443 @@
+
+> form3@3.3.0 test
+> node test/run-all.mjs
+
+✔ stored element evidence: isolation, fresh values, truncation and read-only (272.596439ms)
+✔ static CSS evidence is scoped, revision-bound, read-only and independent of stored counts (246.079691ms)
+✔ oversized CSS is explicitly unavailable; unchanged source hashes are deterministic (2.254705ms)
+✔ archive metadata cannot forge app-owned verification (212.834075ms)
+✔ no elements yields no diagnostic badge; legacy jobs remain compatible (0.320737ms)
+✔ only bounded static provenance is exposed; model-like fields cannot certify a repair (0.617261ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 646.496815
+✅ revision-bound static CSS evidence
+✔ bounded inert offer rejects commands and malformed values (3.685571ms)
+✔ metadata-only fenced and chunked offers do not leak into prose (4.477313ms)
+✔ clear legacy prose offers have fallback but ordinary discussion does not (1.169667ms)
+✔ prompt requires contextual offers and separate explicit build approval (0.585071ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 165.697097
+✅ guided planning metadata
+build ok: dist/
+✅ build (esbuild + bridge hash + wasm)
+PASS wrong password rejected
+PASS registration and model-free composer gate
+PASS current settings navigation, model add, masked key and Escape
+PASS two visible prose stages before structured chat offer
+PASS ordinary imperative chat cannot build
+PASS explicit approval and real held build before artifact
+PASS real server persistence and reload without duplicate build
+PASS 390px interaction and persisted reload
+PASS browser-core: 8 checks; source=/root/.openclaw/workspace/projects/form
+✅ current-contract browser core (login, settings, approval, streaming, persistence)
+PASS real browser->chat->mock provider: desktop/mobile, zero/positive state, scoped revision evidence, no foreign data, no blueprint/build/artifact mutation. Mock response is NOT model reasoning certification.
+✅ scoped diagnostic chat browser
+PASS desktop/mobile: pointer approval survives concurrent job event; active planning invalidates/disables stale controls; model offer persisted on reload; no automatic planning/build; double click one plan; separate explicit build; old offer hidden after planning; sandbox ready; contextual targeted refinement on both viewports; global Plan absent.
+✅ contextual planning offer browser
+✔ selection is account-scoped and validated against fresh authorized sessions (2.010406ms)
+✔ unavailable storage never prevents authenticated loading (0.582567ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 161.263546
+✅ account-scoped conversation selection
+{"result":"PASS","mode":"synthetic","artifactHash":"acb8b16477b338caf74816cf89b7560257a17711c1acc6e42e6878afb9768116","checks":["desktop/mobile","one initialization","real DB create-conflict/select","local persist and unrelated update retain frame/draft","scroll","browser reload","session leave/return","no actions or row mutations","no browser errors"]}
+✅ DB-dependent Element initialization and reload
+PASS desktop/mobile: background/repeated/terminal/empty snapshots and unrelated updates after ui.persist preserve frame+draft; selection/overlay invalidate; browser reload initializes once/restores state; scrolling stable; failed save recovers canonical snapshot.
+✅ unchanged feed Elements survive real updates
+PASS desktop/mobile: background/repeated/terminal/empty snapshots preserve iframe identity and unsaved input.
+✅ job snapshots preserve unchanged Element frames
+initial 1280 0
+initial 390 0
+PASS session entry desktop/mobile/login/sidebar/reload, iframe settling/cancel/deadline, Enter/button middle/bottom submit and completion preservation
+✅ session entry bottom without submit movement
+✔ velocity is bounded, decays, and expires within 1200ms (8.41847ms)
+✔ negative direction, boundary and invalid velocity (1.690262ms)
+✔ new trusted input, hidden document and detached owner stop continuation (6.506217ms)
+✔ one owner at a time, teardown cannot stop another owner (1.177337ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 153.719781
+✅ momentum bounds and teardown
+{ released: 144, coasted: 223 }
+{"feed":272,"inner":0}
+PASS mobile touch scroll, taps, forged-message rejection, overlay native scroll and desktop controls
+✅ mobile Element flick momentum and cancellation
+PASS navigation chat/plan/new/existing/reload: no cancellation, no foreign live content, completion preserves selection, one provider call
+✅ navigation preserves background chat and plans
+✔ namespace revision covers same-size updates and independent connections, not reads/failed writes (24.517913ms)
+✔ opt-in acceptance and uniform foreign denial, no copied chats or capability transfer (316.82761ms)
+✔ actual shared rows update one namespace; forged namespace and schema operations cannot escape (271.688209ms)
+✔ revocation rechecks every read/write; new grant never reactivates old token (293.182655ms)
+✔ state updates remain visible, code changes fail closed until fresh acceptance (271.764684ms)
+✔ disabled accounts and deleted source are unavailable; additive table survives reopening (265.968924ms)
+✔ pending offers cannot read and quotas do not auto-share other elements (428.982715ms)
+✔ grant listing is paginated and account scoped without pending source data (300.856716ms)
+✔ state compare-and-set detects stale snapshots without editing code (250.293072ms)
+✔ state errors roll back and unavailable grants cannot disclose conflict state (296.24069ms)
+✔ recipient create compatibility never changes schema and matches owner response (282.39382ms)
+✔ separate recipients share conflict token and failed persistence is atomic (292.793765ms)
+✔ cross-process revocation cannot interleave shared row authorization and use (553.240222ms)
+✔ cross-process disable cannot interleave offer or acceptance checks (579.644987ms)
+✔ shared snapshots are coherent against cross-process revocation (506.844448ms)
+✔ owner persistence preserves legacy saves but requires CAS for active shared code (289.87615ms)
+✔ owner code replacement is atomic, versioned and invalidates accepted code (252.025073ms)
+✔ owner CAS holds writer lock through snapshot and persistence (390.59873ms)
+✔ owner snapshot rejects same-state html replacement and state write (271.246951ms)
+✔ owner snapshot rejects same-state actions replacement and state write (255.512093ms)
+✔ grant-era owner saves fail closed for legacy clients: pending (299.277847ms)
+✔ grant-era owner saves fail closed for legacy clients: active (301.40045ms)
+✔ grant-era owner saves fail closed for legacy clients: revoked (292.672049ms)
+✔ grant-era owner saves fail closed for legacy clients: declined (336.966293ms)
+✔ grant-era owner saves fail closed for legacy clients: invalidated (298.90115ms)
+✔ recipient deletion preserves grant-era owner protection: pending (308.616582ms)
+✔ recipient deletion preserves grant-era owner protection: active (296.480554ms)
+✔ recipient deletion preserves grant-era owner protection: revoked (313.561514ms)
+✔ recipient deletion preserves grant-era owner protection: declined (327.578175ms)
+✔ recipient deletion preserves grant-era owner protection: invalidated (318.621527ms)
+✔ grant marker backfills existing grants without changing source, survives reopen and cascades with source (353.553057ms)
+✔ failed offer rolls back marker and grant together; never-offered elements stay private-compatible (303.234273ms)
+✔ session, ACL and snapshot write share the transaction; closure releases slots (4.426444ms)
+✔ backpressure closes rather than queueing more private snapshots (0.64412ms)
+✔ expired session and database contention fail closed with generic invalidation (1.004585ms)
+✔ per-account stream cap does not consume a slot for rejected clients (0.740101ms)
+ℹ tests 36
+ℹ suites 0
+ℹ pass 36
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10510.59405
+✅ shared element grants, stream and database revisions
+PASS shared-state SSE: three accounts, owner/recipient updates, reconnect, revocation, logout, disable, code/source invalidation, Origin, cap and cleanup
+✅ shared element HTTP stream
+PASS three-account opt-in UI, desktop/mobile, shared state and rows live, reload, owner-only code, revocation clears sandbox
+✅ shared element browser flow
+PASS desktop/mobile unified settings, one modal, compact footer, collections, connection fields auto-grow, bug submit and styled status notes, model/user navigation
+✅ unified settings and field layout
+PASS navigation chat/plan/new/existing/reload: no cancellation, no foreign live content, completion preserves selection, one provider call
+✅ session navigation preserves jobs
+✔ bounded declarative requirements and safe typed values (6.554242ms)
+✔ reject secret defaults, URLs, authorization and malformed declarations (0.939433ms)
+✔ official SDK initialize, discovery, call with server-only auth (101.31209ms)
+✔ encrypted storage, ownership, revision revocation and private endpoints (23.958766ms)
+✔ private bindings, explicit write approval, no replay, revoke on key rotation (302.607692ms)
+✔ pinned fetch rejects changed targets and private literals before egress (1.309636ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1015.876612
+✅ private connection schema, vault, grants and SDK
+PASS HTTP auth/CSRF/Origin/type, cross-account denial, secret masking, private literal denial, revision and revoke
+✅ private connection HTTP boundaries
+PASS trusted panel, private creation, secret not echoed, settings persistence, real QuickJS settings callback, desktop/mobile
+✅ element settings browser and sandbox
+✔ new missing and mismatched declarations rejected; stored legacy still loads (5.891166ms)
+✔ published frontend accepts backend receipt, CAS rejects stale state and foreign users (206.071834ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 559.034482
+✅ owner receipt and missing animation declarations
+PASS no remount/scroll jump on desktop/mobile; explicit missing-animation notice
+✅ post-it persist has no remount or scroll jump
+✔ bounded private verifier protocol (1576.892755ms)
+✔ only trusted correction hints cross the verifier boundary (18.553874ms)
+✔ admission retries bounded; target rejection never retried (257.726132ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1986.369034
+✅ animation verifier private transport
+[build-budget] {"round":1,"finish":"stop","visibleChars":5,"reasoningChars":15,"usage":{"completion_tokens":20,"reasoning_tokens":18}}
+[build-budget] {"round":1,"finish":"stop","visibleChars":5,"reasoningChars":15,"usage":{"completion_tokens":20,"reasoning_tokens":18}}
+✔ counts reasoning without retaining it; low effort only for GLM build rounds (102.37613ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 542.098543
+✅ provider budget and reasoning metadata
+✔ honest terminal labels and plain-language failures (1.944163ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":5183,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":5335,"reasoningChars":0,"usage":{}}
+✔ missing declaration correction retains full artifact beyond 4KB and validates actual animation (6283.799242ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6608.500871
+✅ build recovery and animation correction
+PASS honest failed status, collapsed technical details, retry in-flight guard, explicit plan edit, mobile
+✅ build failure UX
+✔ bounded numeric versioned animation schema (10.170758ms)
+✔ old artifact remains valid, invalid animation rejected at contract (0.895427ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 330.682185
+✅ animation schema and budgets
+PASS schema, three independently moving surfaces, completion, cancellation, missing target and reduced motion in real QuickJS iframe bridge
+✅ animation stack interaction and persistence recovery
+valid clip passed
+missing target
+abort cleanup
+PASS isolated startup + declared clips, missing/duplicate targets, runaway/global escape, abort cleanup, unavailable DB; original workflow NOT certified
+✅ isolated animation startup and declared-clip verifier
+PASS shared artifact built
+persisted [{"value":8}]
+[job] failed: a6dea2ad Modellaufruf fehlgeschlagen: Modell nicht mehr konfiguriert.
+PASS owner/admin user creation; private/shared providers; real model dropdown and artifact interaction/reload; isolation; deletion confirmation/persistence; revocation; key secrecy; private legacy migration
+✅ private/shared providers, admin users, deletion and browser account isolation
+[{"count":36,"height":407,"scrollHeight":1864,"minRow":44,"bottom":658,"footerTop":672,"wheelScroll":1457,"viewport":{"width":1280,"height":800},"tab":"chats"},{"count":36,"height":349,"scrollHeight":1864,"minRow":44,"bottom":658,"footerTop":672,"wheelScroll":1515,"viewport":{"width":1280,"height":800},"tab":"elements"},{"count":36,"height":396,"scrollHeight":1864,"minRow":44,"bottom":707,"footerTop":721,"wheelScroll":1468,"viewport":{"width":390,"height":844},"tab":"chats"},{"count":36,"height":338,"scrollHeight":1864,"minRow":44,"bottom":707,"footerTop":721,"wheelScroll":1526,"viewport":{"width":390,"height":844},"tab":"elements"},{"count":36,"height":174,"scrollHeight":1864,"minRow":44,"bottom":446,"footerTop":454,"wheelScroll":1690,"viewport":{"width":390,"height":568},"tab":"chats"},{"count":36,"height":132,"scrollHeight":1864,"minRow":44,"bottom":446,"footerTop":454,"wheelScroll":1732,"viewport":{"width":390,"height":568},"tab":"elements"}]
+PASS sidebar rows retain size; chat and element lists wheel-scroll on desktop and mobile
+✅ sidebar scrolling with delete controls
+✔ private by default, explicit sharing, foreign key never exposed, stable legacy ownership (1.865308ms)
+✔ nonadmin provider transport denies private DNS, pins public DNS, denies redirects (52.348296ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 213.914449
+✅ provider ACL and public network boundaries
+✔ standalone loop supplies tools, executes once and returns tool result to model (108.124932ms)
+✔ unknown tool is rejected without executing (25.972683ms)
+[provider] retry empty interrupted stream code=ECONNRESET
+✔ ambiguous external failure is not retried (12.688012ms)
+✔ transport retry after a tool result never re-executes that tool (4.4804ms)
+✔ element actions bind owner, tool revision and reject concurrent clicks (257.320491ms)
+✔ HTTP rejects local, metadata, encoded IPs and unsafe configuration (15.472671ms)
+✔ HTTP permission, hidden credentials, DNS pinning, redirect and size limits (14.591808ms)
+✔ MCP endpoint rejects insecure remote URLs and embedded credentials (2.174693ms)
+✔ connections are disabled by default, tokens stay private, permissions persist (65.378817ms)
+✔ HTTP MCP initialize, discover and call use official client (186.341121ms)
+✔ standalone memories isolate owners and support search edit delete (228.076118ms)
+✔ tool requires owner approval, persists outcome, isolates other users (280.621578ms)
+✔ default tools execute immediately without pending approval, retaining owner isolation and unknown outcomes (193.954887ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 861.138667
+✅ standalone MCP + agent loop + approvals
+PASS realtime movement, pause, reset, playfield, keyboard, collision, restart, destroy
+✅ realtime game loop and inputs
+{"version":1,"delay":0,"dayCount":30,"errors":[]}
+{"version":1,"delay":150,"dayCount":30,"errors":[]}
+{"version":2,"delay":0,"dayCount":30,"errors":[]}
+{"version":2,"delay":150,"dayCount":30,"errors":[]}
+PASS saved calendar versions render days, navigation and notes with delayed DB
+✅ saved calendars + dynamic table sanitizer
+✔ public API element links automatically, executes without confirmation, restart preserves behavior (7645.752355ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8669.765709
+✅ zero-setup public API elements + restart
+✔ Form UI configures MCP, plans without tools, explicitly executes blueprint and receives final answer (8032.387399ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8866.21013
+✅ MCP browser approval roundtrip
+[ping] session=s1 host=good.example ip=93.184.216.34 ok=true ms=23
+[ping] session= host=good.example ip=93.184.216.34 ok=false
+[ping] session= host=private.example blocked (resolved: 10.0.0.5)
+[ping] session= host=dual.example blocked (resolved: 93.184.216.34,fe80::1)
+[ping] session= host=nope.example error=dns
+[ping] session= host=good.example ip=93.184.216.34 ok=false
+config unreadable: Unexpected token 'o', "not json" is not valid JSON
+✔ render contract rejects malformed and oversized output (4.241628ms)
+✔ system prompt carries the v3 two-phase + SVG visual rules (0.406346ms)
+✔ render contract: optional name is sanitized as text (0.533948ms)
+✔ deriveName: heading, then prose snippet, then fallback (1.414204ms)
+✔ refine instruction demands a full in-place update (0.392157ms)
+✔ validHost: strict hostnames only, no literals/URLs/private forms (0.866881ms)
+✔ ipBlocked: every private/reserved range is caught, public passes (9.015783ms)
+✔ runPing: ok / blocked / dual-stack / dns-fail / timeout with injected backend (4.736784ms)
+﹣ optional: real /bin/ping binary probe (skip when absent or offline) (0.259124ms) # SKIP
+✔ element db: lifecycle, where semantics, scoping, persistence, quotas (27.383774ms)
+✔ element db: hard quotas — 10 tables, 5000 rows, 2 MB element (2105.75114ms)
+✔ stream parser: prose-only answer relays everything (0.929067ms)
+✔ stream parser: marker split across chunks is not emitted as prose (0.503794ms)
+✔ stream parser: artifact in same chunk as marker, unterminated fence (0.51092ms)
+✔ stream parser: partial-marker suffix is held back, not lost (0.294919ms)
+✔ model registry: validation, masking, persistence, ENOENT safety (1.703365ms)
+✔ store: passwords scrypt-hashed, salted, timing-safe verify (281.52456ms)
+✔ store: first user is owner, second is user; sessions bound to users (550.148435ms)
+✔ store: conversations, messages, elements are user-scoped (216.253816ms)
+✔ store: import validation rejects malformed archives, regenerates ids (106.489351ms)
+✔ config: defaults to registration off, env forces on, ENOENT safe (1.844442ms)
+✔ system prompt documents ui.db for data-driven elements (0.286605ms)
+✔ QuickJS has no browser capabilities or host Function escape (67.83756ms)
+✔ QuickJS interrupts CPU exhaustion (53.034866ms)
+✔ generated interaction validation catches DOM event and value getter mistakes without hiding stored elements (2.268036ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 3816.474818
+✅ unit tests (contract, stream parser, models, QuickJS sandbox)
+✔ clean round: prose parsed, finish_reason stop, actual content captured (no SSE envelopes) (60.228184ms)
+✔ finish_reason=length sets truncated; unterminated artifact reported as invalid (14.708917ms)
+✔ malformed SSE frames are ignored, valid frames still parsed (5.861219ms)
+✔ explicit provider error frame throws ProviderError (distinct from malformed frames) (5.751814ms)
+✔ final unterminated SSE line is parsed (5.5745ms)
+✔ UTF-8 multibyte char split across reads is reassembled (4.329394ms)
+✔ upstream 401 becomes ProviderError with status (permanent, caller must not retry) (4.676738ms)
+✔ content cap (accumulated deltas) throws SizeError (4.056911ms)
+✔ transport cap (raw SSE bytes) throws SizeError even with tiny visible content (5.184435ms)
+✔ round deadline expiry maps to abortKind timeout (306.262109ms)
+[provider] retry empty interrupted stream code=ECONNRESET
+[provider] retry empty interrupted stream code=ECONNRESET
+✔ external abort maps to abortKind external, not timeout (153.546388ms)
+✔ already-expired deadline fails fast with timeout kind (1.289075ms)
+✔ job generation has no default or zero-configured deadline (10.599601ms)
+✔ empty ECONNRESET retries once and completes, permanent reset stays bounded (3.145339ms)
+✔ connection reset after visible prose is not replayed (22.023143ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3978.223911
+✅ provider transport tests (truncation, error frames, caps, abort/timeout)
+✔ auth: bootstrap unauthenticated -> 401, status reports registration open + no users (121.453461ms)
+✔ auth: register first user = owner; cookie HttpOnly+SameSite=Strict (+Secure behind https proxy) (119.494377ms)
+✔ auth: register duplicate and bad inputs rejected (18.912575ms)
+✔ auth: login with wrong password rejected uniformly; success issues new session (262.872649ms)
+✔ auth: failed logins rate-limited (10 per 5 min per user+client) (729.609435ms)
+✔ CSRF is session-bound: owner token rejected on another session, missing token rejected (13.204708ms)
+✔ models: owner adds model, key masked everywhere, file chmod 600 (26.995143ms)
+✔ models: shared provider hides key, users own their private providers (106.271309ms)
+✔ conversations: server-side create + list, user B sees nothing of user A (38.891299ms)
+✔ chat: foreign conversation rejected for user B (7.639911ms)
+✔ chat streams prose without implicit build; approved build persists result (663.083229ms)
+✔ server-side conversations survive a FRESH session (device switch) (88.182188ms)
+✔ windowed history reaches upstream from the server store (508.654296ms)
+✔ element state sync: /api/state updates the stored render, ownership-checked (42.74759ms)
+✔ invalid artifact triggers exactly ONE corrective build round then success (297.565031ms)
+✔ finish_reason=length: one compact correction, real content replay, ready render (266.612286ms)
+[job] failed: 798856f8 Modellfehler beim Streaming: upstream exploded
+✔ explicit provider error frame: distinct error, NO retry, single upstream call (37.073613ms)
+[job] failed: 62173c6c Modell-Endpunkt antwortete 401 – Invalid API key
+✔ permanent upstream auth error (401): surfaced, NOT retried (34.320636ms)
+✔ final unterminated SSE line is still parsed (30.759715ms)
+✔ UTF-8 multibyte split across TCP reads is reassembled (34.791755ms)
+✔ prose-only answer needs no artifact and is valid (248.201737ms)
+✔ client disconnect detaches the viewer only: the provider job finishes server-side (6075.574122ms)
+✔ EXPLICIT cancel aborts the upstream provider call (1072.671046ms)
+✔ request validation: unknown fields, bad history, bad states rejected (16.902045ms)
+✔ refinement: approval required; target replaced in place and version archived (218.071252ms)
+✔ refinement: invalid refineTarget rejected with size caps (488.144487ms)
+✔ db endpoint: auth guards mirror chat/ping (91.57997ms)
+✔ db endpoint: CRUD lifecycle on a REAL element, quotas + scoping enforced (152.941519ms)
+✔ ping endpoint: CSRF, strict host validation, fixture ok/blocked/dns, per-user rate limit (160.984414ms)
+✔ import: archives land server-side, ids regenerated; export surface stays key-free (16.349409ms)
+✔ models file is not served and static surface is minimal (9.768465ms)
+✔ logout invalidates the session server-side (101.755845ms)
+✔ jobs: snapshot/stream require auth; scoping, cancel ownership, retry guardrails (81.618762ms)
+✔ delete model, then chat is blocked with friendly error (9.510651ms)
+ℹ tests 34
+ℹ suites 0
+ℹ pass 34
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12373.623493
+✅ api tests (auth, scoping, models, SSE, retry, stop, CSRF, ui.db, jobs)
+✔ setup: dedicated server, owner, model, conversation (949.44321ms)
+✔ (1) second chat answers while the FIRST provider response is still streaming (458.849246ms)
+✔ (2) closing the connection (tab close) does NOT abort the provider; result persists with zero subscribers (1517.831344ms)
+✔ (3) reload during the upstream stream: same job, completion lands exactly once (520.552429ms)
+✔ (4) explicit cancel DOES abort the upstream provider call (938.114561ms)
+✔ (5) reverse provider completion: two held jobs land on their own containers (2311.183974ms)
+✔ deletion race: conversation deleted while the provider streams — nothing resurrects (1681.487272ms)
+✔ server restart honestly fails running provider jobs; explicit retry MAY re-call the provider and then succeeds (1912.07155ms)
+✔ approved build cancellation aborts the connected provider and never publishes (537.202123ms)
+✔ ownership: a foreign user never sees or touches the job (238.334781ms)
+✔ teardown (21.492306ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11269.607203
+✅ jobs tests (background builds, reverse order, cancel, delete race, restart)
+PASS login gate: wrong password rejected with inline error
+PASS first registration becomes the logged-in owner session
+PASS empty state until model exists, composer blocked
+FAIL locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator('#settingsbtn')
+
+    at /root/.openclaw/workspace/projects/form/test/browser.test.cjs:91:37
+❌ browser tests (login, streaming UX, artifact, ui.db, boundary, isolation, mobile)
+
+FAILED: browser tests (login, streaming UX, artifact, ui.db, boundary, isolation, mobile)

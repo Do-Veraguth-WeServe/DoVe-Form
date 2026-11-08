@@ -1,0 +1,26 @@
+✔ new output rejects every reported unsupported variation, existing artifacts remain readable and unchanged (19.884942ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":129,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":129,"reasoningChars":0,"usage":{}}
+✔ real SSE generation corrects unsupported CSS exactly once with policy evidence (120.775344ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":168,"reasoningChars":0,"usage":{}}
+✔ second unsupported output fails honestly with no render and no third attempt (16.764065ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":168,"reasoningChars":0,"usage":{}}
+[job] id=ee13420a failed after 2 round(s): invalid-artifact
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":129,"reasoningChars":0,"usage":{}}
+[job] id=e3430e1a user=4b48aad1 kind=refine dur=42ms rounds=2 finish=stop/stop chars=323 render=yes fail=invalid-artifact
+✔ persisted failed refinement preserves original; corrected build becomes ready (376.398351ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":146,"reasoningChars":0,"usage":{}}
+✔ supported output stays one round (9.091639ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 921.786388
