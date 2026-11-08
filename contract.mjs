@@ -78,6 +78,8 @@ export function deriveName(render, prose){
 
 export function validateInteractionAPI(render){
  const js=render.js;
+ if(/\bui\s*\.\s*animate\s*\(/.test(js)&&!render.animations)throw Error('Animation capability: ui.animate requires animations:{version:1,clips:{...}}. Declare every called clip; do not replace it with CSS or a delay.');
+ for(const match of js.matchAll(/\bui\s*\.\s*animate\s*\(\s*(['"])([a-zA-Z][a-zA-Z0-9_-]{0,39})\1/g))if(!Object.hasOwn(render.animations?.clips||{},match[2]))throw Error('Animation capability: called clip '+match[2]+' is not declared. Add a valid clip before publishing.');
  if(/\.\s*(preventDefault|stopPropagation)\s*\(/.test(js))throw Error('Sandbox events are plain {value,checked}, not DOM Events. Remove preventDefault/stopPropagation.');
  if(/ui\.value\(\s*(['"])[^'"]+\1\s*\)/.test(js))throw Error('ui.value(id,value) is write-only. Read via input/change events into state, then use state in click handlers.');
  if(/ui\.on\(\s*(['"])[^'"]+\1\s*,\s*(['"])submit\2/.test(js))throw Error('Only click/input/change events are supported, not submit. Use a button click.');

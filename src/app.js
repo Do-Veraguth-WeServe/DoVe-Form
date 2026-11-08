@@ -781,7 +781,7 @@ document.addEventListener('close',e=>{if(e.target.tagName==='DIALOG'&&e.target.c
 $('#overlay').addEventListener('close',()=>{
   overlayView?.destroy();overlayView=null;overlayMsg=null;overlayMode='view';
   $('#ovcontent').replaceChildren();
-  render();
+  renderPreservingScroll();
 });
 let overlayMsg=null,overlayMode='view',overlayView=null;
 function fillOverlay(){

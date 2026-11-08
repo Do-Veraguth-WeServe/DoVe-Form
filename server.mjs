@@ -1,4 +1,5 @@
 import {Bugs} from './bugs.mjs';
+import {saveOwnedElement} from './owner-save.mjs';
 import {elementEvidence,ELEMENT_EVIDENCE_POLICY} from './element-context.mjs';
 import {Forms,chatPrompt} from './forms.mjs';
 import {FormSharing} from './form-sharing.mjs';
@@ -515,7 +516,7 @@ const server = http.createServer(async (req, res) => {
     catch { res.setHeader('Retry-After','1');return reply(res,503,{error:'Dienst beschäftigt. Bitte neu laden.'}); }
     if(!fresh||fresh.user.id!==user.id||fresh.csrf!==sess.csrf)return reply(res,401,{error:'Anmeldung erforderlich.'});
     try {
-      const result=elementSharing.ownerSave(user.id,d.messageId,d);
+      const result=saveOwnedElement(store,user.id,d.messageId,d);
       return reply(res,result.status,result.result);
     } catch(e) {
       if([5,6].includes(e.errcode)){res.setHeader('Retry-After','1');return reply(res,503,{error:'Dienst beschäftigt. Bitte neu laden.'});}

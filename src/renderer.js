@@ -158,7 +158,7 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction,on
       for(const o of d.ops){
         if(o.op==='animate'){
           if(!/^n[0-9]{1,8}$/.test(o.ref))continue;
-          if(typeof o.name!=='string'||!Object.hasOwn(declarations?.clips||{},o.name))deliver('__animation:'+o.ref,'animation',{ok:false,status:'error',error:'Undeclared animation'});
+          if(typeof o.name!=='string'||!Object.hasOwn(declarations?.clips||{},o.name)){onError?.('Animation nicht verfügbar: Im gespeicherten Element fehlt die Bewegungsdefinition. Bitte mit KI überarbeiten.');deliver('__animation:'+o.ref,'animation',{ok:false,status:'error',error:'Undeclared animation'});}
           else dom.push({op:'animate',ref:o.ref,name:o.name,clip:prepare(declarations.clips[o.name])});
         }else if(o.op==='cancel-animation'){
           if(/^n[0-9]{1,8}$/.test(o.ref))dom.push({op:'cancel-animation',ref:o.ref});
