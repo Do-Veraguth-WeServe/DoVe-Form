@@ -9,6 +9,8 @@ const frame=p.frameLocator('iframe').first();await frame.locator('#tap').tap();a
 const box=await frame.locator('.inner').boundingBox();const cdp=await p.context().newCDPSession(p);const x=box.x+box.width/2,y=box.y+Math.min(220,box.height-10);await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});for(let i=1;i<=8;i++){await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x,y:y-i*18}]});await p.waitForTimeout(20)}await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await p.waitForTimeout(200);
 const result={feed:await p.locator('#feed').evaluate(e=>e.scrollTop),inner:await frame.locator('.inner').evaluate(e=>e.scrollTop)};console.log(JSON.stringify(result));if(process.env.EXPECT_SCROLL_BUG){assert.equal(result.feed,0);assert.ok(result.inner>0)}else{assert.ok(result.feed>=130,'touch displacement must follow finger without iframe-coordinate drift');assert.equal(result.inner,0)}
 if(!process.env.EXPECT_SCROLL_BUG){
+ // Wait for the separately tested real-gesture inertia before measuring forged messages.
+ await p.waitForTimeout(1400);
  const before=await p.locator('#feed').evaluate(e=>e.scrollTop);
  await p.evaluate(()=>window.postMessage({type:'scroll-parent',delta:150},'*'));await p.waitForTimeout(50);assert.equal(await p.locator('#feed').evaluate(e=>e.scrollTop),before,'forged global message cannot scroll');
  await p.locator('#feed').evaluate(e=>e.scrollTop=0);await p.getByRole('button',{name:'Element öffnen',exact:true}).first().click();await p.locator('#overlay iframe[data-ready=true]').waitFor();

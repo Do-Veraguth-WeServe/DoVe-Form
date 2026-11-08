@@ -1,0 +1,19 @@
+{"feed":222,"inner":0}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: forged global message cannot scroll
+
+242 !== 230
+
+    at file:///root/.openclaw/workspace/projects/form/test/element-scroll.test.mjs:13:115 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 242,
+  expected: 230,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.22.2

@@ -1,0 +1,16 @@
+{ released: 144, coasted: 144 }
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: flick must coast after release over an Element
+    at file:///root/.openclaw/workspace/projects/form/test/element-momentum.test.mjs:10:655 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.22.2

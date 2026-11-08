@@ -1,3 +1,4 @@
+import {cancelFeedMomentum,startFeedMomentum} from './feed-momentum.js';
 import {validateAnimations,prepareAnimation} from '../animation-policy.mjs';
 import {safeHTML,safeCSS,safeFragment} from './sanitize.js';
 
@@ -35,8 +36,10 @@ export function bridge(){
   };
   // Only app-owned bootstrap sees real touch events; guest JS has no scrolling API.
   addEventListener('touchstart',e=>{
-    if(!scrollParent||!e.isTrusted||e.touches.length!==1){touch=null;return;}
-    const t=e.touches[0];touch={x:t.screenX,y:t.screenY,lastY:t.screenY,vertical:false};
+    if(!e.isTrusted)return;
+    port?.postMessage({type:'scroll-stop'});
+    if(!scrollParent||e.touches.length!==1){touch=null;return;}
+    const t=e.touches[0];touch={x:t.screenX,y:t.screenY,lastY:t.screenY,time:performance.now(),velocity:0,vertical:false};
   },{passive:true});
   addEventListener('touchmove',e=>{
     if(!touch||!e.isTrusted||e.touches.length!==1)return;
@@ -46,10 +49,16 @@ export function bridge(){
       if(Math.abs(t.screenX-touch.x)>Math.abs(t.screenY-touch.y)){touch=null;return;}
       touch.vertical=true;
     }
-    e.preventDefault();touch.lastY=t.screenY;
+    e.preventDefault();const now=performance.now(),dt=now-touch.time;
+    touch.velocity=Math.max(-2.5,Math.min(2.5,dy/Math.max(8,dt)));touch.time=now;touch.lastY=t.screenY;
     port?.postMessage({type:'scroll-parent',delta:Math.max(-160,Math.min(160,dy))});
   },{passive:false});
-  for(const type of ['touchend','touchcancel'])addEventListener(type,()=>{touch=null;},{passive:true});
+  for(const type of ['touchend','touchcancel'])addEventListener(type,e=>{
+    if(!e.isTrusted)return;
+    if(type==='touchend'&&touch?.vertical&&e.touches.length===0&&performance.now()-touch.time<100)port?.postMessage({type:'scroll-release',velocity:touch.velocity});
+    else port?.postMessage({type:'scroll-stop'});
+    touch=null;
+  },{passive:true});
   addEventListener('message',e=>{
     if(e.source!==parent||e.data?.channel!==channel||!e.ports[0]||port)return;
     port=e.ports[0];scrollParent=e.data.scrollParent===true;
@@ -138,6 +147,8 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction,on
     };
     port.onmessage=({data:d})=>{
       if(d?.type==='applied'){f.style.visibility='';f.removeAttribute('aria-busy');f.dataset.ready='true';}
+      if(d?.type==='scroll-stop')cancelFeedMomentum();
+      if(d?.type==='scroll-release'&&Number.isFinite(d.velocity)&&Math.abs(d.velocity)<=2.5)startFeedMomentum(f,d.velocity);
       if(d?.type==='scroll-parent'&&Number.isFinite(d.delta)&&Math.abs(d.delta)<=160){
         const feed=f.closest('#feed');if(feed&&f.isConnected)feed.scrollTop+=d.delta;
       }
@@ -229,6 +240,7 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction,on
   return {
     element:f,
     destroy(){
+      cancelFeedMomentum(f);
       removeEventListener('message',listener);
       clearTimeout(timer);
       stopped=true;port?.postMessage([{op:'stop-animations'}]);clearInterval(clock);

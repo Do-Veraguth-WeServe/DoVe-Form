@@ -1,0 +1,12 @@
+✔ velocity is bounded, decays, and expires within 1200ms (15.364526ms)
+✔ negative direction, boundary and invalid velocity (2.043314ms)
+✔ new trusted input, hidden document and detached owner stop continuation (6.768167ms)
+✔ one owner at a time, teardown cannot stop another owner (1.431974ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 170.055755
