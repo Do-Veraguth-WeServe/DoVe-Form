@@ -162,3 +162,7 @@ Jeder bestätigte Bau bekommt eine neue Position am aktuellen Ende des Chats. Au
 
 ### Denk- und Antwortanimationen (#74c9b87d)
 Chat und Planung zeigen sofort drei ruhig pulsierende Punkte. Sobald sichtbarer Text eintrifft, wechselt die Anzeige zu «Form antwortet …» mit Schreibcursor. Der Zustand und begrenzte Teiltext bleiben nach Reload erhalten; Abschluss, Fehler und Abbruch beenden die Animation. Reduzierte Bewegung deaktiviert auch den Cursor. Der Baukran bleibt ausschliesslich beim ausdrücklich gestarteten Bau. Die Anzeige beschreibt die Antwortphase, nicht interne Modellgedanken oder einen gemessenen Fertigstellungsgrad.
+
+### Darstellung gezielt untersuchen
+
+Im eigenen Element: **Darstellung prüfen** erfasst einmalig begrenzte Layout-Zähler sowie Laufzeitfehler-/HTML-Warnflags. Die Momentaufnahme steht nur derselben Anmeldung und unverändertem Elementstand für zwei Minuten im Chat zur Verfügung. Kein DOM-Text oder Screenshot wird hochgeladen. Die Antwort kennzeichnet diese Client-Beobachtung getrennt von statischer CSS-Prüfung; sie bestätigt weder korrekte Darstellung noch eine Reparatur. Details und Grenzen: [Diagnostik](docs/form-diagnostics-findings.md).

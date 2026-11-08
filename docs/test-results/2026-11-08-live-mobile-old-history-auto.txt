@@ -1,0 +1,19 @@
+opening geometry 390 { x: 171.015625, y: -52.5, width: 30.90625, height: 31.5 }
+opening trace []
+overlay diagnostic  [] 0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.waitFor: Timeout 6000ms exceeded.
+Call log:
+  - waiting for locator('#overlay iframe[data-ready=true]') to be visible
+
+    at /root/.openclaw/workspace/projects/form/test/live-diagnostics-browser.mjs:20:205 {
+  log: [
+    "  - waiting for locator('#overlay iframe[data-ready=true]') to be visible"
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.22.2

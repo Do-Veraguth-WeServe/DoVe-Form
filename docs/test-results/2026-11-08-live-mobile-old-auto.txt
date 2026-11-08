@@ -1,0 +1,23 @@
+opening geometry 390 { x: 171.015625, y: 121.5, width: 30.90625, height: 31.5 }
+opening trace [
+  {
+    type: 'pointerdown',
+    target: '<button type="button" class="icon" aria-label="Element öffnen" title="Element öffnen (Vollbild, Code, Versionen)">↗</button>',
+    x: 186.4600067138672,
+    y: 137.25
+  },
+  {
+    type: 'pointerup',
+    target: '<button type="button" class="icon" aria-label="Element öffnen" title="Element öffnen (Vollbild, Code, Versionen)">↗</button>',
+    x: 186.4600067138672,
+    y: 137.25
+  },
+  {
+    type: 'click',
+    target: '<button type="button" class="icon" aria-label="Element öffnen" title="Element öffnen (Vollbild, Code, Versionen)">↗</button>',
+    x: 186,
+    y: 137
+  }
+]
+PASS opening-only user-scroll baseline
+PASS explicit live snapshot browser->chat->mock provider: desktop/mobile, zero/positive state, scoped revision evidence, no foreign data, no blueprint/build/artifact mutation. Mock response is NOT model reasoning certification.

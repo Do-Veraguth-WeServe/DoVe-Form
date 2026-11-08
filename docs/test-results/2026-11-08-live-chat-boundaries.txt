@@ -1,0 +1,60 @@
+opening geometry 1280 { x: 486.015625, y: 170.5, width: 30.90625, height: 31.5 }
+opening trace [
+  {
+    type: 'pointerdown',
+    target: '<button type="button" class="icon" aria-label="Element öffnen" title="Element öffnen (Vollbild, Code, Versionen)">↗</button>',
+    x: 501.4599914550781,
+    y: 186.25
+  },
+  {
+    type: 'pointerup',
+    target: '<button type="button" class="icon" aria-label="Element öffnen" title="Element öffnen (Vollbild, Code, Versionen)">↗</button>',
+    x: 501.4599914550781,
+    y: 186.25
+  },
+  {
+    type: 'click',
+    target: '<button type="button" class="icon" aria-label="Element öffnen" title="Element öffnen (Vollbild, Code, Versionen)">↗</button>',
+    x: 501,
+    y: 186
+  }
+]
+opening geometry 390 { x: 171.015625, y: 142.5, width: 30.90625, height: 31.5 }
+opening trace [
+  {
+    type: 'pointerdown',
+    target: '<button type="button" class="icon" aria-label="Element öffnen" title="Element öffnen (Vollbild, Code, Versionen)">↗</button>',
+    x: 186.4600067138672,
+    y: 158.25
+  },
+  {
+    type: 'pointerup',
+    target: '<button type="button" class="icon" aria-label="Element öffnen" title="Element öffnen (Vollbild, Code, Versionen)">↗</button>',
+    x: 186.4600067138672,
+    y: 158.25
+  },
+  {
+    type: 'click',
+    target: '<button type="button" class="icon" aria-label="Element öffnen" title="Element öffnen (Vollbild, Code, Versionen)">↗</button>',
+    x: 186,
+    y: 158
+  }
+]
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+400 !== 200
+
+    at file:///root/.openclaw/workspace/projects/form/test/live-diagnostics-browser.mjs:39:231 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 400,
+  expected: 200,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.22.2

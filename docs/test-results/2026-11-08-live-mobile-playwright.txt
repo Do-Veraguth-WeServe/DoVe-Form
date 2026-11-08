@@ -1,0 +1,351 @@
+2026-11-08T13:33:52.823Z pw:api => browserType.launch started
+2026-11-08T13:33:53.110Z pw:api <= browserType.launch succeeded
+2026-11-08T13:33:53.115Z pw:api => browser.newPage started
+2026-11-08T13:33:53.340Z pw:api <= browser.newPage succeeded
+2026-11-08T13:33:53.342Z pw:api => page.goto started
+2026-11-08T13:33:53.344Z pw:api navigating to "http://127.0.0.1:4782/", waiting until "load"
+2026-11-08T13:33:53.403Z pw:api   "commit" event fired
+2026-11-08T13:33:53.404Z pw:api   navigated to "http://127.0.0.1:4782/"
+2026-11-08T13:33:53.557Z pw:api   "domcontentloaded" event fired
+2026-11-08T13:33:53.566Z pw:api   "load" event fired
+2026-11-08T13:33:53.568Z pw:api <= page.goto succeeded
+2026-11-08T13:33:53.569Z pw:api => locator.fill started
+2026-11-08T13:33:53.575Z pw:api waiting for locator('#loginform [name=username]')
+2026-11-08T13:33:53.649Z pw:api   locator resolved to <input required="" minlength="3" maxlength="32" name="username" autocomplete="username"/>
+2026-11-08T13:33:53.654Z pw:api   fill("diagnostic")
+2026-11-08T13:33:53.654Z pw:api attempting fill action
+2026-11-08T13:33:53.655Z pw:api   waiting for element to be visible, enabled and editable
+2026-11-08T13:33:53.668Z pw:api <= locator.fill succeeded
+2026-11-08T13:33:53.668Z pw:api => locator.fill started
+2026-11-08T13:33:53.669Z pw:api waiting for locator('#loginform [name=password]')
+2026-11-08T13:33:53.679Z pw:api   locator resolved to <input required="" name="password" type="password" autocomplete="current-password"/>
+2026-11-08T13:33:53.681Z pw:api   fill("password123")
+2026-11-08T13:33:53.681Z pw:api attempting fill action
+2026-11-08T13:33:53.681Z pw:api   waiting for element to be visible, enabled and editable
+2026-11-08T13:33:53.690Z pw:api <= locator.fill succeeded
+2026-11-08T13:33:53.691Z pw:api => locator.click started
+2026-11-08T13:33:53.692Z pw:api waiting for locator('#loginform button')
+2026-11-08T13:33:53.704Z pw:api   locator resolved to <button>Anmelden</button>
+2026-11-08T13:33:53.707Z pw:api attempting click action
+2026-11-08T13:33:53.708Z pw:api   waiting for element to be visible, enabled and stable
+2026-11-08T13:33:53.726Z pw:api   element is visible, enabled and stable
+2026-11-08T13:33:53.726Z pw:api   scrolling into view if needed
+2026-11-08T13:33:53.728Z pw:api   done scrolling
+2026-11-08T13:33:53.737Z pw:api   performing click action
+2026-11-08T13:33:53.747Z pw:api   click action done
+2026-11-08T13:33:53.747Z pw:api   waiting for scheduled navigations to finish
+2026-11-08T13:33:53.749Z pw:api   navigations have finished
+2026-11-08T13:33:53.750Z pw:api <= locator.click succeeded
+2026-11-08T13:33:53.751Z pw:api => locator.waitFor started
+2026-11-08T13:33:53.752Z pw:api waiting for locator('#login[open]') to be detached
+2026-11-08T13:33:53.757Z pw:api   locator resolved to visible <dialog open="" id="login" aria-label="Anmeldung">…</dialog>
+2026-11-08T13:33:53.782Z pw:api   locator resolved to visible <dialog open="" id="login" aria-label="Anmeldung">…</dialog>
+2026-11-08T13:33:53.839Z pw:api   locator resolved to visible <dialog open="" id="login" aria-label="Anmeldung">…</dialog>
+2026-11-08T13:33:53.943Z pw:api <= locator.waitFor succeeded
+2026-11-08T13:33:53.944Z pw:api => locator.waitFor started
+2026-11-08T13:33:53.944Z pw:api waiting for locator('#feed iframe[data-ready=true]') to be visible
+2026-11-08T13:33:54.029Z pw:api   locator resolved to visible <iframe class="render" data-ready="true" sandbox="allow-scripts" referrerpolicy="no-referrer" title="Form · interaktive Antwort" allow="camera 'none'; microphone 'none'; geolocation 'none'" srcdoc="<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src &apos;none&apos;; script-src &apos;nonce-5771679c-850b-444f-88bb-92459907f2d1&apos;; style-src &apos;unsafe-inline&apos;; connec…></iframe>
+2026-11-08T13:33:54.030Z pw:api <= locator.waitFor succeeded
+2026-11-08T13:33:54.032Z pw:api => page.evaluate started
+2026-11-08T13:33:54.037Z pw:api <= page.evaluate succeeded
+2026-11-08T13:33:54.039Z pw:api => locator.boundingBox started
+2026-11-08T13:33:54.040Z pw:api waiting for getByRole('button', { name: 'Element öffnen', exact: true })
+2026-11-08T13:33:54.056Z pw:api   locator resolved to visible <button class="icon" type="button" aria-label="Element öffnen" title="Element öffnen (Vollbild, Code, Versionen)">↗</button>
+2026-11-08T13:33:54.092Z pw:api <= locator.boundingBox succeeded
+opening geometry 1280 { x: 486.015625, y: 170.5, width: 30.90625, height: 31.5 }
+2026-11-08T13:33:54.093Z pw:api => locator.click started
+2026-11-08T13:33:54.094Z pw:api waiting for getByRole('button', { name: 'Element öffnen', exact: true })
+2026-11-08T13:33:54.101Z pw:api   locator resolved to <button class="icon" type="button" aria-label="Element öffnen" title="Element öffnen (Vollbild, Code, Versionen)">↗</button>
+2026-11-08T13:33:54.103Z pw:api attempting click action
+2026-11-08T13:33:54.103Z pw:api   waiting for element to be visible, enabled and stable
+2026-11-08T13:33:54.108Z pw:api   element is visible, enabled and stable
+2026-11-08T13:33:54.108Z pw:api   scrolling into view if needed
+2026-11-08T13:33:54.109Z pw:api   done scrolling
+2026-11-08T13:33:54.112Z pw:api   performing click action
+2026-11-08T13:33:54.139Z pw:api   click action done
+2026-11-08T13:33:54.140Z pw:api   waiting for scheduled navigations to finish
+2026-11-08T13:33:54.144Z pw:api   navigations have finished
+2026-11-08T13:33:54.145Z pw:api <= locator.click succeeded
+2026-11-08T13:33:54.145Z pw:api => page.evaluate started
+2026-11-08T13:33:54.150Z pw:api <= page.evaluate succeeded
+opening trace [
+  {
+    type: 'pointerdown',
+    target: '<button type="button" class="icon" aria-label="Element öffnen" title="Element öffnen (Vollbild, Code, Versionen)">↗</button>',
+    x: 501.4599914550781,
+    y: 186.25
+  },
+  {
+    type: 'pointerup',
+    target: '<button type="button" class="icon" aria-label="Element öffnen" title="Element öffnen (Vollbild, Code, Versionen)">↗</button>',
+    x: 501.4599914550781,
+    y: 186.25
+  },
+  {
+    type: 'click',
+    target: '<button type="button" class="icon" aria-label="Element öffnen" title="Element öffnen (Vollbild, Code, Versionen)">↗</button>',
+    x: 501,
+    y: 186
+  }
+]
+2026-11-08T13:33:54.151Z pw:api => locator.waitFor started
+2026-11-08T13:33:54.152Z pw:api waiting for locator('#overlay iframe[data-ready=true]') to be visible
+2026-11-08T13:33:54.235Z pw:api   locator resolved to visible <iframe class="render" data-ready="true" sandbox="allow-scripts" referrerpolicy="no-referrer" title="Form · interaktive Antwort" allow="camera 'none'; microphone 'none'; geolocation 'none'" srcdoc="<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src &apos;none&apos;; script-src &apos;nonce-a33f0aaa-e477-409c-8cf7-927ec6918a99&apos;; style-src &apos;unsafe-inline&apos;; connec…></iframe>
+2026-11-08T13:33:54.236Z pw:api <= locator.waitFor succeeded
+2026-11-08T13:33:54.236Z pw:api => page.evaluate started
+2026-11-08T13:33:54.239Z pw:api <= page.evaluate succeeded
+2026-11-08T13:33:54.239Z pw:api => locator.click started
+2026-11-08T13:33:54.240Z pw:api waiting for getByRole('button', { name: 'Darstellung prüfen', exact: true })
+2026-11-08T13:33:54.249Z pw:api   locator resolved to <button type="button">Darstellung prüfen</button>
+2026-11-08T13:33:54.251Z pw:api attempting click action
+2026-11-08T13:33:54.251Z pw:api   waiting for element to be visible, enabled and stable
+2026-11-08T13:33:54.275Z pw:api   element is visible, enabled and stable
+2026-11-08T13:33:54.275Z pw:api   scrolling into view if needed
+2026-11-08T13:33:54.276Z pw:api   done scrolling
+2026-11-08T13:33:54.280Z pw:api   performing click action
+2026-11-08T13:33:54.291Z pw:api   click action done
+2026-11-08T13:33:54.291Z pw:api   waiting for scheduled navigations to finish
+2026-11-08T13:33:54.294Z pw:api   navigations have finished
+2026-11-08T13:33:54.294Z pw:api <= locator.click succeeded
+2026-11-08T13:33:54.295Z pw:api => locator.waitFor started
+2026-11-08T13:33:54.296Z pw:api waiting for getByText('Browser-Momentaufnahme erfasst:') to be visible
+2026-11-08T13:33:54.330Z pw:api   locator resolved to visible <div class="notice">Browser-Momentaufnahme erfasst: 1048 px breit; ke…</div>
+2026-11-08T13:33:54.331Z pw:api <= locator.waitFor succeeded
+2026-11-08T13:33:54.331Z pw:api => locator.screenshot started
+2026-11-08T13:33:54.332Z pw:api waiting for locator('#overlay')
+2026-11-08T13:33:54.336Z pw:api   locator resolved to visible <dialog open="" id="overlay" aria-label="Elementansicht">…</dialog>
+2026-11-08T13:33:54.342Z pw:api taking element screenshot
+2026-11-08T13:33:54.345Z pw:api waiting for fonts to load...
+2026-11-08T13:33:54.347Z pw:api fonts loaded
+2026-11-08T13:33:54.347Z pw:api attempting scroll into view action
+2026-11-08T13:33:54.348Z pw:api   waiting for element to be stable
+2026-11-08T13:33:54.471Z pw:api <= locator.screenshot succeeded
+2026-11-08T13:33:54.472Z pw:api => locator.click started
+2026-11-08T13:33:54.472Z pw:api waiting for getByRole('button', { name: 'Element schliessen', exact: true })
+2026-11-08T13:33:54.481Z pw:api   locator resolved to <button type="button" aria-label="Element schliessen">✕</button>
+2026-11-08T13:33:54.482Z pw:api attempting click action
+2026-11-08T13:33:54.482Z pw:api   waiting for element to be visible, enabled and stable
+2026-11-08T13:33:54.509Z pw:api   element is visible, enabled and stable
+2026-11-08T13:33:54.509Z pw:api   scrolling into view if needed
+2026-11-08T13:33:54.510Z pw:api   done scrolling
+2026-11-08T13:33:54.515Z pw:api   performing click action
+2026-11-08T13:33:54.522Z pw:api   click action done
+2026-11-08T13:33:54.522Z pw:api   waiting for scheduled navigations to finish
+2026-11-08T13:33:54.523Z pw:api   navigations have finished
+2026-11-08T13:33:54.524Z pw:api <= locator.click succeeded
+2026-11-08T13:33:54.524Z pw:api => locator.fill started
+2026-11-08T13:33:54.524Z pw:api waiting for locator('#prompt')
+2026-11-08T13:33:54.552Z pw:api   locator resolved to <textarea rows="1" id="prompt" maxlength="2000" aria-label="Nachricht" placeholder="Nachricht …"></textarea>
+2026-11-08T13:33:54.555Z pw:api   fill("Warum fehlt das Symbol? Nur untersuchen, nichts bauen.")
+2026-11-08T13:33:54.555Z pw:api attempting fill action
+2026-11-08T13:33:54.556Z pw:api   waiting for element to be visible, enabled and editable
+2026-11-08T13:33:54.563Z pw:api <= locator.fill succeeded
+2026-11-08T13:33:54.563Z pw:api => locator.click started
+2026-11-08T13:33:54.564Z pw:api waiting for locator('#send')
+2026-11-08T13:33:54.568Z pw:api   locator resolved to <button id="send" class="send" aria-label="Nachricht senden">↑</button>
+2026-11-08T13:33:54.571Z pw:api attempting click action
+2026-11-08T13:33:54.571Z pw:api   waiting for element to be visible, enabled and stable
+2026-11-08T13:33:54.592Z pw:api   element is visible, enabled and stable
+2026-11-08T13:33:54.592Z pw:api   scrolling into view if needed
+2026-11-08T13:33:54.594Z pw:api   done scrolling
+2026-11-08T13:33:54.598Z pw:api   performing click action
+2026-11-08T13:33:54.616Z pw:api   click action done
+2026-11-08T13:33:54.616Z pw:api   waiting for scheduled navigations to finish
+2026-11-08T13:33:54.617Z pw:api   navigations have finished
+2026-11-08T13:33:54.618Z pw:api <= locator.click succeeded
+2026-11-08T13:33:54.618Z pw:api => locator.waitFor started
+2026-11-08T13:33:54.619Z pw:api waiting for locator('.prose').filter({ hasText: 'Keine visuelle Prüfung.' }).first() to be visible
+2026-11-08T13:33:54.719Z pw:api   locator resolved to visible <div aria-live="polite" class="prose writing">…</div>
+2026-11-08T13:33:54.720Z pw:api <= locator.waitFor succeeded
+2026-11-08T13:33:54.720Z pw:api => locator.waitFor started
+2026-11-08T13:33:54.721Z pw:api waiting for locator('.diagnostic-evidence').first() to be visible
+2026-11-08T13:33:54.756Z pw:api   locator resolved to visible <details class="diagnostic-evidence small">…</details>
+2026-11-08T13:33:54.757Z pw:api <= locator.waitFor succeeded
+2026-11-08T13:33:54.758Z pw:api => locator.click started
+2026-11-08T13:33:54.759Z pw:api waiting for locator('.diagnostic-evidence').first().locator('summary')
+2026-11-08T13:33:54.766Z pw:api   locator resolved to <summary>Prüfgrundlage dieser Antwort</summary>
+2026-11-08T13:33:54.769Z pw:api attempting click action
+2026-11-08T13:33:54.769Z pw:api   waiting for element to be visible, enabled and stable
+2026-11-08T13:33:54.792Z pw:api   element is visible, enabled and stable
+2026-11-08T13:33:54.792Z pw:api   scrolling into view if needed
+2026-11-08T13:33:54.794Z pw:api   done scrolling
+2026-11-08T13:33:54.799Z pw:api   performing click action
+2026-11-08T13:33:54.807Z pw:api   click action done
+2026-11-08T13:33:54.807Z pw:api   waiting for scheduled navigations to finish
+2026-11-08T13:33:54.810Z pw:api   navigations have finished
+2026-11-08T13:33:54.810Z pw:api <= locator.click succeeded
+2026-11-08T13:33:54.811Z pw:api => locator.innerText started
+2026-11-08T13:33:54.812Z pw:api waiting for locator('.diagnostic-evidence').first()
+2026-11-08T13:33:54.816Z pw:api   locator resolved to <details open="" class="diagnostic-evidence small">…</details>
+2026-11-08T13:33:54.817Z pw:api <= locator.innerText succeeded
+2026-11-08T13:33:54.821Z pw:api => page.reload started
+2026-11-08T13:33:54.822Z pw:api waiting for navigation until "load"
+2026-11-08T13:33:54.854Z pw:api   "commit" event fired
+2026-11-08T13:33:54.854Z pw:api   navigated to "http://127.0.0.1:4782/"
+2026-11-08T13:33:54.854Z pw:api   navigated to "http://127.0.0.1:4782/"
+2026-11-08T13:33:54.916Z pw:api   "domcontentloaded" event fired
+2026-11-08T13:33:54.925Z pw:api   "load" event fired
+2026-11-08T13:33:54.926Z pw:api <= page.reload succeeded
+2026-11-08T13:33:54.927Z pw:api => locator.waitFor started
+2026-11-08T13:33:54.927Z pw:api waiting for locator('.diagnostic-evidence').first() to be visible
+2026-11-08T13:33:55.004Z pw:api   locator resolved to visible <details class="diagnostic-evidence small">…</details>
+2026-11-08T13:33:55.004Z pw:api <= locator.waitFor succeeded
+2026-11-08T13:33:55.005Z pw:api => locator.click started
+2026-11-08T13:33:55.006Z pw:api waiting for locator('.diagnostic-evidence').first().locator('summary')
+2026-11-08T13:33:55.013Z pw:api   locator resolved to <summary>Prüfgrundlage dieser Antwort</summary>
+2026-11-08T13:33:55.015Z pw:api attempting click action
+2026-11-08T13:33:55.016Z pw:api   waiting for element to be visible, enabled and stable
+2026-11-08T13:33:55.027Z pw:api   element is visible, enabled and stable
+2026-11-08T13:33:55.027Z pw:api   scrolling into view if needed
+2026-11-08T13:33:55.029Z pw:api   done scrolling
+2026-11-08T13:33:55.033Z pw:api   performing click action
+2026-11-08T13:33:55.038Z pw:api   click action done
+2026-11-08T13:33:55.039Z pw:api   waiting for scheduled navigations to finish
+2026-11-08T13:33:55.040Z pw:api   navigations have finished
+2026-11-08T13:33:55.040Z pw:api <= locator.click succeeded
+2026-11-08T13:33:55.041Z pw:api => locator.innerText started
+2026-11-08T13:33:55.041Z pw:api waiting for locator('.diagnostic-evidence').first()
+2026-11-08T13:33:55.044Z pw:api   locator resolved to <details open="" class="diagnostic-evidence small">…</details>
+2026-11-08T13:33:55.045Z pw:api <= locator.innerText succeeded
+2026-11-08T13:33:55.045Z pw:api => locator.screenshot started
+2026-11-08T13:33:55.046Z pw:api waiting for locator('.diagnostic-evidence').first()
+2026-11-08T13:33:55.050Z pw:api   locator resolved to visible <details open="" class="diagnostic-evidence small">…</details>
+2026-11-08T13:33:55.059Z pw:api taking element screenshot
+2026-11-08T13:33:55.084Z pw:api waiting for fonts to load...
+2026-11-08T13:33:55.086Z pw:api fonts loaded
+2026-11-08T13:33:55.086Z pw:api attempting scroll into view action
+2026-11-08T13:33:55.086Z pw:api   waiting for element to be stable
+2026-11-08T13:33:55.165Z pw:api <= locator.screenshot succeeded
+2026-11-08T13:33:55.167Z pw:api => page.reload started
+2026-11-08T13:33:55.168Z pw:api waiting for navigation until "load"
+2026-11-08T13:33:55.197Z pw:api   "commit" event fired
+2026-11-08T13:33:55.197Z pw:api   navigated to "http://127.0.0.1:4782/"
+2026-11-08T13:33:55.197Z pw:api   navigated to "http://127.0.0.1:4782/"
+2026-11-08T13:33:55.252Z pw:api   "domcontentloaded" event fired
+2026-11-08T13:33:55.265Z pw:api   "load" event fired
+2026-11-08T13:33:55.265Z pw:api <= page.reload succeeded
+2026-11-08T13:33:55.266Z pw:api => locator.waitFor started
+2026-11-08T13:33:55.266Z pw:api waiting for locator('.diagnostic-evidence').first() to be visible
+2026-11-08T13:33:55.349Z pw:api   locator resolved to visible <details class="diagnostic-evidence small">…</details>
+2026-11-08T13:33:55.349Z pw:api <= locator.waitFor succeeded
+2026-11-08T13:33:55.350Z pw:api => locator.click started
+2026-11-08T13:33:55.350Z pw:api waiting for locator('.diagnostic-evidence').first().locator('summary')
+2026-11-08T13:33:55.357Z pw:api   locator resolved to <summary>Prüfgrundlage dieser Antwort</summary>
+2026-11-08T13:33:55.369Z pw:api attempting click action
+2026-11-08T13:33:55.369Z pw:api   waiting for element to be visible, enabled and stable
+2026-11-08T13:33:55.393Z pw:api   element is visible, enabled and stable
+2026-11-08T13:33:55.393Z pw:api   scrolling into view if needed
+2026-11-08T13:33:55.394Z pw:api   done scrolling
+2026-11-08T13:33:55.401Z pw:api   performing click action
+2026-11-08T13:33:55.409Z pw:api   click action done
+2026-11-08T13:33:55.409Z pw:api   waiting for scheduled navigations to finish
+2026-11-08T13:33:55.410Z pw:api   navigations have finished
+2026-11-08T13:33:55.411Z pw:api <= locator.click succeeded
+2026-11-08T13:33:55.411Z pw:api => locator.innerText started
+2026-11-08T13:33:55.412Z pw:api waiting for locator('.diagnostic-evidence').first()
+2026-11-08T13:33:55.417Z pw:api   locator resolved to <details open="" class="diagnostic-evidence small">…</details>
+2026-11-08T13:33:55.417Z pw:api <= locator.innerText succeeded
+2026-11-08T13:33:55.420Z pw:api => page.close started
+2026-11-08T13:33:55.438Z pw:api <= page.close succeeded
+2026-11-08T13:33:55.441Z pw:api => browser.newPage started
+2026-11-08T13:33:55.632Z pw:api <= browser.newPage succeeded
+2026-11-08T13:33:55.633Z pw:api => page.goto started
+2026-11-08T13:33:55.634Z pw:api navigating to "http://127.0.0.1:4782/", waiting until "load"
+2026-11-08T13:33:55.659Z pw:api   "commit" event fired
+2026-11-08T13:33:55.659Z pw:api   navigated to "http://127.0.0.1:4782/"
+2026-11-08T13:33:55.837Z pw:api   "domcontentloaded" event fired
+2026-11-08T13:33:55.843Z pw:api   "load" event fired
+2026-11-08T13:33:55.844Z pw:api <= page.goto succeeded
+2026-11-08T13:33:55.844Z pw:api => locator.fill started
+2026-11-08T13:33:55.845Z pw:api waiting for locator('#loginform [name=username]')
+2026-11-08T13:33:55.901Z pw:api   locator resolved to <input required="" minlength="3" maxlength="32" name="username" autocomplete="username"/>
+2026-11-08T13:33:55.907Z pw:api   fill("diagnostic")
+2026-11-08T13:33:55.907Z pw:api attempting fill action
+2026-11-08T13:33:55.907Z pw:api   waiting for element to be visible, enabled and editable
+2026-11-08T13:33:55.917Z pw:api <= locator.fill succeeded
+2026-11-08T13:33:55.917Z pw:api => locator.fill started
+2026-11-08T13:33:55.918Z pw:api waiting for locator('#loginform [name=password]')
+2026-11-08T13:33:55.923Z pw:api   locator resolved to <input required="" name="password" type="password" autocomplete="current-password"/>
+2026-11-08T13:33:55.927Z pw:api   fill("password123")
+2026-11-08T13:33:55.927Z pw:api attempting fill action
+2026-11-08T13:33:55.927Z pw:api   waiting for element to be visible, enabled and editable
+2026-11-08T13:33:55.933Z pw:api <= locator.fill succeeded
+2026-11-08T13:33:55.933Z pw:api => locator.click started
+2026-11-08T13:33:55.934Z pw:api waiting for locator('#loginform button')
+2026-11-08T13:33:55.939Z pw:api   locator resolved to <button>Anmelden</button>
+2026-11-08T13:33:55.940Z pw:api attempting click action
+2026-11-08T13:33:55.941Z pw:api   waiting for element to be visible, enabled and stable
+2026-11-08T13:33:55.975Z pw:api   element is visible, enabled and stable
+2026-11-08T13:33:55.975Z pw:api   scrolling into view if needed
+2026-11-08T13:33:55.977Z pw:api   done scrolling
+2026-11-08T13:33:55.982Z pw:api   performing click action
+2026-11-08T13:33:55.990Z pw:api   click action done
+2026-11-08T13:33:55.990Z pw:api   waiting for scheduled navigations to finish
+2026-11-08T13:33:55.992Z pw:api   navigations have finished
+2026-11-08T13:33:55.993Z pw:api <= locator.click succeeded
+2026-11-08T13:33:55.993Z pw:api => locator.waitFor started
+2026-11-08T13:33:55.994Z pw:api waiting for locator('#login[open]') to be detached
+2026-11-08T13:33:55.999Z pw:api   locator resolved to visible <dialog open="" id="login" aria-label="Anmeldung">…</dialog>
+2026-11-08T13:33:56.025Z pw:api   locator resolved to visible <dialog open="" id="login" aria-label="Anmeldung">…</dialog>
+2026-11-08T13:33:56.082Z pw:api <= locator.waitFor succeeded
+2026-11-08T13:33:56.082Z pw:api => locator.waitFor started
+2026-11-08T13:33:56.083Z pw:api waiting for locator('#feed iframe[data-ready=true]') to be visible
+2026-11-08T13:33:56.302Z pw:api   locator resolved to visible <iframe class="render" data-ready="true" sandbox="allow-scripts" referrerpolicy="no-referrer" title="Form · interaktive Antwort" allow="camera 'none'; microphone 'none'; geolocation 'none'" srcdoc="<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src &apos;none&apos;; script-src &apos;nonce-10d119e6-1fbb-45a0-8cd1-73020145584d&apos;; style-src &apos;unsafe-inline&apos;; connec…></iframe>
+2026-11-08T13:33:56.302Z pw:api <= locator.waitFor succeeded
+2026-11-08T13:33:56.303Z pw:api => page.evaluate started
+2026-11-08T13:33:56.308Z pw:api <= page.evaluate succeeded
+2026-11-08T13:33:56.308Z pw:api => locator.boundingBox started
+2026-11-08T13:33:56.309Z pw:api waiting for getByRole('button', { name: 'Element öffnen', exact: true })
+2026-11-08T13:33:56.321Z pw:api   locator resolved to visible <button class="icon" type="button" aria-label="Element öffnen" title="Element öffnen (Vollbild, Code, Versionen)">↗</button>
+2026-11-08T13:33:56.354Z pw:api <= locator.boundingBox succeeded
+opening geometry 390 { x: 171.015625, y: -14.5, width: 30.90625, height: 31.5 }
+2026-11-08T13:33:56.355Z pw:api => locator.click started
+2026-11-08T13:33:56.356Z pw:api waiting for getByRole('button', { name: 'Element öffnen', exact: true })
+2026-11-08T13:33:56.363Z pw:api   locator resolved to <button class="icon" type="button" aria-label="Element öffnen" title="Element öffnen (Vollbild, Code, Versionen)">↗</button>
+2026-11-08T13:33:56.365Z pw:api attempting click action
+2026-11-08T13:33:56.366Z pw:api   waiting for element to be visible, enabled and stable
+2026-11-08T13:33:56.375Z pw:api   element is visible, enabled and stable
+2026-11-08T13:33:56.375Z pw:api   scrolling into view if needed
+2026-11-08T13:33:56.376Z pw:api   done scrolling
+2026-11-08T13:33:56.380Z pw:api   performing click action
+2026-11-08T13:33:56.384Z pw:api   click action done
+2026-11-08T13:33:56.384Z pw:api   waiting for scheduled navigations to finish
+2026-11-08T13:33:56.386Z pw:api   navigations have finished
+2026-11-08T13:33:56.386Z pw:api <= locator.click succeeded
+2026-11-08T13:33:56.387Z pw:api => page.evaluate started
+2026-11-08T13:33:56.389Z pw:api <= page.evaluate succeeded
+opening trace []
+2026-11-08T13:33:56.390Z pw:api => locator.waitFor started
+2026-11-08T13:33:56.390Z pw:api waiting for locator('#overlay iframe[data-ready=true]') to be visible
+2026-11-08T13:33:56.734Z pw:api   "networkidle" event fired
+2026-11-08T13:34:02.394Z pw:api <= locator.waitFor failed
+2026-11-08T13:34:02.395Z pw:api => locator.innerText started
+2026-11-08T13:34:02.396Z pw:api waiting for locator('#overlay')
+2026-11-08T13:34:02.401Z pw:api   locator resolved to <dialog id="overlay" aria-label="Elementansicht">…</dialog>
+2026-11-08T13:34:02.402Z pw:api <= locator.innerText succeeded
+2026-11-08T13:34:02.403Z pw:api => locator.count started
+2026-11-08T13:34:02.410Z pw:api <= locator.count succeeded
+overlay diagnostic  [] 0
+2026-11-08T13:34:02.411Z pw:api => page.screenshot started
+2026-11-08T13:34:02.412Z pw:api taking page screenshot
+2026-11-08T13:34:02.417Z pw:api waiting for fonts to load...
+2026-11-08T13:34:02.421Z pw:api fonts loaded
+2026-11-08T13:34:02.473Z pw:api <= page.screenshot succeeded
+2026-11-08T13:34:02.475Z pw:api => browser.close started
+2026-11-08T13:34:02.715Z pw:api <= browser.close succeeded
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.waitFor: Timeout 6000ms exceeded.
+Call log:
+  - waiting for locator('#overlay iframe[data-ready=true]') to be visible
+
+    at /root/.openclaw/workspace/projects/form/test/live-diagnostics-browser.mjs:18:205 {
+  log: [
+    "  - waiting for locator('#overlay iframe[data-ready=true]') to be visible"
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.22.2
