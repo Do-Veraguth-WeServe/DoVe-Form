@@ -28,7 +28,8 @@ import {correctionContext,animationCorrection} from './build-recovery.mjs';
 import {initAnimationEvidence,saveAnimationEvidence} from './animation-evidence.mjs';
 import {animationPrompt} from './animation-policy.mjs';
 import {cssCapabilityPrompt} from './css-policy.mjs';
-import {parsePlan} from './blueprints.mjs';
+import {parsePlan,planningPrompt} from './blueprints.mjs';
+import {claimsBlueprintUpdate} from './blueprint-claim.mjs';
 import {parseChat} from './forms.mjs';
 import {createStreamParser} from './stream.mjs';
 import {createChatStream} from './chat-envelope.mjs';
@@ -125,7 +126,7 @@ export class JobRunner {
       kind: job.kind, blueprintRevision:job.request?.blueprintRevision||job.blueprintRevision||null, state: job.state, phase: job.phase || 'prose', rev: job.rev,
       error: job.error || null, createdAt: job.createdAt
     };
-    if(job.kind==='plan'&&job.state==='ready')o.blueprint=this.store.latestBlueprint(job.conversationId);
+    if((job.kind==='plan'||job.kind==='chat')&&job.state==='ready')o.blueprint=this.store.latestBlueprint(job.conversationId);
     o.prose = typeof job.prose === 'string' ? job.prose.slice(0, 8000) : null; // partial prose survives reload
     if (withResult) { o.render = job.render || null; if(job.forms)o.forms=job.forms; }
     return o;
@@ -207,9 +208,18 @@ export class JobRunner {
         const out=await runRound(model,job.request.messages,{signal:ctrl.signal,textOnly:true,maxTokens:3200,deadlineMs:Date.now()+60000},t=>parser.feed(t),()=>{});parser.finish();
         const library=this.getForms(job.userId).filter(f=>(job.request.forms||[]).some(old=>old.id===f.id&&old.revision===f.revision));
         const result=parseChat(out.contentText,library);
-        if(!result.prose&&!result.forms.length&&!result.planningOffer)throw Error('Keine Chatantwort erhalten.');
+        if(job.request.allowBlueprintUpdate&&!result.blueprint&&claimsBlueprintUpdate(result.prose)){
+          // One bounded repair: a prose claim is not a persisted revision.
+          const repair=await runRound(model,[{role:'system',content:planningPrompt+' The prior conversation reply claimed an update but omitted the required Blueprint. Return the complete cumulative Blueprint and its structured questions now. No construction.'},...job.request.messages.slice(1)],{signal:ctrl.signal,textOnly:true,maxTokens:2600,deadlineMs:Date.now()+60000,...(/^glm-5\.3(?:-flashx?)?$/i.test(model.model)?{reasoningEffort:'low'}:{})},()=>{},()=>{});
+          if(repair.truncated)throw Error('Blueprint-Antwort zu lang. Bitte erneut versuchen.');
+          result.blueprint=parsePlan(repair.contentText);result.prose=result.blueprint.reply;result.forms=[];result.formEdits=[];result.planningOffer=null;result.metadataError=false;
+        }
+        if(result.blueprint&&!job.request.allowBlueprintUpdate)throw Error('Bitte zuerst die Planung bestätigen.');
+        if(result.blueprint&&out.truncated)throw Error('Blueprint-Antwort zu lang. Bitte erneut versuchen.');
+        if(!result.prose&&!result.forms.length&&!result.planningOffer&&!result.blueprint)throw Error('Keine Chatantwort erhalten.');
         this.store.setJobProse(jobId,result.prose);
         const done=this.store.completeJob(jobId,j=>{
+          if(result.blueprint)this.store.saveBlueprint(j,result.blueprint);
           this.store.finishMessage(j.conversationId,j.messageId,{prose:result.prose,error:result.metadataError?'Formdaten konnten nicht vollständig verarbeitet werden. Bitte erneut versuchen.':out.truncated?'Antwort wurde gekürzt.':null});
           this.store.db.prepare('UPDATE messages SET forms=? WHERE id=?').run(JSON.stringify({items:result.forms,edits:result.formEdits,planningOffer:result.planningOffer,replyEvidence:job.request.replyEvidence||null}),j.messageId);
         });if(done){done.forms={items:result.forms,edits:result.formEdits,planningOffer:result.planningOffer,replyEvidence:job.request.replyEvidence||null};this.emitJob(done,true);}return;

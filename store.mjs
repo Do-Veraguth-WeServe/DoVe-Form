@@ -197,7 +197,7 @@ export class Store {
     const id = crypto.randomUUID(), seq = this.nextSeq(convId);
     this.db.prepare('INSERT INTO messages(id, conversation_id, seq, role, text, prose, error, render, created_at) VALUES (?,?,?,?,?,?,?,?,?)')
       .run(id, convId, seq, role,
-        fields.text != null ? String(fields.text).slice(0, 2000) : null,
+        fields.text != null ? String(fields.text).slice(0, 16000) : null,
         fields.prose != null ? String(fields.prose).slice(0, 8000) : null,
         fields.error != null ? String(fields.error).slice(0, 300) : null,
         fields.render != null ? JSON.stringify(fields.render) : null,
@@ -496,7 +496,7 @@ export function validateArchive(x) {
       messages: s.messages.map(m => {
         if (!m || typeof m !== 'object') throw Error('Ungültige Nachricht');
         const id = typeof m.id === 'string' ? m.id.slice(0, 64) : undefined;
-        if (m.role === 'user' && typeof m.text === 'string') return { id, role: 'user', text: m.text.slice(0, 2000) };
+        if (m.role === 'user' && typeof m.text === 'string') return { id, role: 'user', text: m.text.slice(0, 16000) };
         if (m.role === 'assistant') {
           const o = { id, role: 'assistant' };
           if (typeof m.error === 'string') { o.error = m.error.slice(0, 300); return o; }

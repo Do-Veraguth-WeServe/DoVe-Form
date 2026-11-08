@@ -1,0 +1,102 @@
+{
+  "testOnly": true,
+  "baseline": false,
+  "model": "glm-5.3-flash",
+  "stage": "change",
+  "raw": "Verstanden: Solange in einer Notiz getippt wird – ab dem ersten Zeichen – bekommt das Eingabefeld eine farbige Umrandung, die nach dem Enter wieder zurückgesetzt wird. Das nehme ich in den Plan für die Freie Notizfläche auf. Zwei Punkte muss ich noch klären: die Farbe und, ob Enter die Zeile speichert oder nur eine neue Zeile in derselben Notiz beginnt (mehrzeilige Notizen statt einfacher Eingabefelder).\n\n{\"forms\":[],\"formEdits\":[],\"blueprint\":{\"title\":\"Freie Notizfläche\",\"summary\":\"Mehrere freie Notizen nebeneinander. Plus zum Anlegen, Kreuz zum Löschen. Keine Titel. Symbolleiste und Tastenkürzel für Fett, Kursiv und Überschrift. Persistente Notizen in der Form-Datenbank. Während des Tippens hat das Eingabefeld ab dem ersten Zeichen bis zum Enter eine farbige Umrandung; nach dem Enter wieder normal.\",\"questions\":[{\"text\":\"Welche Farbe soll die Umrandung haben?\",\"options\":[\"Blau\",\"Gelb\",\"Grün\",\"Orange\"]},{\"text\":\"Was soll beim Enter passieren?\",\"options\":[\"Eingabe speichern, Rahmen wird normal\",\"Nur neue Zeile in derselben Notiz, Rahmen bleibt gefärbt\"]}],\"ready\":false}}",
+  "elapsedMs": 25562,
+  "events": {
+    "element-job": 1,
+    "prose-chunk": 106,
+    "done": 1
+  },
+  "bp": {
+    "id": "1751e3f1-97db-4461-90fe-66f57bec8869",
+    "conversationId": "32776079-6f9e-4914-9fbf-acca883c1638",
+    "messageId": "7f2d2588-62ea-4450-b2c8-0e0b3bfdcd79",
+    "revision": 2,
+    "title": "Freie Notizfläche",
+    "summary": "Mehrere freie Notizen nebeneinander. Plus zum Anlegen, Kreuz zum Löschen. Keine Titel. Symbolleiste und Tastenkürzel für Fett, Kursiv und Überschrift. Persistente Notizen in der Form-Datenbank. Während des Tippens hat das Eingabefeld ab dem ersten Zeichen bis zum Enter eine farbige Umrandung; nach dem Enter wieder normal.",
+    "questions": [
+      {
+        "text": "Welche Farbe soll die Umrandung haben?",
+        "options": [
+          "Blau",
+          "Gelb",
+          "Grün",
+          "Orange"
+        ]
+      },
+      {
+        "text": "Was soll beim Enter passieren?",
+        "options": [
+          "Eingabe speichern, Rahmen wird normal",
+          "Nur neue Zeile in derselben Notiz, Rahmen bleibt gefärbt"
+        ]
+      }
+    ],
+    "ready": false,
+    "targetMessageId": "54c44806-0d5d-42e6-af72-abd73785c8ce",
+    "modelId": "42b5b291-7bfe-4b45-a598-272ab0e2d504",
+    "executedJobId": null
+  },
+  "answer": "Verstanden: Solange in einer Notiz getippt wird – ab dem ersten Zeichen – bekommt das Eingabefeld eine farbige Umrandung, die nach dem Enter wieder zurückgesetzt wird. Das nehme ich in den Plan für die Freie Notizfläche auf. Zwei Punkte muss ich noch klären: die Farbe und, ob Enter die Zeile speichert oder nur eine neue Zeile in derselben Notiz beginnt (mehrzeilige Notizen statt einfacher Eingabefelder).",
+  "forms": {
+    "items": [],
+    "edits": [],
+    "planningOffer": null,
+    "replyEvidence": {
+      "version": 1,
+      "kind": "static-css-snapshot",
+      "capturedAt": "2026-11-08T20:06:18.691Z",
+      "elements": [
+        {
+          "id": "54c44806-0d5d-42e6-af72-abd73785c8ce",
+          "codeRevision": "b5e33039f04fae6ff445fd028d6fc60d414371969e624704d210cdfaa3773d06",
+          "assessment": "no-css-removals",
+          "removedCount": 0
+        }
+      ],
+      "omittedElements": 0,
+      "runtimeObserved": false,
+      "visualVerified": false,
+      "repairVerified": false
+    }
+  },
+  "error": null
+}
+{
+  "testOnly": true,
+  "stage": "answer",
+  "raw": "<reply>Grün als Umrandungsfarbe habe ich übernommen. Bei der Enter-Frage kam als Antwort „Grün“ an, was nicht zu den Optionen passt – deshalb kläre ich das nochmal, bevor der Plan fertig ist.</reply><title>Freie Notizfläche</title><summary>Freie Notizfläche mit mehreren Notizen nebeneinander. Plus-Button legt neue Notiz an, Kreuz löscht sie, keine Titel. Symbolleiste und Tastenkürzel für Fett, Kursiv und Überschrift. Persistente Speicherung in der Form-Datenbank (ui.persist/ui.db, nie localStorage). Während des Tippens bekommt das Eingabefeld ab dem ersten Zeichen bis zum Enter eine grüne Umrandung; lt. ursprünglicher Anforderung ist der Rahmen danach wieder normal. Offen ist, ob Enter die Eingabe abschließt oder nur eine neue Zeile in derselben Notiz beginnt (Rahmen bliebe dann grün). Das bestehende Element (einfaches input + p) wird in-place zu dieser Fläche ausgebaut. Ausbau/Rendering ist noch nicht gebaut und nicht visuell verifiziert.</summary><questions><question><text>Was soll beim Enter (nächste Zeile) genau passieren? Deine Antwort „Grün“ passte nicht zu dieser Frage.</text><option>Eingabe speichern, Rahmen wird wieder normal</option><option>Nur neue Zeile in derselben Notiz, Rahmen bleibt grün</option></question></questions><ready>false</ready>",
+  "elapsedMs": 37164,
+  "events": {
+    "element-job": 1,
+    "prose-chunk": 50,
+    "done": 1
+  },
+  "bp": {
+    "id": "88e1a8cd-bcd1-40d1-8cd4-995750f9572c",
+    "conversationId": "32776079-6f9e-4914-9fbf-acca883c1638",
+    "messageId": "bdc09ba9-0ecd-40dd-bfde-c6fba1e8270f",
+    "revision": 3,
+    "title": "Freie Notizfläche",
+    "summary": "Freie Notizfläche mit mehreren Notizen nebeneinander. Plus-Button legt neue Notiz an, Kreuz löscht sie, keine Titel. Symbolleiste und Tastenkürzel für Fett, Kursiv und Überschrift. Persistente Speicherung in der Form-Datenbank (ui.persist/ui.db, nie localStorage). Während des Tippens bekommt das Eingabefeld ab dem ersten Zeichen bis zum Enter eine grüne Umrandung; lt. ursprünglicher Anforderung ist der Rahmen danach wieder normal. Offen ist, ob Enter die Eingabe abschließt oder nur eine neue Zeile in derselben Notiz beginnt (Rahmen bliebe dann grün). Das bestehende Element (einfaches input + p) wird in-place zu dieser Fläche ausgebaut. Ausbau/Rendering ist noch nicht gebaut und nicht visuell verifiziert.",
+    "questions": [
+      {
+        "text": "Was soll beim Enter (nächste Zeile) genau passieren? Deine Antwort „Grün“ passte nicht zu dieser Frage.",
+        "options": [
+          "Eingabe speichern, Rahmen wird wieder normal",
+          "Nur neue Zeile in derselben Notiz, Rahmen bleibt grün"
+        ]
+      }
+    ],
+    "ready": false,
+    "targetMessageId": "54c44806-0d5d-42e6-af72-abd73785c8ce",
+    "modelId": "42b5b291-7bfe-4b45-a598-272ab0e2d504",
+    "executedJobId": null
+  },
+  "answer": "Grün als Umrandungsfarbe habe ich übernommen. Bei der Enter-Frage kam als Antwort „Grün“ an, was nicht zu den Optionen passt – deshalb kläre ich das nochmal, bevor der Plan fertig ist.",
+  "forms": {},
+  "error": null
+}

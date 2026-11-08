@@ -1,6 +1,8 @@
-export function formCard(f,{suggest=()=>{},onState=async()=>{},onError=()=>{}}={}){
+import {questionForm} from './question-form.js';
+export function formCard(f,{suggest=()=>{},onState=async()=>{},onError=()=>{},onAnswer,answerKey,disabled=false}={}){
  const box=document.createElement('section');box.className='chat-form form-'+f.layout;
  const h=document.createElement('strong');h.textContent=f.title;box.append(h);
+ if(f.layout==='choices'){box.append(questionForm({questions:f.questions?.length?f.questions:[{text:f.text||f.title,options:(f.items||[]).map(i=>i.label)}],key:answerKey||'form-preview',disabled:disabled||!onAnswer,onSubmit:onAnswer||(()=>{})}));return box;}
  if(f.text){const p=document.createElement('p');p.textContent=f.text;box.append(p);}
  let pendingChecks=null;
  const items=document.createElement(f.layout==='steps'?'ol':'div');items.className='form-items';

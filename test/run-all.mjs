@@ -26,6 +26,8 @@ const waitReady = (proc, tag, pattern = /ready/) => new Promise((resolve, reject
 });
 
 step('revision-bound static CSS evidence',run('node',['--test','test/reply-evidence.test.mjs','test/element-diagnostics.test.mjs','test/element-context.test.mjs']));
+step('question contract',run('node',['--test','test/question-contract.test.mjs']));
+step('direct multi-question answers',run('node',['test/question-flow.test.mjs']));
 step('guided planning metadata',run('node',['--test','test/planning-offer.test.mjs','test/planning-offer-state.test.mjs']));
 step('build (esbuild + bridge hash + wasm)', run('node', ['build.mjs']));
 step('current-contract browser core (login, settings, approval, streaming, persistence)',run('node',['test/browser-core.test.mjs']));

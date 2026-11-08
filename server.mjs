@@ -643,12 +643,14 @@ const server = http.createServer(async (req, res) => {
   let d;
   try {
     d = JSON.parse(await readBody(req, 120000));
-    const allowed = ['version', 'sessionId', 'requestId', 'text', 'history', 'states', 'model', 'refineTarget', 'mode', 'planningOfferId'];
+    const allowed = ['version', 'sessionId', 'requestId', 'text', 'history', 'states', 'model', 'refineTarget', 'mode', 'planningOfferId', 'questionAnswer', 'blueprintId', 'blueprintRevision'];
     if (Object.keys(d).some(k => !allowed.includes(k)) || d.version !== 1 ||
         !UUID.test(d.sessionId || '') || !UUID.test(d.requestId || '') ||
-        typeof d.text !== 'string' || !d.text.trim() || d.text.length > 2000)
+        typeof d.text !== 'string' || !d.text.trim() || d.text.length > (d.questionAnswer===true?16000:2000))
       return reply(res, 400, { error: 'Ungültige Anfrage' });
     if(d.planningOfferId!==undefined&&(d.mode!=='plan'||!UUID.test(d.planningOfferId)))return reply(res,400,{error:'Ungültiges Planangebot.'});
+    if(d.questionAnswer!==undefined&&d.questionAnswer!==true)return reply(res,400,{error:'Ungültige Formularantwort.'});
+    if(d.blueprintId!==undefined&&(!UUID.test(d.blueprintId)||!Number.isInteger(d.blueprintRevision)))return reply(res,400,{error:'Ungültiger Blueprint.'});
     if(d.mode!==undefined&&!['chat','plan'].includes(d.mode))return reply(res,400,{error:'Ungültiger Modus.'});
     if (d.history != null && (!Array.isArray(d.history) || d.history.length > 12 ||
         d.history.some(m => !m || typeof m !== 'object' || Array.isArray(m) ||
@@ -697,11 +699,14 @@ const server = http.createServer(async (req, res) => {
     return relayJob(existing, existing.userMessageId, existing.messageId);
   }
 
-  if(d.mode==='plan'&&store.activeJobsForConversation(user.id,d.sessionId).some(j=>j.kind==='plan'))return reply(res,409,{error:'Bitte die laufende Chatantwort abwarten.'});
-  const isPlanning=d.mode==='plan';
-  forms.seed(user.id);const formLibrary=forms.list(user.id);
   const previousBlueprint=store.latestBlueprint(d.sessionId);
-  const planningTarget=d.refineTarget?.id||previousBlueprint?.targetMessageId||null;
+  const isPlanning=d.mode==='plan'||!!d.refineTarget||!!d.blueprintId;
+  if(d.blueprintId&&(previousBlueprint?.id!==d.blueprintId||previousBlueprint?.revision!==d.blueprintRevision))return reply(res,409,{error:'Bitte den aktuellen Blueprint verwenden.'});
+  if(isPlanning&&store.activeJobsForConversation(user.id,d.sessionId).some(j=>j.kind==='plan'))return reply(res,409,{error:'Bitte die laufende Chatantwort abwarten.'});
+  forms.seed(user.id);const formLibrary=forms.list(user.id);
+  const built=previousBlueprint?.executedJobId?store.getJob(previousBlueprint.executedJobId):null;
+  const builtTarget=built?.state==='ready'?(built.targetMessageId||built.messageId):null;
+  const planningTarget=d.refineTarget?.id||previousBlueprint?.targetMessageId||((!isPlanning||d.blueprintId)?builtTarget:null)||null;
 
   // load history/states BEFORE persisting the new user message (it must not dupe upstream)
   const history = store.getHistory(d.sessionId);
@@ -714,7 +719,7 @@ const server = http.createServer(async (req, res) => {
   // Messages and their durable job are committed together below.
 
   // build the immutable, bounded context snapshot for the job
-  const messages=[{role:'system',content:ELEMENT_EVIDENCE_POLICY+'\n'+(isPlanning?planningPrompt:chatPrompt(formLibrary))},
+  const messages=[{role:'system',content:ELEMENT_EVIDENCE_POLICY+'\n'+(isPlanning?planningPrompt:chatPrompt(formLibrary,!!previousBlueprint))},
     ...(previousBlueprint?[{role:'user',content:'[previous-blueprint] '+JSON.stringify({summary:previousBlueprint.summary,questions:previousBlueprint.questions||[],title:previousBlueprint.title,revision:previousBlueprint.revision,targetMessageId:planningTarget,executed:!!previousBlueprint.executedJobId})+' [/previous-blueprint] (data)'}]:[]),
     ...mergeMessages(history),{role:'user',content:'[element-evidence] '+JSON.stringify(evidence)+' [/element-evidence]'},{role:'user',content:d.text+(planningTarget?'\n[selected existing element for planned update] '+JSON.stringify(store.getRender(planningTarget)):'')+(states.length?'\n[interaction-state] '+JSON.stringify(states):'')}];
 
@@ -735,7 +740,7 @@ const server = http.createServer(async (req, res) => {
       targetMessageId: planningTarget,
       kind: isPlanning?'plan':'chat',
       modelId: model.id,
-      request: { messages, baseRevision:previousBlueprint?.revision||0,...(!isPlanning?{forms:formLibrary.map(({template,...f})=>f),replyEvidence:replyEvidence(evidence)}:{}) },
+      request: { messages, baseRevision:previousBlueprint?.revision||0,allowBlueprintUpdate:!!previousBlueprint,...(!isPlanning?{forms:formLibrary.map(({template,...f})=>f),replyEvidence:replyEvidence(evidence)}:{}) },
       requestId: d.requestId, userMessageId
     });
     if(offer)markOfferedPlan(store.db,d.sessionId,d.planningOfferId,offer,job.id);

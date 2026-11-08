@@ -1,3 +1,4 @@
+import {questionForm} from './question-form.js';
 import {planningOfferUI} from './planning-offer-ui.js';
 import {rememberSelection,restoreSelection} from './session-selection.js';
 import {diagnosticButton} from './live-diagnostics.js';
@@ -591,7 +592,7 @@ function render(){stopEntry();
           if(turnProse){const p=document.createElement('div');p.className='prose'+(answering?' writing':'');renderMarkdown(p,turnProse);article.append(p)}
           const planningCard=planningOfferUI({message:m,latest:m===s.messages.filter(x=>x.role==='assistant').at(-1),hasBlueprint:!!s.blueprint,busy:[...jobs.values()].some(j=>j.conversationId===s.id&&j.kind==='plan'&&ACTIVE_JOB.includes(j.state)),changed:()=>renderPreservingScroll(),start:async accepted=>{if(db.current!==s.id)return;await send($('#prompt').value.trim()||'Erstelle oder aktualisiere einen Blueprint für das angebotene Element anhand unserer bisherigen Besprechung. Es wird noch nichts gebaut.','plan',{planningOfferId:m.id,onAccepted:accepted});await loadFromServer();}});if(planningCard)article.append(planningCard);
           const evidenceNotice=replyEvidenceNotice(m.forms?.replyEvidence);if(evidenceNotice)article.append(evidenceNotice);
-          if(m.forms){for(const f of m.forms.items||[]){if(f.layout==='custom'&&f.template){const view=renderUI({...f.template,state:{...f.template.state,...f.data}},{onSuggest:fillSuggestion,onError:toast,onWarning:toast,onState:state=>{f.data=state;save();uiRequest('/api/forms/state',{messageId:m.id,index:m.forms.items.indexOf(f),state}).catch(e=>toast(e.message));}});views.push(view);article.append(view.element,formsUI.copyStateButton(f,m.id,m.forms.items.indexOf(f)));}else article.append(formCard(f,{suggest:fillSuggestion,onError:toast,onState:async state=>{await uiRequest('/api/forms/state',{messageId:m.id,index:m.forms.items.indexOf(f),state});f.data=state;save();}}),formsUI.copyStateButton(f,m.id,m.forms.items.indexOf(f)));}for(const e of m.forms.edits||[])article.append(formsUI.proposal(e,m.id,m.forms.edits.indexOf(e)));}
+          if(m.forms){for(const f of m.forms.items||[]){if(f.layout==='custom'&&f.template){const view=renderUI({...f.template,state:{...f.template.state,...f.data}},{onSuggest:fillSuggestion,onError:toast,onWarning:toast,onState:state=>{f.data=state;save();uiRequest('/api/forms/state',{messageId:m.id,index:m.forms.items.indexOf(f),state}).catch(e=>toast(e.message));}});views.push(view);article.append(view.element,formsUI.copyStateButton(f,m.id,m.forms.items.indexOf(f)));}else article.append(formCard(f,{answerKey:me.id+':'+s.id+':'+m.id+':'+m.forms.items.indexOf(f),onAnswer:async(text,accepted)=>{if(db.current!==s.id)throw Error('Bitte das ursprüngliche Gespräch öffnen.');await send(text,'chat',{preserveComposer:true,onAccepted:accepted,questionAnswer:true});},suggest:fillSuggestion,onError:toast,onState:async state=>{await uiRequest('/api/forms/state',{messageId:m.id,index:m.forms.items.indexOf(f),state});f.data=state;save();}}),formsUI.copyStateButton(f,m.id,m.forms.items.indexOf(f)));}for(const e of m.forms.edits||[])article.append(formsUI.proposal(e,m.id,m.forms.edits.indexOf(e)));}
           const job=pendingJobFor(entry.element?.id||m.id);
           if(job&&job.kind==='create'&&!m.render&&!m.error){
             // generation running on the server: partial prose (persisted by the
@@ -710,7 +711,7 @@ async function readSSE(response,onEvent){
 }
 
 async function send(text,mode='chat',options={}){
-  text=text.trim().slice(0,2000);
+  text=text.trim().slice(0,options.questionAnswer?16000:2000);
   if(!text||pending.size>=3)return toast('Bitte kurz warten — drei Antworten laufen schon.');
   if(!me)return showLogin('Bitte zuerst anmelden.');
   if(!models.length){openSettings();return toast('Bitte zuerst ein Modell hinzufügen.')}
@@ -721,7 +722,7 @@ async function send(text,mode='chat',options={}){
   const um={role:'user',id:uid(),text};
   s.messages.push(um);
   if(s.messages.length===1){s.title=text.slice(0,45);const btn=$('#sessions .session-open');if(btn)btn.textContent=s.title}
-  $('#prompt').value='';save();
+  if(!options.preserveComposer)$('#prompt').value='';save();
   // scroll anchor preserved across composer reset + feed re-render: neither a
   // jump to the top nor an automatic jump to the end
   const st=scrollState();
@@ -736,6 +737,8 @@ async function send(text,mode='chat',options={}){
     if(!csrf)throw Error('Sitzung abgelaufen — bitte neu anmelden.');
     const body={version:1,sessionId:s.id,requestId:request.id,text,mode,model:modelId||undefined};
     if(options.planningOfferId)body.planningOfferId=options.planningOfferId;
+    if(options.questionAnswer)body.questionAnswer=true;
+    if(options.blueprintId){body.blueprintId=options.blueprintId;body.blueprintRevision=options.blueprintRevision;}
     if(target)body.refineTarget={id:target.id,name:sanitizeName(elementName(target)),html:target.render.html,css:target.render.css,js:target.render.js,state:target.render.state};
     const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},signal:request.controller.signal,body:JSON.stringify(body)});
     if(!r.ok){const t=await r.json().catch(()=>({}));throw Error(t.error||('Serverfehler '+r.status))}
@@ -1116,29 +1119,11 @@ function blueprintEl(s){
   const summary=document.createElement('p');summary.className='blueprint-summary';summary.textContent=bp.summary;
   const summaryLabel=document.createElement('h3');summaryLabel.className='blueprint-section';summaryLabel.textContent='Zusammenfassung';
   const questions=Array.isArray(bp.questions)?bp.questions:[];
-  const form=document.createElement('form');form.className='blueprint-questions';
-  if(questions.length){
-    const label=document.createElement('h3');label.className='blueprint-section';label.textContent='Zuerst klären · '+questions.length;form.append(label);
-    const fields=questions.map((q,i)=>{
-      const block=document.createElement('label');block.className='blueprint-question';const title=document.createElement('span');title.textContent=q;
-      const input=document.createElement('textarea');input.rows=2;input.maxLength=300;input.required=true;input.placeholder='Deine Antwort …';input.dataset.question=String(i);
-      const key='form-blueprint-answer:'+me.id+':'+bp.id+':'+i;
-      try{input.value=sessionStorage.getItem(key)||'';}catch{}
-      input.oninput=()=>{try{sessionStorage.setItem(key,input.value)}catch{}};
-      block.append(title,input);form.append(block);return input;
-    });
-    const answer=document.createElement('button');answer.type='submit';answer.textContent='Antworten mit Form klären';form.append(answer);
-    form.onsubmit=async e=>{
-      e.preventDefault();
-      if(db.current!==s.id||current()?.blueprint?.id!==bp.id)return toast('Bitte den aktuellen Blueprint verwenden.');
-      if([...jobs.values()].some(j=>j.conversationId===s.id&&j.kind==='plan'&&ACTIVE_JOB.includes(j.state)))return toast('Bitte Form zuerst antworten lassen.');
-      const text='Antworten zu Blueprint Version '+bp.revision+':\n'+questions.map((q,i)=>q+'\nAntwort: '+fields[i].value.trim()).join('\n\n');
-      if(fields.some(f=>!f.value.trim()))return toast('Bitte alle offenen Fragen beantworten.');
-      if(text.length>2000)return toast('Bitte die Antworten etwas kürzen (zusammen maximal 2000 Zeichen).');
-      answer.disabled=true;fold.close();try{await send(text,'plan')}finally{answer.disabled=false;}
-    };
-  }
-  const note=document.createElement('p');note.className='small';note.textContent=bp.executedJobId?'Diese Planversion wurde gestartet. Neue Wünsche kannst du weiter im Chat besprechen.':bp.ready?'Noch kein Bau gestartet. Besprich Änderungen im Chat oder bestätige genau diese Version.':'Offene Fragen zuerst im Chat klären. Es wird noch nichts gebaut.';
+  const form=questionForm({questions,key:'blueprint:'+me.id+':'+s.id+':'+bp.id+':'+bp.revision,disabled:[...jobs.values()].some(j=>j.conversationId===s.id&&j.kind==='plan'&&ACTIVE_JOB.includes(j.state)),onSubmit:async(text,accepted)=>{
+    if(db.current!==s.id||current()?.blueprint?.id!==bp.id||current()?.blueprint?.revision!==bp.revision)throw Error('Bitte den aktuellen Blueprint verwenden.');
+    await send('Antworten zu Blueprint Version '+bp.revision+':\n'+text,'plan',{preserveComposer:true,questionAnswer:true,blueprintId:bp.id,blueprintRevision:bp.revision,onAccepted:accepted});
+  }});form.classList.add('blueprint-questions');
+  const note=document.createElement('p');note.className='small';note.textContent=bp.executedJobId?'Diese Planversion wurde gestartet. Neue Wünsche kannst du weiter im Chat besprechen.':bp.ready?'Noch kein Bau gestartet. Besprich Änderungen im Chat oder bestätige genau diese Version.':'Offene Fragen hier beantworten. Es wird noch nichts gebaut.';
   const modelLabel=document.createElement('label');modelLabel.className='build-model';modelLabel.textContent='Modell für den Bau ';const buildModel=document.createElement('select');buildModel.setAttribute('aria-label','Baumodell');for(const m of models){const o=document.createElement('option');o.value=m.id;o.textContent=m.label;buildModel.append(o);}buildModel.value=models.some(m=>m.id===bp.modelId)?bp.modelId:(models[0]?.id||'');modelLabel.append(buildModel);
   const start=document.createElement('button');start.className='blueprint-execute';start.type='button';start.textContent=bp.executedJobId?'Plan gestartet':'Plan starten';
   start.disabled=!!bp.executedJobId||!bp.ready||questions.length>0||[...jobs.values()].some(j=>j.conversationId===s.id&&j.kind==='plan'&&ACTIVE_JOB.includes(j.state));
@@ -1150,6 +1135,6 @@ function blueprintEl(s){
       fold.close();const session=db.sessions.find(c=>c.id===s.id);if(session)session.blueprint=t.blueprint;if(t.job)applyJob(t.job);const currentId=db.current;await loadFromServer();if(db.sessions.some(c=>c.id===currentId))db.current=currentId;renderPreservingScroll();
     }catch(e){start.disabled=false;toast(e.message)}
   };
-  const update=document.createElement('button');update.type='button';update.className='blueprint-update';update.textContent='Gespräch in Plan übernehmen';update.disabled=[...jobs.values()].some(j=>j.conversationId===s.id&&j.kind==='plan'&&ACTIVE_JOB.includes(j.state));update.onclick=async()=>{if(db.current!==s.id||update.disabled)return;update.disabled=true;try{await send($('#prompt').value.trim()||'Aktualisiere den Blueprint anhand unserer bisherigen Besprechung.','plan')}finally{if(update.isConnected)update.disabled=false;}};
+  const update=document.createElement('button');update.type='button';update.className='blueprint-update';update.textContent='Gespräch in Plan übernehmen';update.disabled=[...jobs.values()].some(j=>j.conversationId===s.id&&j.kind==='plan'&&ACTIVE_JOB.includes(j.state));update.onclick=async()=>{if(db.current!==s.id||update.disabled)return;update.disabled=true;try{await send($('#prompt').value.trim()||'Aktualisiere den Blueprint anhand unserer bisherigen Besprechung.','plan',{blueprintId:bp.id,blueprintRevision:bp.revision})}finally{if(update.isConnected)update.disabled=false;}};
   const body=document.createElement('div');body.className='blueprint-body';const inner=document.createElement('div');inner.className='blueprint-inner';inner.append(update,summaryLabel,summary);if(questions.length)inner.append(form);inner.append(note,modelLabel,start);body.append(inner);fold=planFold({box,head,body,key:me.id+'-'+bp.id,revision:bp.revision,questions:questions.length});return box;
 }

@@ -28,8 +28,8 @@ try{
 const before={builds,plans,chats},f=()=>p.frameLocator('#feed iframe.render');
 await f().locator('#value').filter({hasText:'7'}).waitFor();
 await p.getByRole('button',{name:'Element öffnen',exact:true}).click();await p.getByRole('button',{name:'Mit KI bearbeiten',exact:true}).click();await p.locator('#refchip').waitFor();
-await p.locator('#prompt').fill('Mache den Akzent blau und erhalte den Wert');await p.locator('#send').click();await p.locator('.planning-offer-start').waitFor();assert.equal(builds,before.builds);assert.deepEqual(store.getRender(mid),initial);
-await p.locator('.planning-offer-start').click();await p.locator('.blueprint-execute:not([disabled])').waitFor({state:'attached'});assert.equal(chats,before.chats+1);assert.equal(plans,before.plans+1);assert.equal(builds,before.builds);assert.deepEqual(store.getRender(mid),initial);
+await p.locator('#prompt').fill('Mache den Akzent blau und erhalte den Wert');await p.locator('#send').click();await p.locator('.blueprint-execute:not([disabled])').waitFor({state:'attached'});assert.equal(builds,before.builds);assert.deepEqual(store.getRender(mid),initial);
+assert.equal(await p.locator('.planning-offer-start').count(),0);await p.locator('.blueprint-execute:not([disabled])').waitFor({state:'attached'});assert.equal(chats,before.chats);assert.equal(plans,before.plans+1);assert.equal(builds,before.builds);assert.deepEqual(store.getRender(mid),initial);
 const started=new Promise(r=>{arrived=r});if(await p.locator('.blueprint-toggle').getAttribute('aria-expanded')==='false')await p.locator('.blueprint-toggle').click();await p.locator('.blueprint-execute').click();await p.locator('.site[data-jobid]').waitFor();
 await Promise.race([started,new Promise((_,reject)=>{const t=setTimeout(()=>reject(Error('provider arrival')),10000);t.unref()})]);
 const jobs=(await(await ctx.request.get(base+'/api/jobs')).json()).jobs;assert.ok(jobs.some(j=>j.kind==='refine'&&j.targetMessageId===mid&&j.state==='building'));

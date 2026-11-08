@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "registeredPassedSteps": 65,
+  "installedQuestionFlowPassed": true,
+  "realModel": "glm-5.3-flash",
+  "rollback": "/opt/form/.rollback/2026-11-08T20-17-04-910Z-question-forms",
+  "bundleSHA256": "d4fd377f8f52b9811dc8f9c662476f723233ec5d2a14865d3b8bc01ff8bf4fa6"
+}

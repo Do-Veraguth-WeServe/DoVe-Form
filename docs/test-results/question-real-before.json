@@ -1,0 +1,78 @@
+{
+  "testOnly": true,
+  "baseline": true,
+  "model": "glm-5.3-flash",
+  "stage": "change",
+  "elapsedMs": 27282,
+  "events": {
+    "element-job": 1,
+    "prose-chunk": 108,
+    "done": 1
+  },
+  "bp": {
+    "id": "ec77d22d-4f90-4d17-861a-bd388ff139fb",
+    "conversationId": "c70e07a9-7234-4746-a28a-eea0734a6890",
+    "messageId": "04a98b80-5bf6-4582-9ab2-1905d86a2de6",
+    "revision": 1,
+    "title": "Freie Notizfläche",
+    "summary": "Mehrere freie Notizen nebeneinander. Plus zum Anlegen, Kreuz zum Löschen. Keine Titel. Symbolleiste und Tastenkürzel für Fett, Kursiv und Überschrift. Persistente Notizen in der Form-Datenbank.",
+    "questions": [],
+    "ready": true,
+    "targetMessageId": "cc3e307f-0591-4c21-a3aa-18301a2e8821",
+    "modelId": "42b5b291-7bfe-4b45-a598-272ab0e2d504",
+    "executedJobId": null
+  },
+  "answer": "Verstanden! Die Regel sähe so aus: Sobald du den ersten Buchstaben tippst, bekommt das Eingabefeld eine farbene Umrandung. Sie bleibt stehen, bis du Enter drückst – dann wird die Zeile als Notiz angelegt und die Umrandung verschwindet wieder.\n\nDer bisherige Plan für die Notizfläche ist noch nicht gebaut, ich nehme diesen Punkt also direkt in den Plan auf. Eine kleine Frage vorab: Welche Farbe soll die Umrandung haben?",
+  "forms": {
+    "items": [
+      {
+        "formId": "a3313365-b970-4f48-85bc-9bfa7b729bd1",
+        "revision": 1,
+        "layout": "choices",
+        "title": "Umrandungsfarbe",
+        "text": "Welche Farbe soll die Umrandung haben, während du tippst?",
+        "items": [
+          {
+            "label": "Blau",
+            "detail": "dezent, klassische Fokusfarbe"
+          },
+          {
+            "label": "Grün",
+            "detail": "signalisiert aktives Schreiben"
+          },
+          {
+            "label": "Orange",
+            "detail": "auffällig, warm"
+          },
+          {
+            "label": "Rot",
+            "detail": "sehr auffällig"
+          }
+        ]
+      }
+    ],
+    "edits": [],
+    "planningOffer": {
+      "version": 1,
+      "title": "Freie Notizfläche"
+    },
+    "replyEvidence": {
+      "version": 1,
+      "kind": "static-css-snapshot",
+      "capturedAt": "2026-11-08T19:58:55.216Z",
+      "elements": [
+        {
+          "id": "cc3e307f-0591-4c21-a3aa-18301a2e8821",
+          "codeRevision": "b5e33039f04fae6ff445fd028d6fc60d414371969e624704d210cdfaa3773d06",
+          "assessment": "no-css-removals",
+          "removedCount": 0
+        }
+      ],
+      "omittedElements": 0,
+      "runtimeObserved": false,
+      "visualVerified": false,
+      "repairVerified": false
+    }
+  },
+  "error": null
+}
