@@ -1,0 +1,75 @@
+✔ opt-in acceptance and uniform foreign denial, no copied chats or capability transfer (381.061263ms)
+✔ actual shared rows update one namespace; forged namespace and schema operations cannot escape (360.166598ms)
+✔ revocation rechecks every read/write; new grant never reactivates old token (331.140316ms)
+✔ state updates remain visible, code changes fail closed until fresh acceptance (305.672703ms)
+✔ disabled accounts and deleted source are unavailable; additive table survives reopening (369.416238ms)
+✔ pending offers cannot read and quotas do not auto-share other elements (572.425853ms)
+✔ grant listing is paginated and account scoped without pending source data (395.029045ms)
+✔ state compare-and-set detects stale snapshots without editing code (380.281221ms)
+✔ state errors roll back and unavailable grants cannot disclose conflict state (343.463787ms)
+✔ recipient create compatibility never changes schema and matches owner response (383.277774ms)
+✔ separate recipients share conflict token and failed persistence is atomic (384.472659ms)
+✔ cross-process revocation cannot interleave shared row authorization and use (608.357389ms)
+✔ cross-process disable cannot interleave offer or acceptance checks (701.298553ms)
+✔ shared snapshots are coherent against cross-process revocation (612.384518ms)
+✔ owner persistence preserves legacy saves but requires CAS for active shared code (354.136311ms)
+✔ owner code replacement is atomic, versioned and invalidates accepted code (352.148753ms)
+✔ owner CAS holds writer lock through snapshot and persistence (466.481199ms)
+✖ owner snapshot rejects same-state html replacement and state write (297.721351ms)
+✖ owner snapshot rejects same-state actions replacement and state write (297.975639ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 17
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8386.640973
+
+✖ failing tests:
+
+test at test/element-sharing.test.mjs:243:40
+✖ owner snapshot rejects same-state html replacement and state write (297.721351ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  200 !== 409
+  
+      at file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:248:60
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:24:3)
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:243:124)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 200,
+    expected: 409,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/element-sharing.test.mjs:243:40
+✖ owner snapshot rejects same-state actions replacement and state write (297.975639ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  200 !== 409
+  
+      at file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:248:60
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:24:3)
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:243:124)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 200,
+    expected: 409,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

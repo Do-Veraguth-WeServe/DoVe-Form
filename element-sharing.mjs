@@ -2,6 +2,7 @@
 // remains gated on shared UI/live synchronization acceptance (see ELEMENT-GRANTS.md).
 // No copied messages, namespace aliases, provider credentials or tool grants.
 import crypto from 'node:crypto';
+import {ownerCodeText} from './owner-code.mjs';
 import {validateRender} from './contract.mjs';
 const unavailable = () => { throw Error('Freigabe nicht verfügbar.'); };
 export function elementCodeRevision(render) {
@@ -113,7 +114,7 @@ export class ElementSharing {
   // remain compatible; once a current-code grant is active, a token is mandatory.
   // Full code replacements also participate, so stale editor snapshots cannot
   // silently discard another participant's state. No client grant ID is trusted.
-  ownerSave(uid,messageId,{state,render:replacement,expectedRevision}={}) {
+  ownerSave(uid,messageId,{state,render:replacement,expectedRevision,expectedCodeRevision}={}) {
     return this.locked(() => {
       this.activeUser(uid);
       const owner=this.store.messageOwner(messageId);
@@ -121,13 +122,16 @@ export class ElementSharing {
       const render=this.store.getRender(messageId);
       const shared=this.db.prepare("SELECT 1 FROM element_grants WHERE owner_id=? AND message_id=? AND code_revision=? AND status='active' LIMIT 1").get(uid,messageId,elementCodeRevision(render));
       const revision=elementStateRevision(render.state);
+      const ownerCodeRevision=r=>crypto.createHash('sha256').update(ownerCodeText(r)).digest('hex');
+      if(expectedCodeRevision!==undefined&&expectedCodeRevision!==ownerCodeRevision(render))
+        return {status:409,result:{ok:false,error:'Element wurde geändert. Neu laden.'}};
       if((shared||expectedRevision!==undefined)&&expectedRevision!==revision)
         return {status:409,result:{ok:false,error:'Zustand wurde geändert. Neu laden.',state:render.state,stateRevision:revision}};
       if(replacement==null&&(!state||typeof state!=='object'||Array.isArray(state)||Buffer.byteLength(JSON.stringify(state))>4096))throw Error('Ungültiger Zustand.');
       const next=validateRender(replacement??{...render,state});
       if(replacement!=null)this.store.replaceRender(owner.conversationId,messageId,next);
       else this.store.updateMessageRender(uid,messageId,next);
-      return {status:200,result:{ok:true,state:next.state,stateRevision:elementStateRevision(next.state)}};
+      return {status:200,result:{ok:true,state:next.state,stateRevision:elementStateRevision(next.state),ownerCodeRevision:ownerCodeRevision(next)}};
     });
   }
   state(uid,id,{state,expectedRevision}={}) {

@@ -95,3 +95,6 @@ Tests use disposable synthetic stores, deterministic separate-process writes bef
 **Not deployed.** This completes one source-level background-refinement acceptance item, not the sharing feature. Same-state stale owner-editor saves still need code tokens; opt-in grant UI, live per-delivery ACL checks, invalidation/reconnect, saved-code variations, browser acceptance and migration/zero-job rollout remain. Production backend/schema/runtime and user artifacts are unchanged. Report remains working.
 
 Verification: 28/28 focused tests passed. Full test:blueprints exited0 with 109 unit passes, one optional ping skip, real grant HTTP and owner desktop/mobile browser checks, two integration tests and all Chromium stages including Calendar/Flappy. Blueprint desktop/390px screenshots inspected. SHA256 evidence is recorded in 2026-11-08-refinement-cas-sha256.txt. No production rollout or report resolution is claimed.
+
+
+Latest source slice: OWNER-PERSISTENCE.md documents same-state stale code/actions protection for current browser queues. Legacy tokenless owner compatibility remains an explicit pre-release gate. Not deployed; prior UI/live delivery and release gates remain.

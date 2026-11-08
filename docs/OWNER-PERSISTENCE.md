@@ -27,3 +27,18 @@ Final unchanged full rerun exited0: 103 unit passes, one optional skip, grant HT
 ## Next
 
 Explicit offer/accept/close UI and shared recipient view; per-delivery session/ACL-checked events; invalidation on revocation, disable, deletion and code change; reconnect reconciliation; same-state stale-code protection and background-refinement CAS review; three-account browser acceptance and saved-code startup variations; additive migration rehearsal; zero-job safe rollout with code-only rollback. #6911dd6f remains working; no all-issues-complete claim.
+
+
+## Same-state owner code snapshot — source only, 2026-11-08
+
+The source browser queue carries expectedCodeRevision: a second SHA256 content token over its original code snapshot, including declarative actions but excluding state. The server compares it inside the owner-save transaction before state or full-render writes. A stale mounted sandbox/editor therefore cannot overwrite newer code/actions merely because state is identical. Shared owner-code.mjs sorts object keys, including action arguments, while preserving array order. A first browser run exposed differing field insertion order between client/server; canonical serialization fixed it without relaxing conflict checks.
+
+The queue freezes the initial code snapshot, retains it through state writes and advances only after a full replacement with matching server acknowledgement. Missing/wrong acknowledgement blocks the queue and reconciles; no automatic retry. These are content hashes, not monotonic revisions: exact change-and-revert is indistinguishable.
+
+Compatibility boundary: the code token remains opt-in at the owner endpoint; every current source browser queue sends it. Legacy clients omitting it retain the state-only contract. BEFORE shared-mode release, require code tokens for grant-era owner requests and test old clients fail closed, including invalidated old-code grants. This slice does not close that gate or establish universal stale-owner protection. Recipient ACL, grant scope and plan/build approval are unchanged.
+
+Baseline: two isolated same-state HTML/actions changes returned200 instead of required409. Focused units now cover state/full replacement rejection, fresh snapshot success, immutable queue snapshot, acknowledgement progression and failure without replay. Chromium additionally changes code/actions behind the mounted sandbox, requiring409, unchanged stored render and authorized reload, alongside existing desktop/390px state/editor/offline tests. Disposable accounts/data only; no user product repaired. Logs: docs/test-results/2026-11-08-owner-code-{before,unit,browser,release}.txt.
+
+Not deployed. #6911dd6f remains working; UI/live per-delivery ACL/invalidation/reconnect/startup/migration and zero-job rollout gates remain. #e89344ad remains open with its recorded missing-artifact blocker. Production jobs read returned zero; no restart/migration occurred. Final gate result and exact hashes are appended after collection.
+
+Verification: 31 focused tests passed. Full test:blueprints exited0: 114 unit passes, one optional ping skip, real grant HTTP, strengthened owner browser, two integrations and all Chromium stages including Calendar/Flappy. Desktop/390px owner screenshots inspected. Exact source/test/bundle hashes: docs/test-results/2026-11-08-owner-code-sha256.txt. Production bundle remains separate; documentation only is synchronized, with no runtime/schema/data deployment.

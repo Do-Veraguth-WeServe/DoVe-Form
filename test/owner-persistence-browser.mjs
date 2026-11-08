@@ -19,6 +19,18 @@ try{
  await frame().locator('#n').waitFor();assert.equal(await frame().locator('#n').textContent(),String(before+10));assert.equal(state(),before+10);
  await p.screenshot({path:'docs/screenshots/owner-cas-'+width+'.png'});
  }
+ // Same-state remote code and actions changes must invalidate the mounted snapshot.
+ for(const change of ['html','actions']){
+   await p.reload();await frame().locator('#inc').waitFor();
+   const previous=s.getRender(mid),newer=change==='html'?{...previous,html:previous.html+'<p>Remote revision</p>'}:{...previous,actions:[]};
+   s.updateMessageRender(a.id,mid,newer);
+   const conflict=p.waitForResponse(r=>r.url().endsWith('/api/state')&&r.status()===409);
+   await frame().locator('#inc').click();await conflict;
+   await p.waitForFunction(expected=>JSON.stringify(JSON.parse(localStorage.getItem('form.v3')).sessions[0].messages[0].render).includes(expected),change==='html'?'Remote revision':'"actions":[]');
+   assert.deepEqual(s.getRender(mid),newer);
+ }
+ // Restore fixture code, then open its fresh snapshot. This is disposable test data only.
+ s.updateMessageRender(a.id,mid,{...render,state:{n:state()}});await p.reload();await frame().locator('#inc').waitFor();
  // A stale editor must not claim success or replace either code or shared state.
  await p.getByRole('button',{name:'Element öffnen',exact:true}).click();await p.getByRole('button',{name:'Code bearbeiten',exact:true}).click();await p.getByLabel('HTML',{exact:true}).fill('<p>Rejected edit</p>');
  let view=g.view(b.id,offer.id);g.state(b.id,offer.id,{state:{n:90},expectedRevision:view.stateRevision});const rejected=p.waitForResponse(r=>r.url().endsWith('/api/state')&&r.status()===409);await p.getByRole('button',{name:'Anwenden',exact:true}).click();await rejected;await p.locator('#overlay').waitFor({state:'hidden'});assert.equal(s.getRender(mid).html,render.html);assert.equal(state(),90);

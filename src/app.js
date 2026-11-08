@@ -202,7 +202,7 @@ function pushVersion(m,render){
   while(list.length>5)list.shift();
 }
 function persistence(m){
-  if(!elementSaves.has(m))elementSaves.set(m,elementPersistence({messageId:m.id,state:m.render.state,
+  if(!elementSaves.has(m))elementSaves.set(m,elementPersistence({messageId:m.id,state:m.render.state,render:m.render,
     request:body=>fetch('/api/state',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify(body)}),
     onFailure:async error=>{m.persistenceFailed=true;closeOverlay();renderPreservingScroll();toast(error.message);await syncFromServer();}
   }));

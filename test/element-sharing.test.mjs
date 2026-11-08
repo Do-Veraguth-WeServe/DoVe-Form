@@ -1,3 +1,5 @@
+import {ownerCodeText} from '../owner-code.mjs';
+import {createHash} from 'node:crypto';
 import test from 'node:test';
 import {spawnSync} from 'node:child_process';
 import assert from 'node:assert/strict';
@@ -6,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {Store} from '../store.mjs';
 import {ElementDB} from '../db.mjs';
-import {ElementSharing,elementCodeRevision} from '../element-sharing.mjs';
+import {ElementSharing,elementCodeRevision,elementStateRevision} from '../element-sharing.mjs';
 function fixture(fn){
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'form-grants-'));
  const s=new Store(dir),db=new ElementDB(path.join(dir,'elements.sqlite'));
@@ -237,4 +239,14 @@ test('owner CAS holds writer lock through snapshot and persistence',()=>fixture(
  assert.equal(observed,'locked');assert.equal(s.getRender(mid).state.n,20);
  assert.equal(competingWrite(s,'UPDATE messages SET render=? WHERE id=?',[JSON.stringify({...render,state:{n:21}}),mid]),'written');
  assert.equal(x.ownerSave(a.id,mid,{state:{n:22},expectedRevision:token}).status,409);assert.equal(s.getRender(mid).state.n,21);
+}));
+
+for(const change of ['html','actions'])test('owner snapshot rejects same-state '+change+' replacement and state write',()=>fixture(({s,a,mid,render,x})=>{
+ const code=r=>createHash('sha256').update(ownerCodeText(r)).digest('hex');
+ const old=s.getRender(mid),expectedCodeRevision=code(old),expectedRevision=elementStateRevision(old.state);
+ const newer=change==='html'?{...old,html:'<p>New code</p>'}:{...old,actions:[]};
+ s.updateMessageRender(a.id,mid,newer);
+ for(const payload of [{state:{n:55}},{render:old}])assert.equal(x.ownerSave(a.id,mid,{...payload,expectedRevision,expectedCodeRevision}).status,409);
+ assert.deepEqual(s.getRender(mid),newer);
+ assert.equal(x.ownerSave(a.id,mid,{state:{n:6},expectedRevision,expectedCodeRevision:code(newer)}).status,200);
 }));

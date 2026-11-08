@@ -1,3 +1,4 @@
+import {ownerCodeText} from '../owner-code.mjs';
 import {test} from 'node:test';import assert from 'node:assert/strict';import {createHash} from 'node:crypto';import {elementPersistence} from '../src/element-persistence.js';
 const hash=s=>createHash('sha256').update(JSON.stringify(s)).digest('hex');
 const ok=state=>({ok:true,json:async()=>({ok:true,state})});
@@ -13,3 +14,16 @@ for(const status of [409,401,403,503,'network','malformed'])test('blocks queued 
 });
 test('bounded queue fails closed without a request flood',async()=>{let calls=0,failures=0;const w=elementPersistence({messageId:'m',state:{},request:async()=>{calls++;return ok({})},onFailure:()=>{failures++;}});const results=await Promise.all(Array.from({length:100},()=>w.save({state:{}})));assert.ok(results.every(x=>x===false));assert.equal(calls,0);assert.equal(failures,1);});
 test('stopped snapshot cannot dispatch queued work',async()=>{let calls=0;const w=elementPersistence({messageId:'m',state:{},request:async()=>{calls++;return ok({})},onFailure:()=>{}});const result=w.save({state:{}});w.stop();assert.equal(await result,false);assert.equal(calls,0);});
+test('code snapshot survives state writes and advances only after confirmed replacement',async()=>{
+ const render={version:1,html:'old',css:'',js:'',state:{n:0},actions:[]},code=r=>createHash('sha256').update(ownerCodeText(r)).digest('hex'),calls=[];
+ let current=structuredClone(render);
+ const w=elementPersistence({messageId:'m',state:render.state,render,request:async p=>{calls.push(p);assert.equal(p.expectedCodeRevision,code(current));current=p.render||{...current,state:p.state};return {ok:true,json:async()=>({ok:true,state:current.state,ownerCodeRevision:code(current)})};},onFailure:e=>{throw e}});
+ render.html='mutated outside queue';
+ assert.deepEqual(await Promise.all([w.save({state:{n:1}}),w.save({render:{...current,html:'new',state:{n:2}}}),w.save({state:{n:3}})]),[true,true,true]);
+ assert.notEqual(calls[1].expectedCodeRevision,calls[2].expectedCodeRevision);assert.equal(current.html,'new');
+});
+for(const ownerCodeRevision of [undefined,'wrong'])test('missing or invalid code acknowledgement blocks queue '+ownerCodeRevision,async()=>{
+ let calls=0,failed=0;const render={html:'code',state:{}};
+ const w=elementPersistence({messageId:'m',state:{},render,request:async()=>{calls++;return {ok:true,json:async()=>({ok:true,state:{},ownerCodeRevision})};},onFailure:()=>failed++});
+ assert.deepEqual(await Promise.all([w.save({state:{}}),w.save({state:{}})]),[false,false]);assert.equal(calls,1);assert.equal(failed,1);
+});
