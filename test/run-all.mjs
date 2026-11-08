@@ -32,6 +32,8 @@ step('element settings browser and sandbox',run('node',['test/connection-browser
 step('owner receipt and missing animation declarations',run('node',['--test','test/owner-save-contract.test.mjs','test/animation-declaration.test.mjs']));
 step('post-it persist has no remount or scroll jump',run('node',['test/postit-save-regression.mjs']));
 step('animation verifier private transport',run('node',['--test','test/animation-verifier-client.test.mjs']));
+step('build recovery and animation correction',run('node',['--test','--test-concurrency=1','test/build-recovery.test.mjs']));
+step('build failure UX',run('node',['test/build-recovery-browser.mjs']));
 step('animation schema and budgets',run('node',['--test','test/animation-policy.test.mjs']));
 step('animation stack interaction and persistence recovery',run('node',['test/animation.test.mjs']));
 step('isolated animation startup and declared-clip verifier',run('node',['test/animation-verification.test.mjs']));

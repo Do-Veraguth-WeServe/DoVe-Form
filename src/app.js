@@ -1,3 +1,4 @@
+import {buildStatus,buildFailure} from '../build-recovery.mjs';
 import {connectionSettings} from './connection-settings.js';
 import {elementPersistence} from './element-persistence.js';
 import {elementTimeline} from './element-timeline.js';
@@ -266,22 +267,25 @@ function siteEl(job){
   svg.setAttribute('viewBox','0 0 220 96');svg.setAttribute('class','crane');svg.setAttribute('aria-hidden','true');
   svg.innerHTML=CRANE;
   const meta=document.createElement('div');meta.className='sitemeta';
-  const l1=document.createElement('span');l1.className='sitelabel';l1.textContent=(job&&job.kind==='refine'?'Wird aktualisiert':'Wird gebaut')+(job?.blueprintRevision?' · Planversion '+job.blueprintRevision:'');
+  const l1=document.createElement('span');l1.className='sitelabel';l1.textContent=buildStatus(job)+(job?.blueprintRevision?' · Planversion '+job.blueprintRevision:'');
   const l2=document.createElement('span');l2.className='sitephase';
   meta.append(l1,l2);
   if(job&&['queued','building','validating'].includes(job.state)){
-    l2.textContent=SITE_PHASE[job.state]||'…';
+    l2.textContent=job.phase==='correcting'&&job.state==='building'?'Automatische Korrektur · Versuch 2 von 2':SITE_PHASE[job.state]||'…';
     const c=document.createElement('button');c.type='button';c.textContent='Abbrechen';
     c.setAttribute('aria-label','Elementbau abbrechen');c.onclick=()=>jobAction('cancel',job.id);
     meta.append(c);
   }else if(job&&job.state==='failed'){
-    l2.textContent=job.error||'Fehlgeschlagen.';
+    l2.textContent=buildFailure(job.error)+(job.kind==='refine'?' Dein bisheriges Element bleibt erhalten.':'');
+    if(job.error){const detail=document.createElement('details');const summary=document.createElement('summary');summary.textContent='Technische Details';const text=document.createElement('p');text.textContent=job.error;detail.append(summary,text);meta.append(detail);}
     const r=document.createElement('button');r.type='button';r.textContent='Erneut versuchen';
-    r.onclick=()=>jobAction('retry',job.id);
-    meta.append(r);
+    r.onclick=async()=>{r.disabled=true;try{await jobAction('retry',job.id);}finally{if(r.isConnected)r.disabled=false;}};
+    const revise=document.createElement('button');revise.type='button';revise.textContent='Plan überarbeiten';revise.onclick=()=>{const bp=document.querySelector('.blueprint-toggle');if(bp?.getAttribute('aria-expanded')==='false')bp.click();$('#prompt').focus();toast('Beschreibe die Änderung und wähle Plan. Ein neuer Bau startet erst nach deiner Freigabe.');};
+    meta.append(r,revise);
   }else if(job&&job.state==='cancelled'){
     l2.textContent='Abgebrochen.';
   }else l2.textContent='baut …';
+  if(job&&['failed','cancelled'].includes(job.state))svg.querySelectorAll('*').forEach(el=>el.style.animation='none');
   d.append(svg,meta);
   return d;
 }
@@ -311,7 +315,8 @@ function applyJob(job,opts){
     }else if(wasActive&&ACTIVE_JOB.includes(job.state)&&(prev.phase||'prose')===(job.phase||'prose')){
       // cosmetic state change (queued→building→validating): patch text only
       const ph=document.querySelector('.site[data-jobid="'+job.id+'"] .sitephase');
-      if(ph)ph.textContent=SITE_PHASE[job.state]||'…';
+      if(ph)ph.textContent=job.phase==='correcting'&&job.state==='building'?'Automatische Korrektur · Versuch 2 von 2':SITE_PHASE[job.state]||'…';
+      const label=document.querySelector('.site[data-jobid="'+job.id+'"] .sitelabel');if(label)label.textContent=buildStatus(job)+(job.blueprintRevision?' · Planversion '+job.blueprintRevision:'');
       return;
     }else if(wasActive&&ACTIVE_JOB.includes(job.state)&&(prev.phase||'prose')!==(job.phase||'prose')){
       // phase flip prose→artifact during a live turn: bind the site in place.

@@ -24,6 +24,7 @@
 // discard stale events and reconcile gaplessly via snapshot + event stream.
 
 import crypto from 'node:crypto';
+import {correctionContext,animationCorrection} from './build-recovery.mjs';
 import {initAnimationEvidence,saveAnimationEvidence} from './animation-evidence.mjs';
 import {animationPrompt} from './animation-policy.mjs';
 import {cssCapabilityPrompt} from './css-policy.mjs';
@@ -71,12 +72,13 @@ export async function executeTurn(model, messages, opts, emit) {
         ? 'Antwort wurde durch das Ausgabe-Längenlimit des Modells abgeschnitten — kompakter zweiter Versuch'
         : (round1.error || 'ungültiges JSON')
     });
-    const prev = round1.contentText.slice(0, 4000); // ACTUAL content, never raw SSE envelopes
+    const prev = correctionContext(round1.contentText); // ACTUAL content, never raw SSE envelopes
     let corrective = failureCode === 'truncated'
       ? 'Your previous answer was cut off by the output token limit before it completed (the JSON artifact is truncated). Answer again, much more compact: FIRST a short prose answer, THEN exactly ONE fenced ```json artifact {"version":1,"html","css","js","state"} — valid JSON, well under 10KB, minimal HTML/CSS/JS, no truncation, ids matching between html and js.'
       : 'Your previous answer contained an invalid JSON artifact (' + (round1.error || 'parse error') + '). Answer again in the same language: FIRST a short prose answer, THEN exactly ONE corrected fenced ```json artifact {"version":1,"html","css","js","state"}. The JSON must be valid (no trailing commas, no comments, no truncation), under 20KB total, with ids matching between html and js.';
     // Provider diagnostics are capped; attach the trusted policy separately, not source CSS.
     corrective += '\n' + cssCapabilityPrompt + '\n' + animationPrompt + '\nDeclared animations must execute with unique existing targets in the sanitized DOM. Startup must handle unavailable isolated data/actions without throwing. Browser smoke verification is mandatory; do not claim visual-intent certification.';
+    corrective += animationCorrection(round1.error);
     round2 = await runRound(model,
       [...messages, { role: 'assistant', content: prev }, { role: 'user', content: corrective }],
       roundOpts, wrapProse, onArtifactStart);
@@ -239,6 +241,7 @@ export class JobRunner {
             try { this.store.setJobProse(jobId, liveProse.slice(0, 8000)); } catch {}
           }
         }
+        if(ev.type==='retry'&&ev.code!=='transport'){try{this.store.setJobPhase(jobId,'correcting');const j=this.store.getJob(jobId);if(j)this.emitJob(j);}catch{}}
         if (ev.type === 'artifact-start' && !artifactSeen) {
           artifactSeen = true;
           try { this.store.setJobPhase(jobId, 'artifact'); const j = this.store.getJob(jobId); if (j) this.emitJob(j); } catch {}
