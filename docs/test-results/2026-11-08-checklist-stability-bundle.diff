@@ -1,0 +1,38 @@
+--- /opt/form/dist/app.js	2026-11-07 22:38:23.665418073 +0100
++++ /tmp/form-checklist-release.I8mAng/dist/app.js	2026-11-08 01:08:43.015670351 +0100
+@@ -4465,6 +4465,7 @@
+     p.textContent = f.text;
+     box.append(p);
+   }
++  let pendingChecks = null;
+   const items = document.createElement(f.layout === "steps" ? "ol" : "div");
+   items.className = "form-items";
+   for (const i of f.items || []) {
+@@ -4481,9 +4482,14 @@
+       c2.type = "checkbox";
+       c2.checked = f.data?.checked?.[(f.items || []).indexOf(i)] === true;
+       c2.onchange = async () => {
+-        const boxes = [...box.querySelectorAll("input[type=checkbox]")], previous = f.data;
+-        const state = { checked: boxes.map((x2) => x2.checked) };
+-        boxes.forEach((x2) => x2.disabled = true);
++        const boxes = [...box.querySelectorAll("input[type=checkbox]")];
++        if (pendingChecks) {
++          boxes.forEach((x2, n) => x2.checked = pendingChecks[n]);
++          return;
++        }
++        const previous = f.data, state = { checked: boxes.map((x2) => x2.checked) };
++        pendingChecks = state.checked;
++        box.setAttribute("aria-busy", "true");
+         try {
+           await onState(state);
+           f.data = state;
+@@ -4491,7 +4497,8 @@
+           boxes.forEach((x2, n) => x2.checked = previous?.checked?.[n] === true);
+           onError(e.message);
+         } finally {
+-          boxes.forEach((x2) => x2.disabled = false);
++          pendingChecks = null;
++          box.removeAttribute("aria-busy");
+         }
+       };
+       l.append(c2, document.createTextNode(i.label));

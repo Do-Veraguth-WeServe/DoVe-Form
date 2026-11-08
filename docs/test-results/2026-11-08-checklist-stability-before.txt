@@ -1,0 +1,18 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: saving one checkbox must not disable/blink the whole list
+
+true !== false
+
+    at file:///root/.openclaw/workspace/projects/form/test/checklist-stability.test.mjs:21:9 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: true,
+  expected: false,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.22.2

@@ -1,0 +1,2 @@
+{"base":"http://127.0.0.1:5177","home":200,"csp":true,"bundle":"a70c9710408fa5c7871b31277de5db6c15415fc7095aa3c8cf9715638f167e4f","registration":false,"anonymous":401}
+{"base":"https://fhisling.tail11036c.ts.net:9444","home":200,"csp":true,"bundle":"a70c9710408fa5c7871b31277de5db6c15415fc7095aa3c8cf9715638f167e4f","registration":false,"anonymous":401}

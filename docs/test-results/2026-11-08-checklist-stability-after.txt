@@ -1,0 +1,52 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.uncheck: Clicking the checkbox did not change its state
+Call log:
+  - waiting for locator('#feed .form-list input[type=checkbox]').first()
+    - locator resolved to <input type="checkbox"/>
+  - attempting click action
+    2 × waiting for element to be visible, enabled and stable
+      - element is not stable
+    - retrying click action
+    - waiting 20ms
+    - waiting for element to be visible, enabled and stable
+    - element is not stable
+  - retrying click action
+    - waiting 100ms
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - performing click action
+    - click action done
+    - waiting for scheduled navigations to finish
+    - navigations have finished
+
+    at /root/.openclaw/workspace/projects/form/test/checklist-stability.test.mjs:31:259 {
+  log: [
+    "  - waiting for locator('#feed .form-list input[type=checkbox]').first()",
+    '    - locator resolved to <input type="checkbox"/>',
+    '  - attempting click action',
+    '    2 × waiting for element to be visible, enabled and stable',
+    '      - element is not stable',
+    '    - retrying click action',
+    '    - waiting 20ms',
+    '    - waiting for element to be visible, enabled and stable',
+    '    - element is not stable',
+    '  - retrying click action',
+    '    - waiting 100ms',
+    '    - waiting for element to be visible, enabled and stable',
+    '    - element is visible, enabled and stable',
+    '    - scrolling into view if needed',
+    '    - done scrolling',
+    '    - performing click action',
+    '    - click action done',
+    '    - waiting for scheduled navigations to finish',
+    '    - navigations have finished'
+  ],
+  name: 'Error'
+}
+
+Node.js v24.22.2
