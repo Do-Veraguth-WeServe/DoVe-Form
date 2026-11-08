@@ -1,0 +1,33 @@
+[build-budget] {"round":1,"finish":"stop","visibleChars":236,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":260,"reasoningChars":0,"usage":{}}
+[job] id=71eb54b0 failed after 2 round(s): invalid-artifact
+[build-budget] {"round":1,"finish":"stop","visibleChars":236,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":247,"reasoningChars":0,"usage":{}}
+[job] id=2bbecd74 user=88a7d5b5 kind=refine dur=12573ms rounds=2 finish=stop/stop chars=483 render=yes fail=invalid-artifact
+✔ real isolated Chromium rejects missing target and corrects once, with scoped durable evidence (24635.346448ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":287,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":287,"reasoningChars":0,"usage":{}}
+[job] id=4a27dcde failed after 2 round(s): invalid-artifact
+[build-budget] {"round":1,"finish":"stop","visibleChars":287,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":247,"reasoningChars":0,"usage":{}}
+[job] id=30a2401c user=f7193d93 kind=refine dur=10184ms rounds=2 finish=stop/stop chars=534 render=yes fail=invalid-artifact
+✔ initial HTML loss triggers one correction and double failure preserves the existing element (18588.585424ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":247,"reasoningChars":0,"usage":{}}
+✔ valid animated output passes one real browser round (5898.269197ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":141,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":141,"reasoningChars":0,"usage":{}}
+[job] id=e89a1a40 failed after 2 round(s): invalid-artifact
+[build-budget] {"round":1,"finish":"stop","visibleChars":141,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":101,"reasoningChars":0,"usage":{}}
+[job] id=b606d702 user=9ee033c0 kind=refine dur=9364ms rounds=2 finish=stop/stop chars=242 render=yes fail=invalid-artifact
+✔ initial HTML loss triggers one correction and double failure preserves the existing element (19038.943045ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":101,"reasoningChars":0,"usage":{}}
+✔ valid nonanimated output passes without claiming runtime evidence (4681.900309ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 49517.459817

@@ -1,0 +1,5 @@
+{"base":"http://127.0.0.1:5177","status":200,"registration":false,"anonymous":401,"appSHA256":"8f968a190468f4a636cda40a80a95ef562d54afbbb9bd1f23873784bef4148d4"}
+{"base":"https://fhisling.tail11036c.ts.net:9444","status":200,"registration":false,"anonymous":401,"appSHA256":"8f968a190468f4a636cda40a80a95ef562d54afbbb9bd1f23873784bef4148d4"}
+{"file":"provider.mjs","SHA256":"7dd25abca70a51f036c4ee352ae7df88dce87a506c5c71d953a535c03b53a3e7"}
+{"file":"animation-verification.mjs","SHA256":"6ba6e1ac4aaaa71297bce818c3238e21f8f0c4f667007c54e13e36bd031822e3"}
+{"file":"animation-verifier-worker.mjs","SHA256":"dcbd841933444bd6c6957874927684b0f46525d4bff2e90c024535035b9dee31"}

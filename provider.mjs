@@ -151,8 +151,9 @@ async function runRoundAttempt(cfg, messages, opts, onProse, onArtifactStart) {
     let animationEvidence=null;
     if (fin.hadArtifact) { try {
       render = validateGeneratedCSS(parseArtifact(fin.artifactRaw));
-      if(render.animations)animationEvidence=await requestAnimationVerification(render,{signal:round.signal,timeoutMs:Math.min(34000,deadlineMs-Date.now())});
-    } catch (e) { if(/^Animation verification (unavailable|incomplete|deadline)$/.test(e.message)||/Animation browser verification rejected \[INTERNAL\]/.test(e.message))throw new ProviderError('Animationsprüfung vorübergehend nicht verfügbar. Der Entwurf wurde nicht veröffentlicht; bitte den Bau später erneut versuchen.');render=null;error = String(e.message || e).slice(0, 160); } }
+      const verification=await requestAnimationVerification(render,{signal:round.signal,timeoutMs:Math.min(34000,deadlineMs-Date.now())});
+      if(render.animations)animationEvidence=verification; // HTML-only checks are not animation/runtime evidence.
+    } catch (e) { if(/^Animation verification (unavailable|incomplete|deadline)$/.test(e.message)||/Animation browser verification rejected \[INTERNAL\]/.test(e.message))throw new ProviderError('Elementprüfung vorübergehend nicht verfügbar. Der Entwurf wurde nicht veröffentlicht; bitte den Bau später erneut versuchen.');render=null;error = String(e.message || e).slice(0, 160); } }
     if(round.signal.aborted)throw abortErr(!!signal?.aborted);
     return {
       render, error, animationEvidence, hadArtifact: fin.hadArtifact,

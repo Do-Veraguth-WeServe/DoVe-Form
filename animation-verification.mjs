@@ -8,10 +8,10 @@ import {validateAnimations} from './animation-policy.mjs';
 const ORIGIN='https://form-verification.invalid';
 const targets=n=>n.type==='tween'?[n.target]:n.type==='crumple'?n.targets:n.children.flatMap(targets);
 const duration=n=>n.type==='tween'||n.type==='crumple'?n.duration:n.type==='sequence'?n.children.reduce((s,c)=>s+duration(c),0):Math.max(...n.children.map(duration));
-export async function verifyAnimationArtifact(browser,artifact,{root=process.cwd(),timeoutMs=25000,signal,screenshotDir}={}){
- validateRender(artifact);if(!artifact.animations)return {status:'not-applicable'};
- validateAnimations(artifact.animations);
- const clips=Object.entries(artifact.animations.clips);
+export async function verifyAnimationArtifact(browser,artifact,{root=process.cwd(),timeoutMs=25000,signal,screenshotDir,htmlOnly=false}={}){
+ validateRender(artifact);if(!artifact.animations&&!htmlOnly)return {status:'not-applicable'};
+ if(artifact.animations)validateAnimations(artifact.animations);
+ const clips=htmlOnly?[]:Object.entries(artifact.animations.clips);
  if(clips.reduce((s,[,n])=>s+duration(n)+200,0)>16000)throw verificationError('BUDGET','Animation verification budget exceeded; simplify clips');
  if(signal?.aborted)throw verificationError('CANCELLED','Animation verification cancelled');
  const sourceHash=crypto.createHash('sha256').update(JSON.stringify(artifact)).digest('hex');
@@ -36,6 +36,7 @@ export async function verifyAnimationArtifact(browser,artifact,{root=process.cwd
   // Reject initial sanitizer losses before any guest code executes. Existing saved
   // artifacts remain compatible; only the generation verifier calls this gate.
   if(!await page.evaluate(html=>window.preflightVerificationHTML(html),artifact.html))throw verificationError('HTML','Initial HTML violates the supported sanitizer policy');
+  if(htmlOnly)return {status:'passed',scope:'initial-html-only',sourceHash,limitations:['No guest execution','No runtime, layout or visual-intent certification']};
   const mount=async data=>{
    await page.evaluate(d=>window.mountVerification(d),data);
    await page.waitForFunction(()=>document.querySelector('iframe')?.dataset.ready==='true'||window.verification.errors.length);

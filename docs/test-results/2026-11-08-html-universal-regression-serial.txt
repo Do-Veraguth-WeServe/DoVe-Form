@@ -1,0 +1,43 @@
+✔ new output rejects every reported unsupported variation, existing artifacts remain readable and unchanged (17.214554ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":129,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":129,"reasoningChars":0,"usage":{}}
+✔ real SSE generation corrects unsupported CSS exactly once with policy evidence (8236.218046ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":168,"reasoningChars":0,"usage":{}}
+✔ second unsupported output fails honestly with no render and no third attempt (15.943314ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":168,"reasoningChars":0,"usage":{}}
+[job] id=a6428055 failed after 2 round(s): invalid-artifact
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":129,"reasoningChars":0,"usage":{}}
+[job] id=1ed86d80 user=39fbd76f kind=refine dur=4213ms rounds=2 finish=stop/stop chars=323 render=yes fail=invalid-artifact
+✔ persisted failed refinement preserves original; corrected build becomes ready (4497.839103ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":146,"reasoningChars":0,"usage":{}}
+✔ supported output stays one round (4295.505033ms)
+✔ clean round: prose parsed, finish_reason stop, actual content captured (no SSE envelopes) (77.72163ms)
+✔ finish_reason=length sets truncated; unterminated artifact reported as invalid (17.045265ms)
+✔ malformed SSE frames are ignored, valid frames still parsed (8.876838ms)
+✔ explicit provider error frame throws ProviderError (distinct from malformed frames) (8.105856ms)
+✔ final unterminated SSE line is parsed (5.827276ms)
+✔ UTF-8 multibyte char split across reads is reassembled (5.806254ms)
+✔ upstream 401 becomes ProviderError with status (permanent, caller must not retry) (6.532795ms)
+✔ content cap (accumulated deltas) throws SizeError (6.255495ms)
+✔ transport cap (raw SSE bytes) throws SizeError even with tiny visible content (7.73055ms)
+✔ round deadline expiry maps to abortKind timeout (307.081275ms)
+[provider] retry empty interrupted stream code=ECONNRESET
+[provider] retry empty interrupted stream code=ECONNRESET
+✔ external abort maps to abortKind external, not timeout (152.782394ms)
+✔ already-expired deadline fails fast with timeout kind (1.097507ms)
+✔ job generation has no default or zero-configured deadline (8.257736ms)
+✔ empty ECONNRESET retries once and completes, permanent reset stays bounded (3.402438ms)
+✔ connection reset after visible prose is not replayed (23.055418ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 21473.208138

@@ -18,7 +18,7 @@ try{
  const home=await fs.mkdtemp('/tmp/form-verifier-');
  browser=await chromium.launch({env:{PATH:'/usr/bin:/bin',HOME:home,XDG_CONFIG_HOME:home,XDG_CACHE_HOME:home},ignoreDefaultArgs:['--disable-ipc-flooding-protection','--enable-unsafe-swiftshader'],executablePath:'/opt/form-verifier/chrome/chrome',chromiumSandbox:true,headless:true,args:['--disable-dev-shm-usage']});
  stage='verification';
- const evidence=await verifyAnimationArtifact(browser,request.artifact,{root:'/opt/form-verifier',timeoutMs:25000,signal:controller.signal});
+ const evidence=await verifyAnimationArtifact(browser,request.artifact,{root:'/opt/form-verifier',timeoutMs:25000,signal:controller.signal,htmlOnly:!request.artifact?.animations});
  process.stdout.write(JSON.stringify({ok:true,evidence})+'\n');
 }catch(error){process.stdout.write(JSON.stringify({ok:false,stage,code:verificationFailure(error?.verificationCode).code})+'\n');}
 finally{await browser?.close().catch(()=>{});clearTimeout(deadline);}

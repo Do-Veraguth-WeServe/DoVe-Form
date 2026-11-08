@@ -1,0 +1,86 @@
+✔ new output rejects every reported unsupported variation, existing artifacts remain readable and unchanged (19.157706ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+✖ real SSE generation corrects unsupported CSS exactly once with policy evidence (844.142352ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":168,"reasoningChars":0,"usage":{}}
+✔ second unsupported output fails honestly with no render and no third attempt (28.802023ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":168,"reasoningChars":0,"usage":{}}
+[job] id=6394002c failed after 2 round(s): invalid-artifact
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[job] failed: 01c4d12d Elementprüfung vorübergehend nicht verfügbar. Der Entwurf wurde nicht veröffentlicht; bitte den Bau später erneut versuchen.
+✖ persisted failed refinement preserves original; corrected build becomes ready (1084.863979ms)
+✖ supported output stays one round (771.838683ms)
+✔ clean round: prose parsed, finish_reason stop, actual content captured (no SSE envelopes) (71.511198ms)
+✔ finish_reason=length sets truncated; unterminated artifact reported as invalid (13.202484ms)
+✔ malformed SSE frames are ignored, valid frames still parsed (5.885957ms)
+✔ explicit provider error frame throws ProviderError (distinct from malformed frames) (6.098448ms)
+✔ final unterminated SSE line is parsed (5.802125ms)
+✔ UTF-8 multibyte char split across reads is reassembled (8.15818ms)
+✔ upstream 401 becomes ProviderError with status (permanent, caller must not retry) (12.652086ms)
+✔ content cap (accumulated deltas) throws SizeError (6.65497ms)
+✔ transport cap (raw SSE bytes) throws SizeError even with tiny visible content (7.190431ms)
+✔ round deadline expiry maps to abortKind timeout (306.875974ms)
+[provider] retry empty interrupted stream code=ECONNRESET
+[provider] retry empty interrupted stream code=ECONNRESET
+✔ external abort maps to abortKind external, not timeout (152.961729ms)
+✔ already-expired deadline fails fast with timeout kind (0.754398ms)
+✔ job generation has no default or zero-configured deadline (8.582391ms)
+✔ empty ECONNRESET retries once and completes, permanent reset stays bounded (3.087171ms)
+✔ connection reset after visible prose is not replayed (23.17757ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 17
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7063.375782
+
+✖ failing tests:
+
+test at test/css-preflight.test.mjs:41:1
+✖ real SSE generation corrects unsupported CSS exactly once with policy evidence (844.142352ms)
+  Error [ProviderError]: Elementprüfung vorübergehend nicht verfügbar. Der Entwurf wurde nicht veröffentlicht; bitte den Bau später erneut versuchen.
+      at runRoundAttempt (file:///root/.openclaw/workspace/projects/form/provider.mjs:156:177)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async runRound (file:///root/.openclaw/workspace/projects/form/provider.mjs:42:14)
+      at async executeTurn (file:///root/.openclaw/workspace/projects/form/jobs.mjs:84:14)
+      at async file:///root/.openclaw/workspace/projects/form/test/css-preflight.test.mjs:43:29
+      at async fixture (file:///root/.openclaw/workspace/projects/form/test/css-preflight.test.mjs:39:6)
+      at async TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/css-preflight.test.mjs:42:27)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/css-preflight.test.mjs:56:1
+✖ persisted failed refinement preserves original; corrected build becomes ready (1084.863979ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  'failed' !== 'ready'
+
+      at file:///root/.openclaw/workspace/projects/form/test/css-preflight.test.mjs:66:43
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async fixture (file:///root/.openclaw/workspace/projects/form/test/css-preflight.test.mjs:39:6)
+      at async TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/css-preflight.test.mjs:57:36)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'failed',
+    expected: 'ready',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/css-preflight.test.mjs:72:1
+✖ supported output stays one round (771.838683ms)
+  Error [ProviderError]: Elementprüfung vorübergehend nicht verfügbar. Der Entwurf wurde nicht veröffentlicht; bitte den Bau später erneut versuchen.
+      at runRoundAttempt (file:///root/.openclaw/workspace/projects/form/provider.mjs:156:177)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async runRound (file:///root/.openclaw/workspace/projects/form/provider.mjs:42:14)
+      at async executeTurn (file:///root/.openclaw/workspace/projects/form/jobs.mjs:55:18)
+      at async file:///root/.openclaw/workspace/projects/form/test/css-preflight.test.mjs:74:13
+      at async fixture (file:///root/.openclaw/workspace/projects/form/test/css-preflight.test.mjs:39:6)
+      at async TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/css-preflight.test.mjs:73:2)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

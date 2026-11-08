@@ -30,6 +30,7 @@ step('guided planning metadata',run('node',['--test','test/planning-offer.test.m
 step('build (esbuild + bridge hash + wasm)', run('node', ['build.mjs']));
 step('current-contract browser core (login, settings, approval, streaming, persistence)',run('node',['test/browser-core.test.mjs']));
 step('editor lifecycle (pin, overlay, version restore, sanitizer)',run('node',['test/editor-lifecycle.test.mjs']));
+step('initial static-only HTML preflight',run('node',['test/html-preflight.mjs']));
 step('HTML removal diagnostics (bounded reasons, trusted desktop/mobile feedback)',run('node',['test/html-diagnostics.test.mjs']));
 step('dynamic namespace-aware HTML diagnostics',run('node',['test/dynamic-html-diagnostics.mjs']));
 step('scoped diagnostic chat browser',run('node',['test/element-diagnostics-browser.mjs']));

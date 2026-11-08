@@ -1,0 +1,1 @@
+PASS static-only HTML preflight: five rejected variants, supported SVG/table/input, privacy, no guest execution, legacy direct-call compatibility, cleanup

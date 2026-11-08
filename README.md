@@ -28,6 +28,8 @@ npm run dev     # baut + startet den Dev-Server
 
 Dann im Browser öffnen: **http://127.0.0.1:5177**
 
+**Bau-Prüfung:** Neue generierte Elemente benötigen zusätzlich den isolierten Browser-Prüfdienst (`deploy/form-verifier.socket` und `deploy/form-verifier@.service`, geschützter Socket `/run/form-verifier.sock`; Installation und Grenzen: [Animationen und Prüfdienst](docs/ANIMATIONS.md)). `npm run dev` allein installiert diesen Dienst nicht. Ohne ihn bleiben Chat/Planung nutzbar, aber neue Bauten werden nicht ungeprüft veröffentlicht. Alle neuen Elemente erhalten eine initiale HTML-Sanitizer-Prüfung; nur deklarierte Animationen zusätzlich einen isolierten Start-/Clip-Test. Bestehende Elemente werden nicht migriert. Kein allgemeines Qualitäts- oder Funktionszertifikat.
+
 (Der Port ist fix: `5177`. Überschreibbar mit `PORT=... npm run dev`.)
 
 ### Erster Start: Benutzer anlegen
