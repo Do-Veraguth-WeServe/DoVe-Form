@@ -1,0 +1,14 @@
+http://127.0.0.1:5177 health200 CSP and exact bundle 12fba994586a5f203591e66f73ca927aa65975880f96c3c6026a04257d18a749
+https://fhisling.tail11036c.ts.net:9444 health200 CSP and exact bundle 12fba994586a5f203591e66f73ca927aa65975880f96c3c6026a04257d18a749
+{
+  "commit": "34d8d452d43d92feec1163709176e3295299b07d",
+  "rollback": "/opt/form/.rollback/20261108-element-momentum",
+  "files": {
+    "dist/app.js": "12fba994586a5f203591e66f73ca927aa65975880f96c3c6026a04257d18a749",
+    "dist/bridge-hash.txt": "88469c06bffcfbbb550250dac54ea22fac111d485dae58930b26240f896f9345",
+    "src/renderer.js": "54cdc77b3c193250e29c0a72a40d1e76c8d7096cddcd4120be1695a6c6ea6246",
+    "src/feed-momentum.js": "13a8f71f779a064ce20ba32a5b78d91fde4683e004b0771362046c5f89f47fc6",
+    "docs/ELEMENT-MOMENTUM.md": "b997d23fa93545dd8e5afc569817b7a8717e5d2d25c077be7fa1ef820f2103a2"
+  },
+  "backend": "922299aec8c44c8bebb8a586270f60564b0a9066c1e75c14530457712d03592e"
+}
