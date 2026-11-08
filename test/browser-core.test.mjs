@@ -11,7 +11,7 @@ import {once} from 'node:events';
 import {chromium} from 'playwright-core';
 const root=process.env.FORM_TEST_ROOT||process.cwd();
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'form-browser-core-'));
-const base='http://127.0.0.1:4826',key='fixture-only-key-1234567890';
+const base='http://127.0.0.1:4825',key='fixture-only-key-1234567890';
 let app,browser,builds=0,plans=0,chats=0,releaseFirst,releaseArtifact,releaseBuild;
 let correctionMode=null,correctionAttempts=0,releaseCorrection,proseOnly=false,releaseProse;
 let holdChat=false,heldChats=0,closedChats=0,signalHeld,signalClosed;
@@ -36,11 +36,25 @@ const mock=http.createServer(async(req,res)=>{
  res.end('data: [DONE]\n\n');
  }catch(e){res.destroy(e);}
 });
+// Local transparent proxy can close existing SSE sockets; Chromium's offline flag
+// alone does not reliably terminate already-open HTTP streams.
+const streamSockets=new Set();let severedStreams=0;
+const proxy=http.createServer((req,res)=>{
+ const isStream=req.url==='/api/jobs/stream';
+ if(isStream)streamSockets.add(res);
+ const upstream=http.request({hostname:'127.0.0.1',port:4826,path:req.url,method:req.method,headers:req.headers},incoming=>{
+  res.writeHead(incoming.statusCode,incoming.headers);incoming.pipe(res);
+ });
+ upstream.on('error',()=>res.destroy());
+ res.on('close',()=>{streamSockets.delete(res);upstream.destroy()});
+ req.on('error',()=>upstream.destroy());req.pipe(upstream);
+});
 const api=async p=>(await browser.contexts()[0].request.get(base+p)).json();
 const check=(label)=>console.log('PASS '+label);
 try{
+ await new Promise((resolve,reject)=>{proxy.once('error',reject);proxy.listen(4825,'127.0.0.1',resolve)});
  await new Promise((resolve,reject)=>{mock.once('error',reject);mock.listen(4827,'127.0.0.1',resolve)});
- app=spawn(process.execPath,['server.mjs'],{cwd:root,env:{...process.env,PORT:'4826',FORM3_DATA:dir,FORM3_MODELS:path.join(dir,'models.json'),FORM3_CONFIG:path.join(dir,'config.json'),FORM3_REGISTRATION:'1'},stdio:['ignore','pipe','inherit']});
+ app=spawn(process.execPath,['server.mjs'],{cwd:root,env:{...process.env,PORT:'4826',FORM3_ORIGIN:base,FORM3_DATA:dir,FORM3_MODELS:path.join(dir,'models.json'),FORM3_CONFIG:path.join(dir,'config.json'),FORM3_REGISTRATION:'1'},stdio:['ignore','pipe','inherit']});
  await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('server startup timeout')),15000);app.stdout.on('data',d=>{if(String(d).includes('ready')){clearTimeout(t);resolve()}});app.once('exit',c=>{clearTimeout(t);reject(Error('early server exit '+c))})});
  browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'/root/.cache/puppeteer/chrome/linux-153.0.8010.36/chrome-linux64/chrome',headless:true,args:['--no-sandbox']});
  const context=await browser.newContext({viewport:{width:1280,height:900},reducedMotion:'reduce'}),errors=[];let p=await context.newPage();
@@ -270,6 +284,24 @@ try{
   await p.reload();await site.waitFor();
   assert.equal((await api('/api/jobs')).jobs.find(j=>j.id===job.id).state,'building');
   assert.equal(builds,beforeBuilds+1);assert.equal(closedBuilds,beforeClosed);
+  // Preserve legacy7b's motion/phase/overflow assertions under explicit approval.
+  await p.emulateMedia({reducedMotion:'no-preference'});
+  const moving=await site.locator('.load').evaluate(async el=>{
+   const before=getComputedStyle(el).transform;
+   await new Promise(r=>setTimeout(r,160));
+   const cs=getComputedStyle(el);
+   return {before,after:cs.transform,name:cs.animationName,duration:cs.animationDuration};
+  });
+  assert.equal(moving.name,'lower');assert.ok(parseFloat(moving.duration)>0);
+  assert.notEqual(moving.before,moving.after,'crane load actually moves over time');
+  const phase=await site.locator('.sitephase').innerText();
+  assert.match(phase,/baut|Warteschlange|prüft/);assert.doesNotMatch(phase,/%/);
+  assert.equal(await site.getByRole('button',{name:'Elementbau abbrechen'}).count(),1);
+  assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await site.screenshot({path:'docs/screenshots/core-construction-'+width+'.png'});
+  await p.emulateMedia({reducedMotion:'reduce'});
+  assert.equal(await site.evaluate(el=>el.getAnimations({subtree:true}).filter(a=>a.playState==='running').length),0);
+  assert.equal(partialBuilds,beforePartial+1);assert.equal(closedBuilds,beforeClosed);
   const closed=new Promise(r=>{signalBuildClosed=r});
   await site.getByRole('button',{name:'Elementbau abbrechen'}).click();
   await Promise.race([closed,new Promise((_,reject)=>{const t=setTimeout(()=>reject(Error('build cancel did not abort artifact stream')),5000);t.unref()})]);
@@ -313,7 +345,26 @@ try{
   const siteA=p.locator('.site[data-jobid="'+jobs[0].id+'"]');
   const boxA=p.locator('.message[data-mid="'+jobs[0].messageId+'"]');
   const boxB=p.locator('.message[data-mid="'+jobs[1].messageId+'"]');
-  b.release();await boxB.frameLocator('iframe.render[data-ready=true]').locator('#out').filter({hasText:'Wert: 3'}).waitFor();
+  // Lose the ready event while genuinely offline, then recover without navigation/reload.
+  const documentToken=await p.evaluate(()=>window.acceptanceDocumentToken=crypto.randomUUID());
+  const disconnected=p.waitForEvent('requestfailed',{predicate:r=>r.url().endsWith('/api/jobs/stream'),timeout:10000});
+  await context.setOffline(true);
+  assert.ok(streamSockets.size>0,'real SSE transport is connected before network cut');
+  for(const response of [...streamSockets]){severedStreams++;response.destroy()}
+  await disconnected;
+  assert.equal(await p.evaluate(()=>navigator.onLine),false);
+  b.release();
+  const readJob=()=>{const db=new DatabaseSync(path.join(dir,'form.db'),{readOnly:true});try{return db.prepare('SELECT state FROM jobs WHERE id=?').get(jobs[1].id)?.state}finally{db.close()}};
+  const readyDeadline=Date.now()+15000;
+  while(readJob()!=='ready'&&Date.now()<readyDeadline)await new Promise(r=>setTimeout(r,50));
+  assert.equal(readJob(),'ready','second build persists while its browser is offline');
+  assert.equal(await boxB.locator('iframe.render').count(),0,'offline browser missed publication');
+  assert.equal(a.active,true);assert.equal(builds,before+2);
+  await context.setOffline(false);
+  await boxB.frameLocator('iframe.render[data-ready=true]').locator('#out').filter({hasText:'Wert: 3'}).waitFor({timeout:20000});
+  assert.equal(await p.evaluate(()=>window.acceptanceDocumentToken),documentToken,'no reload or navigation used to recover');
+  assert.equal(await p.locator('.session-open[aria-current=true]').locator('..').getAttribute('data-sid'),jobs[0].conversationId);
+  assert.equal(builds,before+2,'reconnect does not regenerate');
   assert.equal(a.active,true,'first upstream remains open after second publication');await siteA.waitFor();
   assert.equal(await boxA.locator('iframe.render').count(),0);assert.equal(await boxB.locator('.elname').innerText(),b.name);
   assert.equal((await api('/api/jobs')).jobs.find(j=>j.id===jobs[0].id).state,'building');
@@ -329,4 +380,4 @@ try{
   check('reverse concurrent builds '+width+': second publishes first, exact message placement, persisted reload, no regeneration');
  }
  assert.deepEqual(errors,[]);console.log('PASS browser-core: 24 checks; source='+root);
-}finally{for(const entry of reverseBuilds)entry.release?.();releaseProse?.();releaseCorrection?.();releaseFirst?.();releaseArtifact?.();releaseBuild?.();await browser?.close();if(app&&app.exitCode===null){app.kill('SIGTERM');await once(app,'exit')}mock.closeAllConnections();await new Promise(r=>mock.close(r));fs.rmSync(dir,{recursive:true,force:true});}
+}finally{for(const entry of reverseBuilds)entry.release?.();releaseProse?.();releaseCorrection?.();releaseFirst?.();releaseArtifact?.();releaseBuild?.();await browser?.close();if(app&&app.exitCode===null){app.kill('SIGTERM');await once(app,'exit')}mock.closeAllConnections();await new Promise(r=>mock.close(r));proxy.closeAllConnections();await new Promise(r=>proxy.close(r));fs.rmSync(dir,{recursive:true,force:true});}

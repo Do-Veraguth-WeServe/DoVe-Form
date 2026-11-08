@@ -29,6 +29,7 @@ step('revision-bound static CSS evidence',run('node',['--test','test/reply-evide
 step('guided planning metadata',run('node',['--test','test/planning-offer.test.mjs']));
 step('build (esbuild + bridge hash + wasm)', run('node', ['build.mjs']));
 step('current-contract browser core (login, settings, approval, streaming, persistence)',run('node',['test/browser-core.test.mjs']));
+step('chat and plan activity transitions, reduced motion and cleanup',run('node',['test/activity.test.mjs']));
 step('editor lifecycle (pin, overlay, version restore, sanitizer)',run('node',['test/editor-lifecycle.test.mjs']));
 step('cross-conversation collection, state ownership and mobile surfaces',run('node',['test/collection-browser.test.mjs']));
 step('approved in-place refinement browser',run('node',['test/refinement-browser.test.mjs']));
