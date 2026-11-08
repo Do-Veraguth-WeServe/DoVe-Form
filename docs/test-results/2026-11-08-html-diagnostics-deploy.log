@@ -1,0 +1,17 @@
+PASS live home/CSP/bundle hash/anonymous401 http://127.0.0.1:5177
+PASS live home/CSP/bundle hash/anonymous401 https://fhisling.tail11036c.ts.net:9444
+{
+  "rollback": "/opt/form/.rollback/20261108-html-diagnostics",
+  "hashes": {
+    "src/sanitize.js": "4568375f4d03ed84e262199a3d1fccaa75a1c03746e6eb90e56aae286ed25fa0",
+    "src/renderer.js": "7b94e625ac3d9c1d0871b294ffa3ed233a70cdbc4fdb08cce1e70a82a38f4ef6",
+    "src/app.js": "46c77cb1e70c2b38d7a083ee60b6e762437afbd784e62ebdce699002da848148",
+    "dist/app.js": "b326ad0edf2d24c94134a46cf19f519ea3f9b3a41262c6fc1f509f2740a2d6a7",
+    "dist/animation-verification.js": "71c588a19e76c343df1245477446c035d945c208a8c0babcc36b9dcfb50b8f05",
+    "test/html-diagnostics.test.mjs": "628571d036b7ab1287af04f767004eda6a4d910c895b314ce816ec0854f34a37",
+    "test/run-all.mjs": "0f22936944c1549c9e0df51d9b8ba3f2a7d3d0f646646ccfca67589ac8524d43",
+    "TESTING.md": "2b590937c409481c4c8324ef9e19a012abf99c2501bf3b176fbcfa08450be2a3",
+    "docs/form-diagnostics-findings.md": "4da9e025937c3c5c534e25ec5f7e71bb85033c452b5ef6c9e6c0b3581770d1d1"
+  },
+  "restart": false
+}

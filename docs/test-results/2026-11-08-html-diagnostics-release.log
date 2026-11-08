@@ -1,0 +1,8 @@
+PASS HTML diagnostic reasons, redaction, cap, no stale DOMPurify state, SVG/table/input/scrub compatibility
+PASS 1280 trusted feed/overlay/reload warning, working allowed interaction, unchanged artifact, zero egress/page errors
+PASS 390 trusted feed/overlay/reload warning, working allowed interaction, unchanged artifact, zero egress/page errors
+valid clip passed
+missing target
+abort cleanup
+PASS isolated startup + declared clips, missing/duplicate targets, runaway/global escape, abort cleanup, unavailable DB; original workflow NOT certified
+PASS three-account opt-in UI, desktop/mobile, shared state and rows live, reload, owner-only code, revocation clears sandbox

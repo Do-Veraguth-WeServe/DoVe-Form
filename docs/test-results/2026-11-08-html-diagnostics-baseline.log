@@ -1,0 +1,17 @@
+PASS HTML diagnostic reasons, redaction, cap, no stale DOMPurify state, SVG/table/input/scrub compatibility
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.waitFor: Timeout 5000ms exceeded.
+Call log:
+  - waiting for locator('#feed .notice').filter({ hasText: 'Eine Element-ID wurde entfernt' }) to be visible
+
+    at /root/.openclaw/workspace/projects/form/test/html-diagnostics.test.mjs:26:176 {
+  log: [
+    "  - waiting for locator('#feed .notice').filter({ hasText: 'Eine Element-ID wurde entfernt' }) to be visible"
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.22.2

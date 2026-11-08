@@ -186,3 +186,8 @@ Six browser check groups passed on source and independently against deployed /op
 Added to test/run-all.mjs without removing the legacy browser gate. This is test coverage, not a new runtime fix or animation visual acceptance. Full npm test was not rerun here; the previous baseline still fails the old browser entry at #settingsbtn and requires migration of remaining scenarios, including refinement and later network/boundary/cancellation paths. No complete-suite-green claim. Runtime/layout diagnostic evidence and real-provider causal-answer acceptance remain pending. Reports #e89344ad and #a3daf406 remain unresolved.
 
 Production runtime and frontend are unchanged (app SHA256 25b96b5f5910143511e762ae76d9c5fa2e5cd90493a7da37d6cc5a8ea2a02eb6); live auth-status HTTP 200. Only test files and this documentation are synchronized to production, with previous files preserved at /opt/form/.rollback/20261108-editor-tests. No restart, schema, registration, provider or user-data change.
+
+
+## HTML removal diagnostics (2026-11-08)
+
+Run node test/html-diagnostics.test.mjs (included in run-all). Isolated owner account, no provider: bounded/redacted sanitizer diagnostics and trusted feed/overlay/reload warnings at 1280/390px, allowed interaction still works, artifact unchanged and no network egress. FORM_TEST_ROOT=/opt/form verifies deployed modules with disposable data. FORM_TEST_APP_ROOT selects only the fixture server root for before/after UI reproduction. Dated html-diagnostics logs retain the pre-release missing-warning failure and regression results. This is local initial-HTML feedback, not server HTML preflight, dynamic-fragment warnings, chat runtime telemetry, or full visual certification.

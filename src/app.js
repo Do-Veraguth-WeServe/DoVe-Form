@@ -586,7 +586,7 @@ function render(){stopEntry();
           if(turnProse){const p=document.createElement('div');p.className='prose'+(answering?' writing':'');renderMarkdown(p,turnProse);article.append(p)}
           if(m===s.messages.filter(x=>x.role==='assistant').at(-1)&&m.forms?.planningOffer?.version===1){const offer=document.createElement('section');offer.className='planning-offer chat-form';const title=document.createElement('p');title.textContent=m.forms.planningOffer.title;const button=document.createElement('button');button.type='button';button.className='planning-offer-start';button.textContent=s.blueprint?'Plan weiterentwickeln':'Element planen';button.disabled=[...jobs.values()].some(j=>j.conversationId===s.id&&j.kind==='plan'&&ACTIVE_JOB.includes(j.state));button.onclick=async()=>{if(db.current!==s.id||button.disabled)return;button.disabled=true;try{await send($('#prompt').value.trim()||'Erstelle oder aktualisiere einen Blueprint für das angebotene Element anhand unserer bisherigen Besprechung. Es wird noch nichts gebaut.','plan');}finally{if(button.isConnected)button.disabled=false;}};const hint=document.createElement('p');hint.className='small';hint.textContent='Zuerst besprechen wir den Plan. Gebaut wird erst nach deiner separaten Freigabe.';offer.append(title,button,hint);article.append(offer);}
           const evidenceNotice=replyEvidenceNotice(m.forms?.replyEvidence);if(evidenceNotice)article.append(evidenceNotice);
-          if(m.forms){for(const f of m.forms.items||[]){if(f.layout==='custom'&&f.template){const view=renderUI({...f.template,state:{...f.template.state,...f.data}},{onSuggest:fillSuggestion,onError:toast,onState:state=>{f.data=state;save();uiRequest('/api/forms/state',{messageId:m.id,index:m.forms.items.indexOf(f),state}).catch(e=>toast(e.message));}});views.push(view);article.append(view.element,formsUI.copyStateButton(f,m.id,m.forms.items.indexOf(f)));}else article.append(formCard(f,{suggest:fillSuggestion,onError:toast,onState:async state=>{await uiRequest('/api/forms/state',{messageId:m.id,index:m.forms.items.indexOf(f),state});f.data=state;save();}}),formsUI.copyStateButton(f,m.id,m.forms.items.indexOf(f)));}for(const e of m.forms.edits||[])article.append(formsUI.proposal(e,m.id,m.forms.edits.indexOf(e)));}
+          if(m.forms){for(const f of m.forms.items||[]){if(f.layout==='custom'&&f.template){const view=renderUI({...f.template,state:{...f.template.state,...f.data}},{onSuggest:fillSuggestion,onError:toast,onWarning:toast,onState:state=>{f.data=state;save();uiRequest('/api/forms/state',{messageId:m.id,index:m.forms.items.indexOf(f),state}).catch(e=>toast(e.message));}});views.push(view);article.append(view.element,formsUI.copyStateButton(f,m.id,m.forms.items.indexOf(f)));}else article.append(formCard(f,{suggest:fillSuggestion,onError:toast,onState:async state=>{await uiRequest('/api/forms/state',{messageId:m.id,index:m.forms.items.indexOf(f),state});f.data=state;save();}}),formsUI.copyStateButton(f,m.id,m.forms.items.indexOf(f)));}for(const e of m.forms.edits||[])article.append(formsUI.proposal(e,m.id,m.forms.edits.indexOf(e)));}
           const job=pendingJobFor(entry.element?.id||m.id);
           if(job&&job.kind==='create'&&!m.render&&!m.error){
             // generation running on the server: partial prose (persisted by the
@@ -621,6 +621,7 @@ function render(){stopEntry();
       onState:stateCallback(m),
               onSuggest:text=>{$('#prompt').value=text;toast('Vorschlag eingefügt — nur du sendest ihn.')},
               onError:text=>{note.textContent=text;note.className='notice error'},
+              onWarning:text=>{note.textContent=text;note.className='notice'},
               onPing:doPing,
               onDb:p=>doDb(m.id,p)
             });
@@ -864,6 +865,7 @@ function fillOverlay(){
       onState:stateCallback(m),
       onSuggest:text=>{$('#prompt').value=text;toast('Vorschlag eingefügt — nur du sendest ihn.')},
       onError:tx=>{note.textContent=tx;note.className='notice error'},
+      onWarning:tx=>{note.textContent=tx;note.className='notice'},
       onPing:doPing,
       onDb:p=>doDb(m.id,p)
     });

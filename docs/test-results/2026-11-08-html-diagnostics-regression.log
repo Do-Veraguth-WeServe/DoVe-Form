@@ -1,0 +1,22 @@
+PASS 1280 named pin persisted, overlay teardown and feed restoration
+PASS 1280 invalid JSON rejected, confirmed edit/reload and server version restore
+PASS 1280 editor injection sanitized on apply/reload, zero external requests or page errors
+PASS 390 named pin persisted, overlay teardown and feed restoration
+PASS 390 invalid JSON rejected, confirmed edit/reload and server version restore
+PASS 390 editor injection sanitized on apply/reload, zero external requests or page errors
+PASS editor lifecycle: source=/root/.openclaw/workspace/projects/form
+PASS schema, three independently moving surfaces, completion, cancellation, missing target and reduced motion in real QuickJS iframe bridge
+PASS real renderer sanitizer: desktop/mobile, zero/positive counts, real-span replacement, blocked network; isolated DOM fixture, not user content
+✔ new missing and mismatched declarations rejected; stored legacy still loads (4.832818ms)
+✔ bounded numeric versioned animation schema (9.148279ms)
+✔ old artifact remains valid, invalid animation rejected at contract (0.760623ms)
+✔ static CSS evidence is scoped, revision-bound, read-only and independent of stored counts (251.67006ms)
+✔ oversized CSS is explicitly unavailable; unchanged source hashes are deterministic (3.127427ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 615.592449

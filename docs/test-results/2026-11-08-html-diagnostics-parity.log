@@ -1,0 +1,18 @@
+file:///root/.openclaw/workspace/projects/form/[eval1]:3
+const baseline=await build({stdin:{contents:old+'
+                                                ^
+
+SyntaxError: Invalid or unexpected token
+    at compileSourceTextModule (node:internal/modules/esm/utils:319:16)
+    at ModuleLoader.createModuleWrap (node:internal/modules/esm/loader:209:12)
+    at ModuleLoader.eval (node:internal/modules/esm/loader:247:23)
+    at node:internal/process/execution:77:24
+    at asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:11)
+    at Object.runEntryPointWithESMLoader (node:internal/modules/run_main:123:19)
+    at evalModuleEntryPoint (node:internal/process/execution:76:47)
+    at node:internal/main/eval_stdin:34:5
+    at Socket.<anonymous> (node:internal/process/execution:205:5)
+    at Socket.emit (node:events:526:24)
+
+Node.js v24.22.2
+PASS exact pre-change HTML and dynamic fragment output/error parity: 14 variants including SVG, tables, blocked attributes and element limit.

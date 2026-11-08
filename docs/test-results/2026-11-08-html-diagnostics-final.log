@@ -1,0 +1,14 @@
+PASS HTML diagnostic reasons, redaction, cap, no stale DOMPurify state, SVG/table/input/scrub compatibility
+PASS 1280 trusted feed/overlay/reload warning, working allowed interaction, unchanged artifact, zero egress/page errors
+PASS 390 trusted feed/overlay/reload warning, working allowed interaction, unchanged artifact, zero egress/page errors
+PASS wrong password rejected
+PASS registration and model-free composer gate
+PASS current settings navigation, model add, masked key and Escape
+PASS two visible prose stages before structured chat offer
+PASS ordinary imperative chat cannot build
+PASS explicit approval and real held build before artifact
+PASS real server persistence and reload without duplicate build
+PASS 390px interaction and persisted reload
+PASS approved correction correct: exactly two rounds, durable mobile reload, honest terminal state
+PASS approved correction fail: exactly two rounds, durable mobile reload, honest terminal state
+PASS browser-core: 10 checks; source=/root/.openclaw/workspace/projects/form

@@ -1,6 +1,6 @@
 import {cancelFeedMomentum,startFeedMomentum} from './feed-momentum.js';
 import {validateAnimations,prepareAnimation} from '../animation-policy.mjs';
-import {safeHTML,safeCSS,safeFragment} from './sanitize.js';
+import {inspectHTML,safeCSS,safeFragment} from './sanitize.js';
 
 const HOST_OK=/^[a-z0-9.-]{1,253}$/i;
 
@@ -101,7 +101,7 @@ export function bridge(){
 }
 
 
-export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction,onConnection,onInteraction=()=>{}}={}){
+export function renderUI(data,{onState,onSuggest,onError,onWarning=()=>{},onPing,onDb,onAction,onConnection,onInteraction=()=>{}}={}){
   const f=document.createElement('iframe');
   f.className='render';
   f.style.visibility='hidden';f.setAttribute('aria-busy','true');
@@ -115,7 +115,8 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction,on
   const asyncQ=[]; // pending synthetic-event deliveries (ping/db results)
   const declarations=data.animations?validateAnimations(data.animations):null;
   const prepare=prepareAnimation;
-  const html=safeHTML(data.html),css=safeCSS(data.css);
+  const inspected=inspectHTML(data.html),html=inspected.html,css=safeCSS(data.css);
+  if(inspected.removedCount)onWarning('Darstellung eingeschränkt: HTML-Bestandteile wurden aus Sicherheitsgründen entfernt oder angepasst.'+(inspected.diagnostics.some(d=>d.reason==='id-removed')?' Eine Element-ID wurde entfernt; zugehörige Interaktionen können fehlen.':''));
   const listener=e=>{
     if(e.source!==f.contentWindow||e.origin!=='null'||e.data?.channel!==channel)return;
     if(e.data.type==='resize')f.style.height=Math.min(2400,Math.max(120,Number(e.data.height)||120))+'px';
