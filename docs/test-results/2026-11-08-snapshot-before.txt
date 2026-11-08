@@ -1,0 +1,18 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: unrelated/repeated snapshot must not replace the iframe
+
+false !== true
+
+    at file:///root/.openclaw/workspace/projects/form/test/snapshot-stability.test.mjs:6:228 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.22.2

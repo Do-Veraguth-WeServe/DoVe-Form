@@ -403,8 +403,15 @@ function connectJobs(){
       for(const r of pending)if(r.jobId&&!present.has(r.jobId))missing.add(r.jobId);
       if(missing.size){void recoverCompletedTurns(missing);return}
       let touched=false;
-      for(const j of list){const known=jobs.has(j.id);applyJob(j,{rerender:false});if(!known||j.state==='ready'||j.state==='failed'||j.state==='cancelled')touched=true}
-      if(touched||list.length)renderPreservingScroll();
+      for(const j of list){
+        const previous=jobs.get(j.id);
+        // Reconnect snapshots repeat canonical jobs already loaded at entry.
+        // Replaying them must not tear down an unchanged Element/Worker.
+        if(previous&&(Number(previous.rev)>Number(j.rev)||JSON.stringify(previous)===JSON.stringify(j)))continue;
+        applyJob(j,{rerender:false});
+        if(j.conversationId===db.current)touched=true;
+      }
+      if(touched)renderPreservingScroll();
     }catch{}});
     jobStream.addEventListener('job',e=>{try{
       const j=JSON.parse(e.data);
