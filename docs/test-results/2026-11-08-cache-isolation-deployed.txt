@@ -1,0 +1,7 @@
+overlay pointer trace 1280 ["Element öffnen (Vollbild, Code, Versionen)"]
+PASS 1280: foreign-account seeded owner cache ignored, own canonical/cache/DOM after login+reload, no auto-import or mutation
+PASS 1280: guest globals, dynamic HTML/SVG, suggestion without submit, opaque parent/network denial, forged resize, masked key/cache/CSRF, persisted state and overflow
+overlay pointer trace 390 ["Element öffnen (Vollbild, Code, Versionen)"]
+PASS 390: foreign-account seeded owner cache ignored, own canonical/cache/DOM after login+reload, no auto-import or mutation
+PASS 390: guest globals, dynamic HTML/SVG, suggestion without submit, opaque parent/network denial, forged resize, masked key/cache/CSRF, persisted state and overflow
+PASS sandbox boundary browser source=/opt/form

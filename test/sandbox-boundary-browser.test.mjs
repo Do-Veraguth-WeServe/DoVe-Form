@@ -65,6 +65,49 @@ try{
   await p.getByRole('button',{name:'Element schliessen',exact:true}).click();
   await p.reload();await f().locator('#amount').waitFor();await p.waitForFunction(()=>document.querySelector('#feed iframe.render')?.dataset.ready==='true');assert.equal(await f().locator('#amount').inputValue(),'7');assert.deepEqual(store.getRender(mid),{...boundaryRender,state:{amount:7}});
   assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal overflow');assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
+  // Legacy11: a previous owner's local cache is evidence, never authority to import.
+  const ownerCache=await p.evaluate(()=>JSON.parse(localStorage.getItem('form.v3')));
+  assert.ok(ownerCache.sessions.some(s=>s.id===conv.id));
+  const foreign=store.createUser('cacheforeign'+width,'password456');
+  const ownConv=store.createConversation(foreign.id,'Foreign own '+width);
+  const ownMid=store.appendMessage(ownConv.id,'user',{text:'foreign-only-marker-'+width});
+  const foreignCtx=await browser.newContext({viewport:{width,height:844},reducedMotion:'reduce'});
+  try{
+    const fp=await foreignCtx.newPage(),foreignErrors=[],foreignWrites=[];
+    fp.on('pageerror',e=>foreignErrors.push(e.message));
+    fp.on('request',r=>{if(r.method()==='POST'&&!r.url().endsWith('/api/auth/login'))foreignWrites.push(r.url())});
+    await fp.goto(base);
+    await fp.evaluate(cache=>localStorage.setItem('form.v3',JSON.stringify(cache)),ownerCache);
+    await fp.reload();
+    await fp.locator('#login[open]').waitFor();
+    assert.equal(await fp.locator('#feed iframe.render').count(),0,'unauthenticated cache does not mount owner code');
+    await fp.locator('#loginform [name=username]').fill('cacheforeign'+width);
+    await fp.locator('#loginform [name=password]').fill('password456');
+    await fp.locator('#loginform button').click();
+    await fp.locator('#login[open]').waitFor({state:'detached'});
+    for(const stage of ['login','reload']){
+      if(stage==='reload')await fp.reload();
+      await fp.locator('#feed').getByText('foreign-only-marker-'+width,{exact:true}).waitFor();
+      const snapshot=await fp.evaluate(async()=>({
+        canonical:await(await fetch('/api/conversations')).json(),
+        cache:JSON.parse(localStorage.getItem('form.v3')),
+        titles:[...document.querySelectorAll('#sessions .session-open')].map(e=>e.textContent)
+      }));
+      assert.deepEqual(snapshot.canonical.conversations.map(c=>c.id),[ownConv.id],stage+' canonical own-only');
+      assert.deepEqual(snapshot.cache.sessions.map(c=>c.id),[ownConv.id],stage+' cache replaces foreign history');
+      assert.deepEqual(snapshot.cache.sessions[0].messages.map(m=>m.id),[ownMid]);
+      assert.deepEqual(snapshot.titles,['Foreign own '+width]);
+      for(const id of [conv.id,mid])assert.ok(!JSON.stringify(snapshot).includes(id),stage+' contains no owner IDs');
+      assert.equal(await fp.locator('iframe.render,#importbar,#import,#export,#file').count(),0);
+      assert.equal(await fp.locator('#elements-list button').count(),0);
+      assert.ok(await fp.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    }
+    assert.deepEqual(foreignWrites,[],'no auto-import/build/mutation from seeded cache');
+    assert.deepEqual(foreignErrors,[]);
+    assert.equal(store.db.prepare('SELECT count(*) n FROM conversations WHERE user_id=?').get(foreign.id).n,1);
+    assert.deepEqual(store.getRender(mid),{...boundaryRender,state:{amount:7}},'owner data unchanged');
+    console.log('PASS '+width+': foreign-account seeded owner cache ignored, own canonical/cache/DOM after login+reload, no auto-import or mutation');
+  }finally{await foreignCtx.close()}
   console.log('PASS '+width+': guest globals, dynamic HTML/SVG, suggestion without submit, opaque parent/network denial, forged resize, masked key/cache/CSRF, persisted state and overflow');await ctx.close();
  }
  console.log('PASS sandbox boundary browser source='+root);
