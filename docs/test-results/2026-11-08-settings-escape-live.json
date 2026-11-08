@@ -1,0 +1,12 @@
+[
+  {
+    "base": "http://127.0.0.1:5177",
+    "status": 200,
+    "sha256": "d8b0d350e0edf8d4266f6d88efb3c8c05a29996156d7abfd876a0f44408d8672"
+  },
+  {
+    "base": "https://fhisling.tail11036c.ts.net:9444",
+    "status": 200,
+    "sha256": "d8b0d350e0edf8d4266f6d88efb3c8c05a29996156d7abfd876a0f44408d8672"
+  }
+]

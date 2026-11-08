@@ -1,0 +1,23 @@
+PASS wrong password rejected
+PASS registration and model-free composer gate
+PASS current settings navigation, model add, masked key and Escape
+PASS two visible prose stages before structured chat offer
+PASS ordinary imperative chat cannot build
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+0 !== 1
+
+    at file:///root/.openclaw/workspace/projects/form/test/browser-core.test.mjs:48:262 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 0,
+  expected: 1,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.22.2

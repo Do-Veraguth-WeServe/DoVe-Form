@@ -28,6 +28,7 @@ const waitReady = (proc, tag, pattern = /ready/) => new Promise((resolve, reject
 step('revision-bound static CSS evidence',run('node',['--test','test/element-diagnostics.test.mjs','test/element-context.test.mjs']));
 step('guided planning metadata',run('node',['--test','test/planning-offer.test.mjs']));
 step('build (esbuild + bridge hash + wasm)', run('node', ['build.mjs']));
+step('current-contract browser core (login, settings, approval, streaming, persistence)',run('node',['test/browser-core.test.mjs']));
 step('scoped diagnostic chat browser',run('node',['test/element-diagnostics-browser.mjs']));
 step('contextual planning offer browser',run('node',['test/guided-planning.test.mjs']));
 step('account-scoped conversation selection',run('node',['--test','test/session-selection.test.mjs']));

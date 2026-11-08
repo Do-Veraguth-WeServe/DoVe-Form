@@ -1,5 +1,7 @@
 # Unified settings and sidebar
 
+2026-11-08: Escape from nested model/user settings now closes the shell correctly. Desktop/mobile regression, current-contract browser core, deployment hashes and rollback: BROWSER-CORE-ACCEPTANCE.md.
+
 Requested by Dominik (Telegram6297): central settings instead of sidebar-footer clutter; consistent non-resizable connection and bug-report fields.
 
 Sidebar footer contains only profile and settings. Library sits above the collections; Elements has Own/Shared controls. Account/logout, models, connections (MCP/HTTP), memory, authorized users and help/reports live in one settings shell. Existing authenticated form handlers and IDs are reused in embedded nonmodal panes, not stacked modal dialogs. Element-specific connection settings stay at the Element. Desktop uses a category rail; mobile a full-height sheet with visible two-column category navigation.

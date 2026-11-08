@@ -1,0 +1,20 @@
+PASS wrong password rejected
+PASS registration and model-free composer gate
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.waitFor: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator('#settings[open]') to be detached
+    63 × locator resolved to visible <dialog open="" id="settings" role="region" aria-modal="false" class="settings-pane" aria-label="Modelle verwalten">…</dialog>
+
+    at /root/.openclaw/workspace/projects/form/test/browser-core.test.mjs:43:196 {
+  log: [
+    "  - waiting for locator('#settings[open]') to be detached",
+    '    63 × locator resolved to visible <dialog open="" id="settings" role="region" aria-modal="false" class="settings-pane" aria-label="Modelle verwalten">…</dialog>'
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.22.2

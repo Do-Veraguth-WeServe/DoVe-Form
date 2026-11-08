@@ -1,0 +1,1 @@
+PASS desktop/mobile unified settings, one modal, compact footer, collections, connection fields auto-grow, bug submit and styled status notes, model/user navigation
