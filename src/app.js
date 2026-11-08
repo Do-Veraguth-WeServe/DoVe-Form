@@ -380,7 +380,7 @@ function reconcileReadyJobs(){
   const s=current();if(!s)return;
   let changed=false;
   for(const j of [...jobs.values()]){
-    if(j.state!=='ready')continue;
+    if(j.state!=='ready'||j.conversationId!==s.id)continue;
     if(attachReadyJob(s,j)){jobs.delete(j.id);changed=true}
   }
   if(changed)save();
@@ -549,6 +549,9 @@ let feedCache=new Map();
 let blueprintCache=null; // unchanged approval controls must survive job-driven renders
 function feedSignature(message,element){return JSON.stringify([message,element,pendingJobFor(message.id),pendingJobFor(element.id),marked,isPinned(element)]);}
 function render(){stopEntry();
+  // Reconnected turns have no live POST relay to reconcile background completion.
+  // Apply only the selected conversation's queued ready result on navigation.
+  reconcileReadyJobs();
   const previousViews=views;views=[];
   const nextCache=new Map(),nodes=[];
   $('#sessions').replaceChildren();

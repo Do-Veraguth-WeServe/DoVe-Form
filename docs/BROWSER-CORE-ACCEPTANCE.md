@@ -84,3 +84,10 @@ The first expanded fixture reused one conversation across both viewports; after 
 This is acceptance-only work with disposable accounts/store and a held local mock. No production artifact, account or provider settings are changed; no real-provider spend, restart or new animation claim. Full npm-test and legacy7b–7d/8–9/11/13 reconciliation remain open. Reports #a3daf406 and #e89344ad remain unresolved for their recorded reasons.
 
 Verified: all eight combinations pass against source and installed /opt/form application modules (16 cases; held and completed anchors checked in each). Existing entry/sizing checks pass in both runs. Syntax/diff checks pass. Only test/docs are synchronized; no runtime release or restart. Dated scroll-anchor-source/deployed logs and SHA256 evidence are retained. Full-suite certification and unresolved reports are unchanged.
+
+
+## Chat concurrent with held approved build — 2026-11-08
+
+The first explicitly approved build now remains genuinely held before its artifact while a second ordinary chat streams and completes. Browser-core asserts one build request, the original durable building job, no premature iframe, then reloads desktop1280 and mobile390 and requires exactly one construction crane with the same job ID. Only after those checks is the provider released; the existing interaction/state/reload gates still apply. The suite now has 19 checks. This is bounded legacy7c coverage, not tab-close/reverse-order browser acceptance or a full-suite pass.
+
+The parallel expanded navigation fixture reproduced a real reconnected background-result display bug and motivated the small selected-conversation ready reconciliation fix documented in NAVIGATION-JOBS.md. No production user artifact/data repair or new animation capability is involved. Existing legacy suite stays intact. Reports #a3daf406 and #e89344ad remain unresolved.

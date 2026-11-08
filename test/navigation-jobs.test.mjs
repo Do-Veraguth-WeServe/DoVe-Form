@@ -7,21 +7,33 @@ try{app=spawn('node',['server.mjs'],{cwd:process.env.FORM_TEST_ROOT||process.cwd
  browser=await chromium.launch({executablePath:'/root/.cache/puppeteer/chrome/linux-153.0.8010.36/chrome-linux64/chrome',headless:true,args:['--no-sandbox']});const p=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];p.on('pageerror',e=>errors.push(e.message));await p.goto(BASE);await p.locator('#switchreg').click();for(const [k,v] of Object.entries({username:'activity',password:'password123',password2:'password123'}))await p.locator('#regform [name='+k+']').fill(v);await p.locator('#regform button').last().click();await p.locator('#login[open]').waitFor({state:'detached'});
 
  const cancel=[];p.on('request',r=>{if(r.url().endsWith('/api/jobs/cancel'))cancel.push(r.url())});
+ for(const width of [1280,390]){
+ await p.setViewportSize({width,height:844});
+ const sidebar=async()=>{if(width===390&&!await p.locator('#new').isVisible())await p.locator('#mobile').click();};
  for(const mode of ['chat','plan']){
+ await sidebar();const priorCalls=calls;
  await p.locator('#new').click();
  await p.locator('#prompt').fill('Navigation '+mode);if(mode==='plan')await offeredPlan(p,dir);else await p.locator('#send').click();await p.locator('.activity[data-phase=thinking]').waitFor();
  const origin=await p.locator('.session-open[aria-current=true]').locator('..').getAttribute('data-sid');
- await p.locator('#new').click();await p.waitForTimeout(200);
+ await p.waitForFunction(async id=>{const d=await(await fetch('/api/jobs')).json();return d.jobs.some(j=>j.conversationId===id&&j.state==='building')},origin);
+ const active=(await(await p.request.get(BASE+'/api/jobs')).json()).jobs.filter(j=>j.conversationId===origin);assert.equal(active.length,1);const jobId=active[0].id;assert.ok(jobId);
+ // Reconnect while the upstream is held before its first token.
+ await p.reload();await p.locator('.activity[data-phase=thinking]').waitFor();
+ assert.equal(await p.locator('.activity').count(),1);assert.equal(await p.locator('.activity').getAttribute('data-jobid'),jobId);assert.equal(calls,priorCalls+1);
+ await sidebar();await p.locator('#new').click();await p.waitForTimeout(200);
  assert.equal(cancel.length,0,'navigation must not cancel server job');
  assert.equal(await p.locator('.activity').count(),0,'foreign thinking stays out of new chat');
  const destination=await p.locator('.session-open[aria-current=true]').locator('..').getAttribute('data-sid');assert.notEqual(origin,destination);
  next();await p.waitForTimeout(150);assert.equal(await p.locator('.prose').count(),0,'foreign prose stays out of new chat');
- await p.locator('[data-sid="'+origin+'"] .session-open').click();await p.locator('.activity[data-phase=writing]').waitFor();assert.equal(await p.locator('.activity').count(),1);
- await p.locator('[data-sid="'+destination+'"] .session-open').click();finish();await p.waitForTimeout(500);
+ await sidebar();await p.locator('[data-sid="'+origin+'"] .session-open').click();await p.locator('.activity[data-phase=writing]').waitFor();assert.equal(await p.locator('.activity').count(),1);
+ await p.reload();await p.locator('.activity[data-phase=writing]').waitFor();
+ assert.equal(await p.locator('.activity').count(),1);assert.equal(await p.locator('.activity').getAttribute('data-jobid'),jobId);assert.equal(calls,priorCalls+1);
+ await sidebar();await p.locator('[data-sid="'+destination+'"] .session-open').click();finish();await p.waitForTimeout(500);assert.equal(cancel.length,0);assert.equal(await p.locator('.prose').count(),0,'completed foreign prose stays out of destination');
  assert.equal(await p.locator('.session-open[aria-current=true]').locator('..').getAttribute('data-sid'),destination,'completion must not navigate back');
- await p.locator('[data-sid="'+origin+'"] .session-open').click();await p.locator('.prose').filter({hasText:'Fertig.'}).waitFor();assert.equal(await p.locator('.activity').count(),0);
- await p.reload();await p.locator('[data-sid="'+origin+'"] .session-open').click();await p.locator('.prose').filter({hasText:'Fertig.'}).waitFor();
- assert.equal(calls,mode==='chat'?1:2,'navigation/reload must not regenerate');
- }
+ await sidebar();await p.locator('[data-sid="'+origin+'"] .session-open').click();await p.locator('.prose').filter({hasText:'Fertig.'}).waitFor();assert.equal(await p.locator('.activity').count(),0);
+ await p.reload();await sidebar();await p.locator('[data-sid="'+origin+'"] .session-open').click();await p.locator('.prose').filter({hasText:'Fertig.'}).waitFor();
+ assert.equal(calls,priorCalls+1,'navigation/reload must not regenerate');
+ console.log('PASS active reconnect',width,mode,'thinking/writing/completed, one upstream, no navigation cancellation');
+ }}
  assert.deepEqual(errors,[]);console.log('PASS navigation chat/plan/new/existing/reload: no cancellation, no foreign live content, completion preserves selection, one provider call');
 }finally{next?.();finish?.();await browser?.close();if(app){app.kill();await new Promise(r=>app.exitCode!==null?r():app.once('exit',r))}mock.closeAllConnections();await new Promise(r=>mock.close(r));fs.rmSync(dir,{recursive:true,force:true});}

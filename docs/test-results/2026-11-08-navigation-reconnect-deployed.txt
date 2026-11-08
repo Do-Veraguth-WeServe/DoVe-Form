@@ -1,0 +1,5 @@
+PASS active reconnect 1280 chat thinking/writing/completed, one upstream, no navigation cancellation
+PASS active reconnect 1280 plan thinking/writing/completed, one upstream, no navigation cancellation
+PASS active reconnect 390 chat thinking/writing/completed, one upstream, no navigation cancellation
+PASS active reconnect 390 plan thinking/writing/completed, one upstream, no navigation cancellation
+PASS navigation chat/plan/new/existing/reload: no cancellation, no foreign live content, completion preserves selection, one provider call

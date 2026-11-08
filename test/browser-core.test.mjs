@@ -52,7 +52,26 @@ try{
  assert.equal(chats,1);assert.equal(plans,0);assert.equal(builds,0);assert.equal(await p.locator('iframe.render').count(),0);check('ordinary imperative chat cannot build');
  await p.locator('.planning-offer-start').dblclick();await p.locator('.blueprint-execute:not([disabled])').waitFor({state:'attached'});assert.equal(plans,1);assert.equal(builds,0);
  if(await p.locator('.blueprint-toggle').getAttribute('aria-expanded')==='false')await p.locator('.blueprint-toggle').click();await p.locator('.blueprint-execute').click();
- await p.locator('.site[data-jobid]').waitFor();await p.waitForFunction(async()=>{const d=await(await fetch('/api/jobs')).json();return d.jobs.some(j=>j.state==='building')});await Promise.race([buildStarted,new Promise((_,reject)=>{const t=setTimeout(()=>reject(Error('provider not reached')),10000);t.unref()})]);assert.equal(builds,1);assert.equal(await p.locator('iframe.render').count(),0);assert.equal((await api('/api/jobs')).jobs.filter(j=>j.state==='building').length,1);releaseBuild();await p.locator('iframe.render[data-ready=true]').waitFor();check('explicit approval and real held build before artifact');
+ await p.locator('.site[data-jobid]').waitFor();await p.waitForFunction(async()=>{const d=await(await fetch('/api/jobs')).json();return d.jobs.some(j=>j.state==='building')});await Promise.race([buildStarted,new Promise((_,reject)=>{const t=setTimeout(()=>reject(Error('provider not reached')),10000);t.unref()})]);assert.equal(builds,1);assert.equal(await p.locator('iframe.render').count(),0);assert.equal((await api('/api/jobs')).jobs.filter(j=>j.state==='building').length,1);
+ // Legacy7c: chat must finish while the approved build's upstream remains held.
+ const heldJob=(await api('/api/jobs')).jobs.find(j=>j.state==='building');
+ const heldSelector='.site[data-jobid="'+heldJob.id+'"]';
+ proseOnly=true;const chatsBeforeBuild=chats;
+ await p.locator('#prompt').fill('Erkläre ein VPN während der Regler gebaut wird');await p.locator('#prompt').press('Enter');
+ await p.locator('.live .prose').filter({hasText:'Virtual Private Network'}).waitFor();releaseProse();
+ await p.waitForFunction(()=>!document.querySelector('.live'));
+ await p.locator('.message.assistant .prose').filter({hasText:'Es verschlüsselt die Verbindung'}).waitFor();
+ assert.equal(chats,chatsBeforeBuild+1);assert.equal(builds,1);
+ assert.equal((await api('/api/jobs')).jobs.find(j=>j.id===heldJob.id).state,'building');
+ assert.equal(await p.locator(heldSelector).count(),1);assert.equal(await p.locator('iframe.render').count(),0);proseOnly=false;
+ for(const width of [1280,390]){
+  await p.setViewportSize({width,height:844});await p.reload();await p.locator(heldSelector).waitFor();
+  assert.equal(await p.locator(heldSelector).count(),1);assert.equal(builds,1);
+  assert.equal((await api('/api/jobs')).jobs.find(j=>j.id===heldJob.id).state,'building');
+  assert.equal(await p.locator(heldSelector+' svg.crane').count(),1);
+ }
+ check('concurrent chat completes before held build; desktop/mobile reload retain one identical job');
+ releaseBuild();await p.locator('iframe.render[data-ready=true]').waitFor();check('explicit approval and real held build before artifact');
  let f=p.frameLocator('iframe.render');await f.locator('#out').filter({hasText:'Wert: 3'}).waitFor();await f.locator('#amt').fill('7');await f.locator('#out').filter({hasText:'Wert: 7'}).waitFor();
  await p.waitForFunction(async()=>{const d=await(await fetch('/api/conversations')).json();return d.conversations.some(c=>c.messages.some(m=>m.render?.state?.value===7))});
  await p.reload();f=p.frameLocator('iframe.render');await f.locator('#out').filter({hasText:'Wert: 7'}).waitFor();assert.equal(await f.locator('#amt').inputValue(),'7');assert.equal(builds,1);assert.equal(await p.locator('iframe.render').count(),1);check('real server persistence and reload without duplicate build');
@@ -199,5 +218,5 @@ try{
    check('logout/relogin '+width+': revoked cookie, independent session retained, data restored without generation');
   }finally{await fresh.close()}
  }
- assert.deepEqual(errors,[]);console.log('PASS browser-core: 18 checks; source='+root);
+ assert.deepEqual(errors,[]);console.log('PASS browser-core: 19 checks; source='+root);
 }finally{releaseProse?.();releaseCorrection?.();releaseFirst?.();releaseArtifact?.();releaseBuild?.();await browser?.close();if(app&&app.exitCode===null){app.kill('SIGTERM');await once(app,'exit')}mock.closeAllConnections();await new Promise(r=>mock.close(r));fs.rmSync(dir,{recursive:true,force:true});}

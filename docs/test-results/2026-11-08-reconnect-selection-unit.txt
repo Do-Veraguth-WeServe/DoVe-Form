@@ -1,0 +1,10 @@
+✔ selection is account-scoped and validated against fresh authorized sessions (1.697515ms)
+✔ unavailable storage never prevents authenticated loading (0.569449ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 140.195511
