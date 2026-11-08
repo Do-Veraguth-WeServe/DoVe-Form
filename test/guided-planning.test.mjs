@@ -22,8 +22,10 @@ try{app=spawn('node',['server.mjs'],{cwd:process.env.FORM_TEST_ROOT||process.cwd
  const beforePlans=plans,beforeBuilds=builds;assert.equal(await p.locator('.blueprint').count(),0);
  await p.reload();await p.locator('.planning-offer-start').waitFor();assert.equal(plans,beforePlans);assert.equal(builds,beforeBuilds);
  await p.screenshot({path:'docs/screenshots/guided-planning-'+width+'.png',animations:'disabled'});
- await p.locator('.planning-offer-start').dblclick();await p.locator('.blueprint-execute:not([disabled])').waitFor({state:'attached'});
- assert.equal(plans,beforePlans+1);assert.equal(builds,beforeBuilds);assert.equal(await p.locator('.planning-offer-start').count(),0);
+ await p.route('**/api/chat',route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Test: Start vor Annahme abgelehnt'})}));
+ await p.locator('.planning-offer-start').click();await p.getByRole('button',{name:'Planung erneut starten',exact:true}).waitFor();assert.equal(plans,beforePlans);assert.equal(await p.locator('.planning-offer-marker').count(),0);await p.unroute('**/api/chat');
+ await p.locator('.planning-offer-start').dblclick();await p.locator('.blueprint-execute:not([disabled])').waitFor({state:'attached'}).catch(async e=>{console.log('Planning diagnostic',plans,errors,await p.locator('#feed').innerText());throw e;});
+ assert.equal(plans,beforePlans+1);assert.equal(builds,beforeBuilds);assert.equal(await p.locator('.planning-offer-start').count(),0);await p.locator('.planning-offer-marker').filter({hasText:'Planung gestartet'}).waitFor();assert.ok(await p.locator('.planning-offer-marker').evaluate(e=>e.getBoundingClientRect().height)<65);await p.reload();await p.locator('.planning-offer-marker').filter({hasText:'Planung gestartet'}).waitFor();assert.equal(await p.locator('.planning-offer-start').count(),0);assert.equal(plans,beforePlans+1);await p.locator('.planning-offer-marker').screenshot({path:'docs/screenshots/planning-marker-'+width+'.png'});
  if(await p.locator('.blueprint-toggle').getAttribute('aria-expanded')==='false')await p.locator('.blueprint-toggle').click();
  // A concurrent job update between pointer-down and pointer-up must not eat approval.
  await p.waitForFunction(()=>document.querySelector('.blueprint-body').getAnimations().length===0);
@@ -35,7 +37,7 @@ try{app=spawn('node',['server.mjs'],{cwd:process.env.FORM_TEST_ROOT||process.cwd
  await p.locator('.blueprint').screenshot({path:'docs/screenshots/blueprint-click-'+width+'.png'});
  await p.mouse.up();await p.locator('iframe.render[data-ready=true]').waitFor();assert.equal(builds,beforeBuilds+1);
  await p.getByRole('button',{name:'Element markieren: Eigene Karte',exact:true}).click();await p.locator('#prompt').fill('Lass uns die Karte verbessern.');await p.locator('#prompt').press('Enter');await p.locator('.planning-offer-start').waitFor();await p.waitForFunction(()=>!document.querySelector('.live'));
- await p.locator('.planning-offer-start').dblclick();await p.locator('.blueprint-execute:not([disabled])').waitFor({state:'attached'});assert.equal(plans,beforePlans+2);assert.equal(builds,beforeBuilds+1);
+ await p.locator('.planning-offer-start').dblclick();await p.locator('.blueprint-execute:not([disabled])').waitFor({state:'attached'}).catch(async e=>{console.log('Planning diagnostic',plans,errors,await p.locator('#feed').innerText());throw e;});assert.equal(plans,beforePlans+2);assert.equal(builds,beforeBuilds+1);
  const snapshot=await(await api(a,'/api/conversations')).json();const currentId=await p.locator('.session-open[aria-current=true]').locator('..').getAttribute('data-sid');const selected=snapshot.conversations.find(c=>c.id===currentId&&c.blueprint?.targetMessageId);assert.ok(selected?.messages.some(m=>m.id===selected.blueprint.targetMessageId&&m.render),'guided refinement retains target');
  const prior=await p.locator('.blueprint-execute').elementHandle();
  const planning={id:'fixture-active-plan-'+width,conversationId:currentId,kind:'plan',state:'building',rev:1};

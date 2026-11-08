@@ -1,3 +1,4 @@
+import {offeredPlan,markOfferedPlan} from './planning-offer-state.mjs';
 import {Bugs} from './bugs.mjs';
 import {LiveDiagnostics} from './live-diagnostics.mjs';
 import {saveOwnedElement} from './owner-save.mjs';
@@ -642,11 +643,12 @@ const server = http.createServer(async (req, res) => {
   let d;
   try {
     d = JSON.parse(await readBody(req, 120000));
-    const allowed = ['version', 'sessionId', 'requestId', 'text', 'history', 'states', 'model', 'refineTarget', 'mode'];
+    const allowed = ['version', 'sessionId', 'requestId', 'text', 'history', 'states', 'model', 'refineTarget', 'mode', 'planningOfferId'];
     if (Object.keys(d).some(k => !allowed.includes(k)) || d.version !== 1 ||
         !UUID.test(d.sessionId || '') || !UUID.test(d.requestId || '') ||
         typeof d.text !== 'string' || !d.text.trim() || d.text.length > 2000)
       return reply(res, 400, { error: 'Ungültige Anfrage' });
+    if(d.planningOfferId!==undefined&&(d.mode!=='plan'||!UUID.test(d.planningOfferId)))return reply(res,400,{error:'Ungültiges Planangebot.'});
     if(d.mode!==undefined&&!['chat','plan'].includes(d.mode))return reply(res,400,{error:'Ungültiger Modus.'});
     if (d.history != null && (!Array.isArray(d.history) || d.history.length > 12 ||
         d.history.some(m => !m || typeof m !== 'object' || Array.isArray(m) ||
@@ -723,6 +725,7 @@ const server = http.createServer(async (req, res) => {
   let job;
   try {
     store.db.exec('BEGIN IMMEDIATE');
+    const offer=d.planningOfferId?offeredPlan(store.db,d.sessionId,d.planningOfferId):null;
     userMessageId = store.appendMessage(d.sessionId, 'user', { text: d.text });
     store.setTitleIfFirst(d.sessionId, d.text);
     assistantMessageId = store.appendMessage(d.sessionId, 'assistant', {});
@@ -735,6 +738,7 @@ const server = http.createServer(async (req, res) => {
       request: { messages, baseRevision:previousBlueprint?.revision||0,...(!isPlanning?{forms:formLibrary.map(({template,...f})=>f),replyEvidence:replyEvidence(evidence)}:{}) },
       requestId: d.requestId, userMessageId
     });
+    if(offer)markOfferedPlan(store.db,d.sessionId,d.planningOfferId,offer,job.id);
     store.db.exec('COMMIT');
   } catch (e) {
     try { store.db.exec('ROLLBACK'); } catch {}

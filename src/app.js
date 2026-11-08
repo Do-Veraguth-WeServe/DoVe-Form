@@ -1,3 +1,4 @@
+import {planningOfferUI} from './planning-offer-ui.js';
 import {rememberSelection,restoreSelection} from './session-selection.js';
 import {diagnosticButton} from './live-diagnostics.js';
 import {sessionEntry} from './session-entry.js';
@@ -588,7 +589,7 @@ function render(){stopEntry();
         else{
           const turnJob=pendingJobFor(m.id);const answering=['plan','chat'].includes(turnJob?.kind)&&ACTIVE_JOB.includes(turnJob.state);const turnProse=answering?(turnJob.prose||m.prose):m.prose;
           if(turnProse){const p=document.createElement('div');p.className='prose'+(answering?' writing':'');renderMarkdown(p,turnProse);article.append(p)}
-          if(m===s.messages.filter(x=>x.role==='assistant').at(-1)&&m.forms?.planningOffer?.version===1){const offer=document.createElement('section');offer.className='planning-offer chat-form';const title=document.createElement('p');title.textContent=m.forms.planningOffer.title;const button=document.createElement('button');button.type='button';button.className='planning-offer-start';button.textContent=s.blueprint?'Plan weiterentwickeln':'Element planen';button.disabled=[...jobs.values()].some(j=>j.conversationId===s.id&&j.kind==='plan'&&ACTIVE_JOB.includes(j.state));button.onclick=async()=>{if(db.current!==s.id||button.disabled)return;button.disabled=true;try{await send($('#prompt').value.trim()||'Erstelle oder aktualisiere einen Blueprint für das angebotene Element anhand unserer bisherigen Besprechung. Es wird noch nichts gebaut.','plan');}finally{if(button.isConnected)button.disabled=false;}};const hint=document.createElement('p');hint.className='small';hint.textContent='Zuerst besprechen wir den Plan. Gebaut wird erst nach deiner separaten Freigabe.';offer.append(title,button,hint);article.append(offer);}
+          const planningCard=planningOfferUI({message:m,latest:m===s.messages.filter(x=>x.role==='assistant').at(-1),hasBlueprint:!!s.blueprint,busy:[...jobs.values()].some(j=>j.conversationId===s.id&&j.kind==='plan'&&ACTIVE_JOB.includes(j.state)),changed:()=>renderPreservingScroll(),start:async accepted=>{if(db.current!==s.id)return;await send($('#prompt').value.trim()||'Erstelle oder aktualisiere einen Blueprint für das angebotene Element anhand unserer bisherigen Besprechung. Es wird noch nichts gebaut.','plan',{planningOfferId:m.id,onAccepted:accepted});await loadFromServer();}});if(planningCard)article.append(planningCard);
           const evidenceNotice=replyEvidenceNotice(m.forms?.replyEvidence);if(evidenceNotice)article.append(evidenceNotice);
           if(m.forms){for(const f of m.forms.items||[]){if(f.layout==='custom'&&f.template){const view=renderUI({...f.template,state:{...f.template.state,...f.data}},{onSuggest:fillSuggestion,onError:toast,onWarning:toast,onState:state=>{f.data=state;save();uiRequest('/api/forms/state',{messageId:m.id,index:m.forms.items.indexOf(f),state}).catch(e=>toast(e.message));}});views.push(view);article.append(view.element,formsUI.copyStateButton(f,m.id,m.forms.items.indexOf(f)));}else article.append(formCard(f,{suggest:fillSuggestion,onError:toast,onState:async state=>{await uiRequest('/api/forms/state',{messageId:m.id,index:m.forms.items.indexOf(f),state});f.data=state;save();}}),formsUI.copyStateButton(f,m.id,m.forms.items.indexOf(f)));}for(const e of m.forms.edits||[])article.append(formsUI.proposal(e,m.id,m.forms.edits.indexOf(e)));}
           const job=pendingJobFor(entry.element?.id||m.id);
@@ -708,7 +709,7 @@ async function readSSE(response,onEvent){
   }
 }
 
-async function send(text,mode='chat'){
+async function send(text,mode='chat',options={}){
   text=text.trim().slice(0,2000);
   if(!text||pending.size>=3)return toast('Bitte kurz warten — drei Antworten laufen schon.');
   if(!me)return showLogin('Bitte zuerst anmelden.');
@@ -734,6 +735,7 @@ async function send(text,mode='chat'){
   try{
     if(!csrf)throw Error('Sitzung abgelaufen — bitte neu anmelden.');
     const body={version:1,sessionId:s.id,requestId:request.id,text,mode,model:modelId||undefined};
+    if(options.planningOfferId)body.planningOfferId=options.planningOfferId;
     if(target)body.refineTarget={id:target.id,name:sanitizeName(elementName(target)),html:target.render.html,css:target.render.css,js:target.render.js,state:target.render.state};
     const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},signal:request.controller.signal,body:JSON.stringify(body)});
     if(!r.ok){const t=await r.json().catch(()=>({}));throw Error(t.error||('Serverfehler '+r.status))}
@@ -742,7 +744,7 @@ async function send(text,mode='chat'){
       if(event==='prose-chunk'&&typeof data.text==='string'){prose+=data.text.slice(0,4000);live.prose(prose)}
       else if(event==='artifact-start'){live.site(jobStarted)} // Phase 3 beginnt mit dem Artefakt
       else if(event==='retry')live.note(data.code==='transport'?data.reason:'Ungültiges Artefakt — ein Korrekturversuch läuft …');
-      else if(event==='element-job'&&data.job&&data.job.id){jobStarted=data.job;request.jobId=data.job.id;live.site(data.job);applyJob(data.job)}
+      else if(event==='element-job'&&data.job&&data.job.id){jobStarted=data.job;request.jobId=data.job.id;options.onAccepted?.(data.job);live.site(data.job);applyJob(data.job)}
       else if(event==='render'){try{artifact=validateRender(data.render)}catch{errorMsg='Ungültige Antwort der Gegenseite.'}}
       else if(event==='error'){errorMsg=String(data.message||'Antwort fehlgeschlagen.');}
       else if(event==='done'){doneUser=data.userMessageId||null;doneAssist=data.assistantMessageId||null}
