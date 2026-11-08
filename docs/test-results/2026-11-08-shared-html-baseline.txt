@@ -1,0 +1,16 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.waitFor: Timeout 3000ms exceeded.
+Call log:
+  - waiting for locator('#shared-elements .shared-warning').filter({ hasText: 'Eine Element-ID wurde entfernt' }) to be visible
+
+    at /root/.openclaw/workspace/projects/form/test/shared-html-diagnostics.mjs:6:945 {
+  log: [
+    "  - waiting for locator('#shared-elements .shared-warning').filter({ hasText: 'Eine Element-ID wurde entfernt' }) to be visible"
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.22.2

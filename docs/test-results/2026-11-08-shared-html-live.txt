@@ -1,0 +1,2 @@
+PASS home/CSP/closed registration/anonymous401/exact bundle http://127.0.0.1:5177 a8a56771eca32762716b293ac5a1a8d7690b15ca21d3f19e0436992910516aac
+PASS home/CSP/closed registration/anonymous401/exact bundle https://fhisling.tail11036c.ts.net:9444 a8a56771eca32762716b293ac5a1a8d7690b15ca21d3f19e0436992910516aac

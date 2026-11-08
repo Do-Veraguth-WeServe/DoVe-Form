@@ -44,6 +44,7 @@ step('navigation preserves background chat and plans',run('node',['test/navigati
 step('shared element grants, stream and database revisions',run('node',['--test','test/element-sharing.test.mjs','test/element-stream.test.mjs','test/element-db-revision.test.mjs']));
 step('shared element HTTP stream',run('node',['test/element-stream-http.mjs']));
 step('shared element browser flow',run('node',['test/shared-elements-browser.mjs']));
+step('shared HTML diagnostics and invalidation',run('node',['test/shared-html-diagnostics.mjs']));
 step('unified settings and field layout',run('node',['test/settings-layout.test.mjs']));
 step('session navigation preserves jobs',run('node',['test/navigation-jobs.test.mjs']));
 step('private connection schema, vault, grants and SDK',run('node',['--test','test/connection-contract.test.mjs','test/connection-vault.test.mjs','test/connection-mcp.test.mjs','test/element-connections.test.mjs']));
