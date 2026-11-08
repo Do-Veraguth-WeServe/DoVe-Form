@@ -1,0 +1,143 @@
+[
+  {
+    "input": "<circle id=\"before\" r=\"4\"/><img src=\"https://invalid.example\"><circle id=\"after\" r=\"5\"/>",
+    "current": {
+      "html": "",
+      "svg": "<circle r=\"4\"></circle><circle r=\"5\"></circle>",
+      "table": "<tbody></tbody>",
+      "section": "",
+      "row": "",
+      "warnings": {
+        "html": {
+          "removed": true,
+          "idRemoved": false
+        },
+        "svg": {
+          "removed": true,
+          "idRemoved": true
+        },
+        "row": {
+          "removed": true,
+          "idRemoved": false
+        },
+        "section": {
+          "removed": true,
+          "idRemoved": false
+        },
+        "table": {
+          "removed": true,
+          "idRemoved": false
+        }
+      }
+    },
+    "native": "<circle id=\"before\" r=\"4\"></circle><img src=\"https://invalid.example\"><circle id=\"after\" r=\"5\"></circle>",
+    "names": [
+      [
+        "circle",
+        "http://www.w3.org/2000/svg"
+      ],
+      [
+        "IMG",
+        "http://www.w3.org/1999/xhtml"
+      ],
+      [
+        "circle",
+        "http://www.w3.org/2000/svg"
+      ]
+    ]
+  },
+  {
+    "input": "<circle r=\"4\"/><div>hello</div><rect width=\"4\" height=\"5\"/>",
+    "current": {
+      "html": "",
+      "svg": "<circle r=\"4\"></circle><rect width=\"4\" height=\"5\"></rect>",
+      "table": "<tbody></tbody>",
+      "section": "",
+      "row": "",
+      "warnings": {
+        "html": {
+          "removed": true,
+          "idRemoved": false
+        },
+        "svg": {
+          "removed": true,
+          "idRemoved": false
+        },
+        "row": {
+          "removed": true,
+          "idRemoved": false
+        },
+        "section": {
+          "removed": true,
+          "idRemoved": false
+        },
+        "table": {
+          "removed": true,
+          "idRemoved": false
+        }
+      }
+    },
+    "native": "<circle r=\"4\"></circle><div>hello</div><rect width=\"4\" height=\"5\"></rect>",
+    "names": [
+      [
+        "circle",
+        "http://www.w3.org/2000/svg"
+      ],
+      [
+        "DIV",
+        "http://www.w3.org/1999/xhtml"
+      ],
+      [
+        "rect",
+        "http://www.w3.org/2000/svg"
+      ]
+    ]
+  },
+  {
+    "input": "<circle r=\"4\"/><script>alert(1)</script><rect width=\"4\"/>",
+    "current": {
+      "html": "",
+      "svg": "<circle r=\"4\"></circle><rect width=\"4\"></rect>",
+      "table": "<tbody></tbody>",
+      "section": "",
+      "row": "",
+      "warnings": {
+        "html": {
+          "removed": true,
+          "idRemoved": false
+        },
+        "svg": {
+          "removed": true,
+          "idRemoved": false
+        },
+        "row": {
+          "removed": true,
+          "idRemoved": false
+        },
+        "section": {
+          "removed": true,
+          "idRemoved": false
+        },
+        "table": {
+          "removed": true,
+          "idRemoved": false
+        }
+      }
+    },
+    "native": "<circle r=\"4\"></circle><script>alert(1)</script><rect width=\"4\"></rect>",
+    "names": [
+      [
+        "circle",
+        "http://www.w3.org/2000/svg"
+      ],
+      [
+        "script",
+        "http://www.w3.org/2000/svg"
+      ],
+      [
+        "rect",
+        "http://www.w3.org/2000/svg"
+      ]
+    ]
+  }
+]

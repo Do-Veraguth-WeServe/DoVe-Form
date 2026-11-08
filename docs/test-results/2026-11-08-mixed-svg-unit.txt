@@ -1,0 +1,1 @@
+PASS eight mixed SVG/HTML variants: following shapes retained, active content/URLs removed, correct namespaces, no execution/egress, redacted warning, 600-node limit, 601 rejected; source=/root/.openclaw/workspace/projects/form

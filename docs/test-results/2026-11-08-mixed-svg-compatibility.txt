@@ -1,0 +1,6 @@
+PASS sanitizer warning survives live updates/reconnect; clears offline/revoked/clean replacement; three-account opt-in UI, desktop/mobile, shared state and rows live, reload, owner-only code, revocation clears sandbox
+{"version":1,"delay":0,"dayCount":30,"errors":[]}
+{"version":1,"delay":150,"dayCount":30,"errors":[]}
+{"version":2,"delay":0,"dayCount":30,"errors":[]}
+{"version":2,"delay":150,"dayCount":30,"errors":[]}
+PASS saved calendar versions render days, navigation and notes with delayed DB

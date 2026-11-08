@@ -1,0 +1,30 @@
+PASS HTML diagnostic reasons, redaction, cap, no stale DOMPurify state, SVG/table/input/scrub compatibility
+PASS 1280 trusted feed/overlay/reload warning, working allowed interaction, unchanged artifact, zero egress/page errors
+PASS 390 trusted feed/overlay/reload warning, working allowed interaction, unchanged artifact, zero egress/page errors
+PASS observed animated startup dynamic HTML: five rejections; safe HTML/SVG/table contexts; static-only no execution; privacy; cleanup
+PASS schema, three independently moving surfaces, completion, cancellation, missing target and reduced motion in real QuickJS iframe bridge
+PASS wrong password rejected
+PASS registration and model-free composer gate
+PASS current settings navigation, model add, masked key and Escape
+PASS two visible prose stages before structured chat offer
+PASS ordinary imperative chat cannot build
+PASS concurrent chat completes before held build; desktop/mobile reload retain one identical job
+PASS tab-close build completion without viewer; desktop/mobile reopen one persisted Element, no regeneration
+PASS explicit approval and real held build before artifact
+PASS real server persistence and reload without duplicate build
+PASS 390px interaction and persisted reload
+PASS prose-only 1280: no build, no live iframe remount, unchanged persisted Element and reload
+PASS prose-only 390: no build, no live iframe remount, unchanged persisted Element and reload
+PASS explicit Stop 1280: upstream aborted, durable cancellation, static reduced motion, Element preserved
+PASS explicit Stop 390: upstream aborted, durable cancellation, static reduced motion, Element preserved
+PASS approved correction correct: exactly two rounds, durable mobile reload, honest terminal state
+PASS approved correction fail: exactly two rounds, durable mobile reload, honest terminal state
+PASS fresh device 1280: all conversations, exact saved messages and functioning Element
+PASS logout/relogin 1280: revoked cookie, independent session retained, data restored without generation
+PASS fresh device 390: all conversations, exact saved messages and functioning Element
+PASS logout/relogin 390: revoked cookie, independent session retained, data restored without generation
+PASS artifact-phase cancel 1280: real upstream abort, no partial publication, durable reload, no retry
+PASS artifact-phase cancel 390: real upstream abort, no partial publication, durable reload, no retry
+PASS reverse concurrent builds 1280: second publishes first, exact message placement, persisted reload, no regeneration
+PASS reverse concurrent builds 390: second publishes first, exact message placement, persisted reload, no regeneration
+PASS browser-core: 24 checks; source=/root/.openclaw/workspace/projects/form

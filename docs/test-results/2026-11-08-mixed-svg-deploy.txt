@@ -1,0 +1,9 @@
+/opt/form-verifier/dist/animation-verification.js 138516229633a7722edc0f4ed06c5b4378c92060f5c5f451a58ff4204613f85f
+/opt/form/src/sanitize.js 2e1cdeb2eef4a88190c006786775da6c43d02f8668bde2bf3d7cc1ed31fd50e0
+/opt/form/dist/app.js cec2474be84e58312e08fb1117e40cf357ce82e90fcdeeb0dcd4c2ea56bfb7b8
+/opt/form/dist/animation-verification.js 138516229633a7722edc0f4ed06c5b4378c92060f5c5f451a58ff4204613f85f
+/opt/form/test/run-all.mjs c1b165c5ffde20dd1588ce1e78a8049b795e4446e83d5c154b243eedead9c588
+/opt/form/test/sandbox-boundary-browser.test.mjs e11a76d38e65cd7cf50c576939ed7ca2ac17236e5c424df86619c2635e8fcb1a
+/opt/form/docs/form-diagnostics-findings.md da3d3f275a58cbf318821d081daf4b874a7528b1c20a1dc72165aa066ee56427
+/opt/form/test/mixed-svg-fragments.mjs 2ef1e25b81a6ac83723de5b1735a735fbe7824979969776ffd73a8b0867101de
+PASS idle frontend/verifier-only rollout; no restart; rollback=/opt/form/.rollback/20261108-mixed-svg

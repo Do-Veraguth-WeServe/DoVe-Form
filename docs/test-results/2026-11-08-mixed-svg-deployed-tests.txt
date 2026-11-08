@@ -1,0 +1,18 @@
+PASS eight mixed SVG/HTML variants: following shapes retained, active content/URLs removed, correct namespaces, no execution/egress, redacted warning, 600-node limit, 601 rejected; source=/opt/form
+overlay pointer trace 1280 ["Element öffnen (Vollbild, Code, Versionen)"]
+PASS 1280: foreign-account seeded owner cache ignored, own canonical/cache/DOM after login+reload, no auto-import or mutation
+PASS 1280: guest globals, dynamic HTML/SVG, suggestion without submit, opaque parent/network denial, forged resize, masked key/cache/CSRF, persisted state and overflow
+overlay pointer trace 390 ["Element öffnen (Vollbild, Code, Versionen)"]
+PASS 390: foreign-account seeded owner cache ignored, own canonical/cache/DOM after login+reload, no auto-import or mutation
+PASS 390: guest globals, dynamic HTML/SVG, suggestion without submit, opaque parent/network denial, forged resize, masked key/cache/CSRF, persisted state and overflow
+PASS sandbox boundary browser source=/opt/form
+PASS observed animated startup dynamic HTML: five rejections; safe HTML/SVG/table contexts; static-only no execution; privacy; cleanup
+✔ sandboxed service returns safe specific rejection categories (32230.537576ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 32386.876585

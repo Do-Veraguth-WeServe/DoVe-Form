@@ -39,6 +39,7 @@ step('real database CRUD bridge, scope, quotas and reload',run('node',['test/db-
 step('sandbox boundary, safe fragments and cache secrets',run('node',['test/sandbox-boundary-browser.test.mjs']));
 step('initial static-only HTML preflight',run('node',['test/html-preflight.mjs']));
 step('HTML removal diagnostics (bounded reasons, trusted desktop/mobile feedback)',run('node',['test/html-diagnostics.test.mjs']));
+step('mixed SVG/HTML retention and sanitizer boundary',run('node',['test/mixed-svg-fragments.mjs']));
 step('dynamic namespace-aware HTML diagnostics',run('node',['test/dynamic-html-diagnostics.mjs']));
 step('scoped diagnostic chat browser',run('node',['test/element-diagnostics-browser.mjs']));
 step('bounded live diagnostics transport',run('node',['--test','test/live-diagnostics.test.mjs']));

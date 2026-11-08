@@ -23,12 +23,18 @@ export function inspectFragment(s){
  const summary=d=>({removed:d.removedCount>0,idRemoved:d.diagnostics.some(x=>x.reason==='id-removed')});
  const warnings={html:summary(plain),svg:summary(plain)};
  const collect=()=>{let removed=false,idRemoved=false;for(const e of DOMPurify.removed||[]){if(e.attribute||e.element?.nodeName!=='BODY')removed=true;if(e.attribute?.name==='id')idRemoved=true;}return {removed,idRemoved};};
- try{
-  const w=DOMPurify.sanitize('<svg>'+s+'</svg>',{ALLOWED_TAGS:[...tags,'svg'],ALLOWED_ATTR:attrs,ALLOW_DATA_ATTR:false,ALLOW_ARIA_ATTR:false});
-  const warning=collect(),d=document.createElement('div');d.innerHTML=w;let out='';
-  for(const n of [...d.childNodes]){if(n.nodeType===1){const isSvgRoot=n.namespaceURI==='http://www.w3.org/2000/svg'&&n.tagName.toLowerCase()==='svg';out+=isSvgRoot?n.innerHTML:n.outerHTML}else if(n.nodeType===3)out+=n.textContent}
-  if(out){svg=scrub(out,()=>{warning.removed=true;});warnings.svg=warning;}
- }catch{}
+ {
+  // Parse in the actual target namespace, in an inert document. A string
+  // '<svg>...</svg>' wrapper exits SVG parsing at HTML breakout tags and
+  // incorrectly drops safe shapes that follow them. Sanitize the resulting
+  // nodes in place before any serialization or insertion into the live page.
+  const inert=document.implementation.createHTMLDocument('');
+  const root=inert.createElementNS('http://www.w3.org/2000/svg','svg');
+  root.innerHTML=s;
+  DOMPurify.sanitize(root,{IN_PLACE:true,ALLOWED_TAGS:tags,ALLOWED_ATTR:attrs,ALLOW_DATA_ATTR:false,ALLOW_ARIA_ATTR:false});
+  const warning=collect();
+  svg=scrub(root.innerHTML,()=>{warning.removed=true;});warnings.svg=warning;
+ }
  try{
   const clean=DOMPurify.sanitize('<table><tbody>'+s+'</tbody></table>',{ALLOWED_TAGS:tags,ALLOWED_ATTR:attrs,ALLOW_DATA_ATTR:false,ALLOW_ARIA_ATTR:false});
   const warning=collect(),t=document.createElement('template');t.innerHTML=clean;const root=t.content.querySelector('table');

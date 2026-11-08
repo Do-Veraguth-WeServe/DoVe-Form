@@ -32,8 +32,8 @@ try{
   await f().locator('#amount').fill('7');await f().locator('#result').filter({hasText:'84'}).waitFor();
   await f().locator('#suggest').click();assert.equal(await p.locator('#prompt').inputValue(),'explicit only');
   assert.equal(await f().locator('#dyn script,#dyn img').count(),0);
-  // Mixed malicious fragment: legacy acceptance requires removal, not shape retention.
-  // Shape loss in this mixed script/img/SVG input is a separate recorded follow-up.
+  // Mixed malicious fragments retain the following safe SVG shape.
+  assert.equal(await f().locator('#dyn rect').count(),1);
   assert.equal(await f().locator('#dyn3 rect').count(),1);assert.equal(await f().locator('#dyn2 p').innerText(),'ok');
   await p.locator('.notice.error').filter({hasText:'ui.value'}).first().waitFor();
   assert.equal(await f().locator('a,img,meta[http-equiv=refresh],script:not([nonce]),[onclick]').count(),0);
