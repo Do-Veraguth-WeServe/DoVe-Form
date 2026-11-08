@@ -10,18 +10,18 @@ try{
  console.log('valid clip passed');
  await verifyAnimationArtifact(browser,{...fixture,html:'<div id="root"></div>',js:'ui.html("root",'+JSON.stringify(fixture.html)+');'});
  const large={...fixture,animations:{version:1,clips:Object.fromEntries(Array.from({length:9},(_,i)=>['fold'+i,{...fixture.animations.clips.fold,duration:2000}]))}};
- await assert.rejects(verifyAnimationArtifact(browser,large),/budget exceeded/);
+ await assert.rejects(verifyAnimationArtifact(browser,large),{verificationCode:'BUDGET'});
  assert.equal(out.status,'passed');assert.equal(out.clips.length,1);assert.equal(new Set(out.clips[0].samples.map(s=>s.transform)).size,3);
  assert.match(out.sourceHash,/^[a-f0-9]{64}$/);
  assert.equal(browser.contexts().length,0);
  console.log('missing target');
- await assert.rejects(verifyAnimationArtifact(browser,{...fixture,html:'<div>missing</div>'}),/missing or ambiguous/);
- await assert.rejects(verifyAnimationArtifact(browser,{...fixture,html:fixture.html+'<div id="a">duplicate</div>'}),/missing or ambiguous/);
- await assert.rejects(verifyAnimationArtifact(browser,{...fixture,js:'while(true){}'}),/startup/);
- await assert.rejects(verifyAnimationArtifact(browser,{...fixture,js:'document.body.innerHTML="escape"'}),/startup/);
+ await assert.rejects(verifyAnimationArtifact(browser,{...fixture,html:'<div>missing</div>'}),{verificationCode:'TARGET'});
+ await assert.rejects(verifyAnimationArtifact(browser,{...fixture,html:fixture.html+'<div id="a">duplicate</div>'}),{verificationCode:'TARGET'});
+ await assert.rejects(verifyAnimationArtifact(browser,{...fixture,js:'while(true){}'}),{verificationCode:'STARTUP'});
+ await assert.rejects(verifyAnimationArtifact(browser,{...fixture,js:'document.body.innerHTML="escape"'}),{verificationCode:'STARTUP'});
  console.log('abort cleanup');
  const controller=new AbortController();setTimeout(()=>controller.abort(),100);
- await assert.rejects(verifyAnimationArtifact(browser,fixture,{signal:controller.signal}),/cancelled/);
+ await assert.rejects(verifyAnimationArtifact(browser,fixture,{signal:controller.signal}),{verificationCode:'CANCELLED'});
  assert.equal(browser.contexts().length,0);
  // No DB, external actions, fetch, or stored live user state are available.
  const unavailable={...fixture,js:'ui.db.select("tasks",{},function(r){if(r.ok)throw Error("unexpected live DB");});'};

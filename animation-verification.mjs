@@ -1,5 +1,6 @@
 // Isolated startup/declared-clip smoke evidence, not semantic visual acceptance.
 import fs from 'node:fs/promises';
+import {verificationError} from './animation-verification-errors.mjs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import {validateRender} from './contract.mjs';
@@ -11,8 +12,8 @@ export async function verifyAnimationArtifact(browser,artifact,{root=process.cwd
  validateRender(artifact);if(!artifact.animations)return {status:'not-applicable'};
  validateAnimations(artifact.animations);
  const clips=Object.entries(artifact.animations.clips);
- if(clips.reduce((s,[,n])=>s+duration(n)+200,0)>16000)throw Error('Animation verification budget exceeded; simplify clips');
- if(signal?.aborted)throw Error('Animation verification cancelled');
+ if(clips.reduce((s,[,n])=>s+duration(n)+200,0)>16000)throw verificationError('BUDGET','Animation verification budget exceeded; simplify clips');
+ if(signal?.aborted)throw verificationError('CANCELLED','Animation verification cancelled');
  const sourceHash=crypto.createHash('sha256').update(JSON.stringify(artifact)).digest('hex');
  const files=new Map();
  for(const [url,file,type] of [['/verify.js','animation-verification.js','text/javascript'],['/worker.js','worker.js','text/javascript'],['/quickjs.wasm','quickjs.wasm','application/wasm']])files.set(url,{body:await fs.readFile(path.join(root,'dist',file)),contentType:type});
@@ -35,10 +36,10 @@ export async function verifyAnimationArtifact(browser,artifact,{root=process.cwd
   const mount=async data=>{
    await page.evaluate(d=>window.mountVerification(d),data);
    await page.waitForFunction(()=>document.querySelector('iframe')?.dataset.ready==='true'||window.verification.errors.length);
-   if(await page.evaluate(()=>window.verification.errors.length))throw Error('Runtime startup rejected');
+   if(await page.evaluate(()=>window.verification.errors.length))throw verificationError('STARTUP','Runtime startup rejected');
   };
   await mount(artifact);await page.waitForTimeout(150);
-  if(await page.evaluate(()=>window.verification.errors.length))throw Error('Runtime startup rejected');
+  if(await page.evaluate(()=>window.verification.errors.length))throw verificationError('STARTUP','Runtime startup rejected');
   const effectiveHTML=await page.frameLocator('iframe').locator('body').evaluate(el=>{const clone=el.cloneNode(true);clone.querySelectorAll('script').forEach(s=>s.remove());return clone.innerHTML;});
   const evidence=[];
   for(const [index,[name,node]] of clips.entries()){
@@ -52,17 +53,17 @@ export async function verifyAnimationArtifact(browser,artifact,{root=process.cwd
    const samples=[];
    for(const id of ids){
     const loc=frame.locator('[id="'+id+'"]');
-    if(await loc.count()!==1)throw Error('Animation target missing or ambiguous');
+    if(await loc.count()!==1)throw verificationError('TARGET','Animation target missing or ambiguous');
     samples.push(await loc.evaluate(el=>({transform:getComputedStyle(el).transform,opacity:getComputedStyle(el).opacity,width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height})));
    }
    if(screenshotDir)await page.locator('iframe').screenshot({path:path.join(screenshotDir,'clip-'+index+'-middle.png')});
    await page.waitForFunction(key=>window.verification.states[0]?.[key],stateKey,{timeout:9000});
    const result=await page.evaluate(key=>window.verification.states[0][key],stateKey);
-   if(result.status!=='finished'||result.ok!==true)throw Error('Declared animation execution failed');
+   if(result.status!=='finished'||result.ok!==true)throw verificationError('EXECUTION','Declared animation execution failed');
    if(screenshotDir)await page.locator('iframe').screenshot({path:path.join(screenshotDir,'clip-'+index+'-end.png')});
    evidence.push({clip:index,targets:ids.length,samples,status:'finished'});
   }
   return {status:'passed',scope:'startup-and-declared-clips',sourceHash,viewport:{width:390,height:844},clips:evidence,limitations:['No semantic visual-intent certification','No generated click/persistence workflow certification','Empty isolated data; no production actions']};
- }catch(e){throw Error('Animation browser verification failed ('+phase+'): '+(signal?.aborted?'cancelled':String(e.message).includes('Target page')?'deadline or browser closed':String(e.message).slice(0,100)));}
+ }catch(e){throw verificationError(signal?.aborted?'CANCELLED':cancelled?'DEADLINE':e.verificationCode||'INTERNAL','Animation browser verification failed ('+phase+'): '+(signal?.aborted?'cancelled':String(e.message).includes('Target page')?'deadline or browser closed':String(e.message).slice(0,100)));}
  finally{clearTimeout(timer);signal?.removeEventListener('abort',cancel);await context.close().catch(()=>{});}
 }

@@ -15,3 +15,11 @@ test('bounded private verifier protocol',async()=>{
  await assert.rejects(verify({},{socketPath:'/nonexistent/form-verifier.sock'}),/unavailable/);
  await assert.rejects(verify({html:'x'.repeat(220001)}),/too large/);
 });
+
+test('only trusted correction hints cross the verifier boundary',async()=>{
+ for(const [code,expected] of [['TARGET',/exists exactly once/],['STARTUP',/supported ui APIs/],['BUDGET',/16-second/],['EXECUTION',/clip execution/],['DEADLINE',/deadline/],['CANCELLED',/cancelled/],['INTERNAL',/unavailable/],['__proto__',/INTERNAL/],['guest-secret',/INTERNAL/]]) {
+  await fixture(s=>s.end(JSON.stringify({ok:false,code,error:'private guest exception',stage:'private html'})+'\n'),async socketPath=>{
+   await assert.rejects(verify({},{socketPath}),error=>{assert.match(error.message,expected);assert.doesNotMatch(error.message,/private|guest-secret|__proto__/);return true;});
+  });
+ }
+});

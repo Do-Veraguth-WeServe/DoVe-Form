@@ -1,4 +1,5 @@
 import net from 'node:net';
+import {verificationFailure} from './animation-verification-errors.mjs';
 export function requestAnimationVerification(artifact,{socketPath='/run/form-verifier.sock',signal,timeoutMs=34000}={}){
  if(signal?.aborted)return Promise.reject(Error('Animation verification cancelled'));
  const payload=JSON.stringify({artifact})+'\n';
@@ -15,7 +16,7 @@ export function requestAnimationVerification(artifact,{socketPath='/run/form-ver
   socket.on('data',chunk=>{
    data+=chunk;if(Buffer.byteLength(data)>64000)return finish(Error('Animation verification response too large'));
    if(!data.includes('\n'))return;
-   try{const result=JSON.parse(data.slice(0,data.indexOf('\n')));if(result.ok!==true||result.evidence?.status!=='passed')throw Error();finish(null,result.evidence);}catch{finish(Error('Animation browser verification rejected'));}
+   try{const result=JSON.parse(data.slice(0,data.indexOf('\n')));if(result.ok!==true||result.evidence?.status!=='passed')return finish(Error(verificationFailure(result.code).message));finish(null,result.evidence);}catch{finish(Error(verificationFailure('INTERNAL').message));}
   });
  });
 }

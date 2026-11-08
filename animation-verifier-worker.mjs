@@ -1,5 +1,6 @@
 // One request per systemd socket instance; OS deadline/cgroup kills all descendants.
 import fs from 'node:fs/promises';
+import {verificationFailure} from './animation-verification-errors.mjs';
 import {chromium} from 'playwright-core';
 import {verifyAnimationArtifact} from './animation-verification.mjs';
 if(process.getuid()===0)throw Error('Verifier refuses root');
@@ -19,5 +20,5 @@ try{
  stage='verification';
  const evidence=await verifyAnimationArtifact(browser,request.artifact,{root:'/opt/form-verifier',timeoutMs:25000,signal:controller.signal});
  process.stdout.write(JSON.stringify({ok:true,evidence})+'\n');
-}catch{process.stdout.write(JSON.stringify({ok:false,stage,error:'Isolated animation verification rejected or unavailable'})+'\n');}
+}catch(error){process.stdout.write(JSON.stringify({ok:false,stage,code:verificationFailure(error?.verificationCode).code})+'\n');}
 finally{await browser?.close().catch(()=>{});clearTimeout(deadline);}

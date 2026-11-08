@@ -1,0 +1,29 @@
+✔ bounded numeric versioned animation schema (5.435414ms)
+✔ old artifact remains valid, invalid animation rejected at contract (0.863564ms)
+✔ bounded private verifier protocol (65.076095ms)
+✔ only trusted correction hints cross the verifier boundary (23.93371ms)
+✔ clean round: prose parsed, finish_reason stop, actual content captured (no SSE envelopes) (58.389393ms)
+✔ finish_reason=length sets truncated; unterminated artifact reported as invalid (13.247763ms)
+✔ malformed SSE frames are ignored, valid frames still parsed (6.410721ms)
+✔ explicit provider error frame throws ProviderError (distinct from malformed frames) (7.028809ms)
+✔ final unterminated SSE line is parsed (6.069692ms)
+✔ UTF-8 multibyte char split across reads is reassembled (5.052119ms)
+✔ upstream 401 becomes ProviderError with status (permanent, caller must not retry) (5.256955ms)
+✔ content cap (accumulated deltas) throws SizeError (5.023558ms)
+✔ transport cap (raw SSE bytes) throws SizeError even with tiny visible content (6.670292ms)
+✔ round deadline expiry maps to abortKind timeout (308.023089ms)
+[provider] retry empty interrupted stream code=ECONNRESET
+[provider] retry empty interrupted stream code=ECONNRESET
+✔ external abort maps to abortKind external, not timeout (153.642477ms)
+✔ already-expired deadline fails fast with timeout kind (0.840706ms)
+✔ job generation has no default or zero-configured deadline (8.582992ms)
+✔ empty ECONNRESET retries once and completes, permanent reset stays bounded (3.107251ms)
+✔ connection reset after visible prose is not replayed (22.474299ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3993.244255
