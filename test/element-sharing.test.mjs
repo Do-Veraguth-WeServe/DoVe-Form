@@ -31,7 +31,7 @@ test('opt-in acceptance and uniform foreign denial, no copied chats or capabilit
  assert.throws(()=>x.view(b.id,g.id));assert.throws(()=>x.accept(c.id,g.id));assert.throws(()=>x.accept(a.id,g.id));
  assert.deepEqual(x.accept(b.id,g.id),g);assert.deepEqual(x.accept(b.id,g.id),g);
  const view=x.view(b.id,g.id);assert.equal(view.render.state.n,4);assert.equal(view.render.actions,undefined);assert.equal(view.canEdit,false);
- assert.deepEqual(Object.keys(view).sort(),['canEdit','codeRevision','id','render','stateRevision']);
+ assert.deepEqual(Object.keys(view).sort(),['canEdit','codeRevision','dbRevision','id','render','stateRevision']);
  assert.equal(s.messageOwner(mid).userId,a.id);assert.equal(s.listConversations(b.id).conversations.length,0);
  assert.throws(()=>s.updateMessageRender(b.id,mid,view.render));
  const error=fn=>{try{fn();assert.fail('should deny');}catch(e){return e.message;}};

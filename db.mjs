@@ -27,7 +27,9 @@ export class ElementDB {
     this.db = new DatabaseSync(file);
     this.db.exec('PRAGMA journal_mode=WAL; PRAGMA busy_timeout=3000; PRAGMA synchronous=NORMAL;');
     this.db.exec('CREATE TABLE IF NOT EXISTS __form_meta__(ekey TEXT NOT NULL, tname TEXT NOT NULL, rows INTEGER NOT NULL DEFAULT 0, bytes INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(ekey,tname))');
+    this.db.exec('CREATE TABLE IF NOT EXISTS __form_revisions__(ekey TEXT PRIMARY KEY, revision INTEGER NOT NULL)');
   }
+  revision(sessionId,elementId) { return this.db.prepare('SELECT revision FROM __form_revisions__ WHERE ekey=?').get(this.ekey(sessionId,elementId))?.revision||0; }
   close() { try { this.db.close(); } catch {} }
 
   // Drop every table of one element (conversation delete / cleanup).
@@ -62,14 +64,15 @@ export class ElementDB {
     if (!ekey) return fail(400, 'Ungültige Element-Identität.');
     if (!OPS.has(op)) return fail(400, 'Unbekannte Operation.');
     if (typeof table !== 'string' || !TABLE_RE.test(table)) return fail(400, 'Ungültiger Tabellenname ([a-z0-9_], max 32).');
+    const mutate=fn=>this._tx(()=>{const r=fn();if(r.status===200)this.db.prepare('INSERT INTO __form_revisions__ VALUES(?,1) ON CONFLICT(ekey) DO UPDATE SET revision=revision+1').run(ekey);return r;});
     const phys = `"${ekey}_${table}"`;
     try {
-      if (op === 'create') return this._tx(() => this._create(ekey, table, phys, columns));
-      if (op === 'drop') return this._tx(() => this._drop(ekey, table, phys));
-      if (op === 'insert') return this._tx(() => this._insert(ekey, table, phys, row));
+      if (op === 'create') return mutate(() => this._create(ekey, table, phys, columns));
+      if (op === 'drop') return mutate(() => this._drop(ekey, table, phys));
+      if (op === 'insert') return mutate(() => this._insert(ekey, table, phys, row));
       if (op === 'select') return this._select(ekey, table, phys, query);
-      if (op === 'update') return this._tx(() => this._update(ekey, table, phys, id, patch));
-      if (op === 'delete') return this._tx(() => this._delete(ekey, table, phys, id));
+      if (op === 'update') return mutate(() => this._update(ekey, table, phys, id, patch));
+      if (op === 'delete') return mutate(() => this._delete(ekey, table, phys, id));
     } catch (e) {
       const msg = String(e && e.message || e).slice(0, 160);
       return /QUOTA/.test(msg) ? fail(413, msg.replace(/^Error: QUOTA /, '')) : fail(500, 'Datenbankfehler.');

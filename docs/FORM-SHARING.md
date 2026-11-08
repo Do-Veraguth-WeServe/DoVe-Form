@@ -1,3 +1,5 @@
+> Current integration acceptance (2026-11-08): see [Shared Elements release](SHARED-ELEMENTS-RELEASE.md). Earlier source-only statements below are historical checkpoints. Production status is recorded in that release document.
+
 # Form sharing — bounded rollout, 2026-11-07
 
 Report 6911dd6f is NOT fully resolved. This slice adds independent Form library copies and persisted custom-Form state snapshots. Revocable shared-data Elements/live synchronization remain pending. Element template copy verification is recorded below. Nothing is auto-shared.

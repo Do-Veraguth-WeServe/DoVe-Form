@@ -111,10 +111,10 @@ export class ElementSharing {
   }
   view(uid,id) {
     return this.locked(() => {
-      const {render}=this.authorize(uid,id);
+      const {render,owner,grant}=this.authorize(uid,id);
       const {actions,...safe}=validateRender(render);
       // Explicit projection: no history, conversation ids, DB names or linked actions.
-      return {id,render:safe,codeRevision:elementCodeRevision(render),stateRevision:elementStateRevision(safe.state),canEdit:false};
+      return {id,dbRevision:this.elementDB?.revision(owner.conversationId,grant.message_id)||0,render:safe,codeRevision:elementCodeRevision(render),stateRevision:elementStateRevision(safe.state),canEdit:false};
     });
   }
   // Owner saves use the same state token as recipients. Legacy unshared saves

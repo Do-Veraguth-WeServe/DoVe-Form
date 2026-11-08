@@ -26,6 +26,9 @@ const waitReady = (proc, tag, pattern = /ready/) => new Promise((resolve, reject
 });
 
 step('build (esbuild + bridge hash + wasm)', run('node', ['build.mjs']));
+step('shared element grants, stream and database revisions',run('node',['--test','test/element-sharing.test.mjs','test/element-stream.test.mjs','test/element-db-revision.test.mjs']));
+step('shared element HTTP stream',run('node',['test/element-stream-http.mjs']));
+step('shared element browser flow',run('node',['test/shared-elements-browser.mjs']));
 step('private connection schema, vault, grants and SDK',run('node',['--test','test/connection-contract.test.mjs','test/connection-vault.test.mjs','test/connection-mcp.test.mjs','test/element-connections.test.mjs']));
 step('private connection HTTP boundaries',run('node',['test/connection-http.test.mjs']));
 step('element settings browser and sandbox',run('node',['test/connection-browser.test.mjs']));

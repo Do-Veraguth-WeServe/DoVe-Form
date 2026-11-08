@@ -1,3 +1,5 @@
+> Current integration acceptance (2026-11-08): see [Shared Elements release](SHARED-ELEMENTS-RELEASE.md). Earlier source-only statements below are historical checkpoints. Production status is recorded in that release document.
+
 # Shared-data Element grants — integration in progress
 
 Latest source integration: [Owner browser persistence](OWNER-PERSISTENCE.md) adds serialized state tokens and explicit conflict/error reconciliation, with desktop/mobile tests. Still **not deployed**; opt-in UI, per-delivery ACL/live synchronization, code revision and release gates remain. Historical sections below describe earlier checkpoints.

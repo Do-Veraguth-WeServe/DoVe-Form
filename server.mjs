@@ -4,6 +4,7 @@ import {elementEvidence,ELEMENT_EVIDENCE_POLICY} from './element-context.mjs';
 import {Forms,chatPrompt} from './forms.mjs';
 import {FormSharing} from './form-sharing.mjs';
 import {ElementSharing} from './element-sharing.mjs';
+import {ElementStreams} from './element-stream.mjs';
 import {ConnectionVault} from './connection-vault.mjs';
 import {ElementConnections} from './element-connections.mjs';
 import {planningPrompt} from './blueprints.mjs';
@@ -75,6 +76,7 @@ claimLegacy();
 // see or choose them; the /api/db handler additionally enforces user ownership.
 const elementDB = new ElementDB(path.join(DATA_DIR, 'elements.sqlite'));
 const elementSharing = new ElementSharing(store, elementDB);
+const elementStreams = new ElementStreams(elementSharing);
 const privateConnections=new ConnectionVault(store.db,path.join(DATA_DIR,'connection-master.key'));
 const elementConnections=new ElementConnections(store,privateConnections);
 const DB_RATE = Number(process.env.FORM3_DB_RATE || 120);
@@ -201,7 +203,7 @@ const server = http.createServer(async (req, res) => {
     res.setHeader('Cache-Control','no-store');
     if(!['GET','POST'].includes(req.method))return reply(res,405,{error:'Methode nicht erlaubt.'});
     const suffix=pathname.slice('/api/elements/grants'.length);
-    if(!(req.method==='GET'?['','/view']:['/offer','/accept','/close','/state','/db']).includes(suffix))return reply(res,404,{error:'Nicht gefunden.'});
+    if(!(req.method==='GET'?['','/view','/stream']:['/offer','/accept','/close','/state','/db']).includes(suffix))return reply(res,404,{error:'Nicht gefunden.'});
     const dbCall=suffix==='/db';
     if(!rate((dbCall?'db:':'element-grants:')+user.id,dbCall?DB_RATE:60,60000)){
       res.setHeader('Retry-After','5');return reply(res,429,{error:'Bitte kurz warten.'});
@@ -217,6 +219,17 @@ const server = http.createServer(async (req, res) => {
       if(!fresh||fresh.user.id!==user.id||fresh.csrf!==sess.csrf)return reply(res,401,{error:'Anmeldung erforderlich.'});
     }
     try{
+      if(req.method==='GET'&&suffix==='/stream'){
+        if(req.headers.origin!==undefined&&!ORIGINS.includes(req.headers.origin))return reply(res,403,{error:'Ungültiger Ursprung.'});
+        const id=url.searchParams.get('id');
+        elementSharing.view(user.id,id); // generic404 before opening an unauthorized stream
+        const opened=elementStreams.open({uid:user.id,id,res,sessionValid:()=>{
+          const current=store.getSession(cookieToken(req));
+          return current?.user.id===user.id&&current.csrf===sess.csrf;
+        }});
+        if(!opened){res.setHeader('Retry-After','5');return reply(res,429,{error:'Zu viele offene Freigaben-Streams.'});}
+        return;
+      }
       if(req.method==='GET')return reply(res,200,suffix==='/view'
         ?elementSharing.view(user.id,url.searchParams.get('id'))
         :elementSharing.list(user.id,{after:url.searchParams.get('after')||'',limit:Number(url.searchParams.get('limit')||20)}));

@@ -92,7 +92,7 @@ export function bridge(){
 }
 
 
-export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction,onConnection}={}){
+export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction,onConnection,onInteraction=()=>{}}={}){
   const f=document.createElement('iframe');
   f.className='render';
   f.style.visibility='hidden';f.setAttribute('aria-busy','true');
@@ -142,7 +142,7 @@ export function renderUI(data,{onState,onSuggest,onError,onPing,onDb,onAction,on
         const feed=f.closest('#feed');if(feed&&f.isConnected)feed.scrollTop+=d.delta;
       }
       if(d?.type==='animation-result'&&/^n[0-9]{1,8}$/.test(d.ref)&&['finished','cancelled','error'].includes(d.status))deliver('__animation:'+d.ref,'animation',{ok:d.ok===true,status:d.status,error:typeof d.error==='string'?d.error.slice(0,120):undefined});
-      if(d?.type==='event')dispatch(d);
+      if(d?.type==='event'){onInteraction();dispatch(d);}
       if(d?.type==='misuse')onError('Hinweis: ui.value gilt nur für Eingabefelder — dynamische Inhalte gehören in ui.html.');
     };
     worker.onmessage=({data:d})=>{

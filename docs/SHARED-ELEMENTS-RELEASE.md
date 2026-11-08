@@ -1,0 +1,17 @@
+# Shared Elements integration (2026-11-08)
+
+Direct authorization: Telegram6284, finish existing #6911dd6f.
+
+UI: owner full-screen Element -> Gemeinsam teilen -> exact account name; recipient uses Geteilte Elemente -> Annehmen -> Gemeinsam öffnen. Both participants use the shared view for live state/table refresh. Owner-only code editing remains in the original private Element. Owner revokes, recipient leaves. No existing content automatically shared; source conversation/history, private connection grants and credentials never transfer. Independent copies remain separate.
+
+SSE checks session/ACL/code under the writer lock before every snapshot/heartbeat. Revocation, logout, disabled users, deleted source or changed code invalidate; frontend destroys sandbox. Offline event or six-second missing authenticated heartbeat clears view; reconnect is explicit and gets current snapshot, never replays pending writes. Successful table mutations bump a durable namespace-scoped revision inside the same elements.sqlite transaction; state CAS prevents silent stale overwrites. Row changes retain existing last-write semantics.
+
+Remote snapshots rebuild the sandbox to support existing generated code without requiring a new refresh API. Unsaved local input can be lost on remote refresh. Startup/timer writes are blocked until interaction in each shared mount, preventing automatic writes during reconnect/remount; existing schema must first be initialized by owner. Shared views do not permit schema changes or external tool/connection actions. Nonstandard initialization may need an owner-authorized refinement; this is not a guarantee for arbitrary generated scripts. Owner code changes require a fresh offer and acceptance, not silently executing new code for recipients.
+
+Verified so far: three-account real Chromium UI desktop/390px offer/accept, counter state and table-row live propagation, reload, foreign empty list, no code controls, revoke clears iframe. Offline regression initially failed: EventSource did not reliably close promptly on offline. Added explicit offline handler and authenticated heartbeat lease. Source SSE HTTP fixture independently covers revocation, source/code invalidation, logout/disable, Origin/caps/reconnect. Restored production copy migration: all original tables fingerprint-identical, both integrity checks ok; disposable copy removed. Screenshots inspected.
+
+Release gates/results and deployment are recorded separately; this document alone does not claim production shipping.
+
+Final acceptance: test:shared-elements exited0 (36 units; real HTTP ACL/upload races; SSE authorization/invalidation; desktop/mobile three-account browser, offline/reconnect, saved create-then-select startup and rejected automatic insert across refresh). test:blueprints exited0 (130 unit passes/one optional skip, two integrations, complete existing browser stages). Full npm test remains a separate known baseline-failure backlog, not claimed green.
+
+Deployment method: reviewed server delta is only grant/stream routes/init and session-lock fail-closed handling; store delta is atomic refinement CAS, required for concurrent shared state. No unrelated server changes remain. deploy/shared-elements-release.mjs backs up both databases and code, checks zero jobs twice, applies only reviewed files, verifies both public bundles and auth, records hashes; code-only rollback never restores user DB.

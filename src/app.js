@@ -1,3 +1,4 @@
+import {sharedElements} from './shared-elements.js';
 import {buildStatus,buildFailure} from '../build-recovery.mjs';
 import {connectionSettings} from './connection-settings.js';
 import {elementPersistence} from './element-persistence.js';
@@ -822,7 +823,7 @@ function fillOverlay(){
     const b2=document.createElement('button');b2.type='button';b2.textContent='Code bearbeiten';b2.onclick=()=>{overlayMode='code';fillOverlay()};
     const b3=document.createElement('button');b3.type='button';b3.textContent='Versionen';b3.onclick=()=>{overlayMode='versions';fillOverlay()};
     const copy=document.createElement('button');copy.type='button';copy.textContent='Element-Vorlage kopieren';copy.onclick=()=>formsUI.copyElement(m);
-    foot.append(b1,b2,b3,copy);body.append(foot);
+    const share=document.createElement('button');share.type='button';share.textContent='Gemeinsam teilen';share.onclick=()=>sharingUI.offer(m);foot.append(b1,b2,b3,copy,share);body.append(foot);
     if(me?.role==='owner')void renderElementActions(body,m);
   }
 
@@ -1037,6 +1038,7 @@ $('#memorysearch').onchange=renderMemories;
 $('#memoryadd').onsubmit=async e=>{e.preventDefault();const f=e.target;try{await memoryRequest('/save',{content:f.content.value,project:f.project.value});f.reset();await renderMemories()}catch(err){toast(err.message)}};
 async function uiRequest(path,data){const r=await fetch(path,data===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify(data)});const t=await r.json();if(!r.ok)throw Error(t.error||'Anfrage fehlgeschlagen.');return t;}
 function fillSuggestion(text){$('#prompt').value=text;$('#prompt').focus();toast('Vorschlag eingefügt – du entscheidest, ob du ihn sendest.');}
+const sharingUI=sharedElements({request:uiRequest,toast,csrf:()=>csrf,afterClose:()=>render(),beforeOpen:()=>{closeOverlay();views.forEach(v=>v.destroy());views=[];}});
 const formsUI=initFormsUI({request:uiRequest,toast,suggest:fillSuggestion,onCopy:async id=>{if(!await loadFromServer())throw Error('Kopie gespeichert; bitte Chatliste neu laden.');closeOverlay();db.current=id;marked=null;save();render();$('#sidebar').classList.remove('open');$('#mobile').setAttribute('aria-expanded','false');}});
 $('#preferencesbtn').onclick=()=>$('#preferences').showModal();$('#preferencesclose').onclick=()=>$('#preferences').close();
 async function refreshBugs(){const data=await uiRequest('/api/bugs');const list=$('#buglist');list.replaceChildren();if(!data.reports.length)list.textContent='Noch keine Meldungen.';for(const b of data.reports){const row=document.createElement('section');row.className='library-row';const title=document.createElement('strong');title.textContent=b.title;const meta=document.createElement('p');meta.className='small';meta.textContent=b.username+' · '+new Date(b.created_at).toLocaleString()+' · #'+b.id.slice(0,8);const body=document.createElement('p');body.style.whiteSpace='pre-wrap';body.textContent=b.description+'\nErwartet: '+b.expected+(b.conversation_id?'\nChat-ID: '+b.conversation_id:'');const status=document.createElement('select');status.setAttribute('aria-label','Bugstatus');for(const [v,l]of [['open','Offen'],['working','In Arbeit'],['resolved','Behoben']]){const o=document.createElement('option');o.value=v;o.textContent=l;status.append(o)}status.value=b.status;status.disabled=!data.canManage;const note=document.createElement('textarea');note.setAttribute('aria-label','Bearbeitungsnotiz');note.maxLength=2000;note.value=b.resolution;note.readOnly=!data.canManage;row.append(title,meta,body,status,note);if(data.canManage){const save=document.createElement('button');save.textContent='Status speichern';save.onclick=async()=>{try{await uiRequest('/api/bugs/status',{id:b.id,status:status.value,resolution:note.value});toast('Status gespeichert.')}catch(e){toast(e.message)}};row.append(save)}list.append(row)}}
