@@ -1077,7 +1077,7 @@ function blueprintEl(s){
     start.disabled=true;
     try{
       const r=await fetch('/api/blueprints/execute',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify({sessionId:s.id,blueprintId:bp.id,revision:bp.revision,model:buildModel.value})});const t=await r.json();if(!r.ok)throw Error(t.error);
-      s.blueprint=t.blueprint;if(t.job)applyJob(t.job);const currentId=db.current;await loadFromServer();if(db.sessions.some(c=>c.id===currentId))db.current=currentId;renderPreservingScroll();
+      fold.close();s.blueprint=t.blueprint;if(t.job)applyJob(t.job);const currentId=db.current;await loadFromServer();if(db.sessions.some(c=>c.id===currentId))db.current=currentId;renderPreservingScroll();
     }catch(e){start.disabled=false;toast(e.message)}
   };
   const update=document.createElement('button');update.type='button';update.textContent='Gespräch in Plan übernehmen';update.onclick=()=>send('Aktualisiere den Blueprint anhand unserer bisherigen Besprechung.','plan');
