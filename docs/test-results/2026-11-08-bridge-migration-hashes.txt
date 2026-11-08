@@ -1,0 +1,4 @@
+e13a61df4f227c52d3ee912e8f8424adee2c921e22d0ad0f25ae0319679369b4  test/ping-browser.test.mjs
+c6595c57dead4f3837c006855e13a8c20f47c0930de40beb578b06ebd1577512  test/db-crud-browser.test.mjs
+d6ae95888f6e76334f4ad8f05220bbae19174841a638ae128c8882ffffb5ec68  test/run-all.mjs
+da18f6e089e7d84b4e7e824404b3cda7807432f3b5c389d33807fc570d6b0b83  docs/BROWSER-CORE-ACCEPTANCE.md

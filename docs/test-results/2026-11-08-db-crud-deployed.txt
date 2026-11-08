@@ -1,0 +1,3 @@
+PASS 1280: real CRUD bridge, sibling isolation, row quota with unchanged reload, drop/recreate, unchanged artifact and no egress/errors
+PASS 390: real CRUD bridge, sibling isolation, row quota with unchanged reload, drop/recreate, unchanged artifact and no egress/errors
+PASS database CRUD browser source=/opt/form
