@@ -1,5 +1,10 @@
 // Trusted, isolated test entrypoint; never included in the main app.
 import {renderUI} from './renderer.js';
+import {inspectHTML} from './sanitize.js';
+// Only a fixed verdict crosses back; never source values or detached DOM nodes.
+window.preflightVerificationHTML=html=>{
+ try{return inspectHTML(html).removedCount===0;}catch{return false;}
+};
 let current;
 window.mountVerification=data=>{
  current?.destroy();document.body.replaceChildren();

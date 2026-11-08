@@ -1,0 +1,45 @@
+PASS initial animated HTML preflight: five rejected variants, supported SVG/table/input, privacy, legacy compatibility, cleanup
+✔ sandboxed service returns safe specific rejection categories (29387.606209ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 29523.913976
+[build-budget] {"round":1,"finish":"stop","visibleChars":236,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":260,"reasoningChars":0,"usage":{}}
+[job] id=b399328a failed after 2 round(s): invalid-artifact
+[build-budget] {"round":1,"finish":"stop","visibleChars":236,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":247,"reasoningChars":0,"usage":{}}
+[job] id=6084753a user=de50e580 kind=refine dur=11654ms rounds=2 finish=stop/stop chars=483 render=yes fail=invalid-artifact
+✔ real isolated Chromium rejects missing target and corrects once, with scoped durable evidence (24282.799932ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":287,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":287,"reasoningChars":0,"usage":{}}
+[job] id=39e8137f failed after 2 round(s): invalid-artifact
+[build-budget] {"round":1,"finish":"stop","visibleChars":287,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":247,"reasoningChars":0,"usage":{}}
+[job] id=6871c19c user=2b655518 kind=refine dur=10095ms rounds=2 finish=stop/stop chars=534 render=yes fail=invalid-artifact
+✔ initial HTML loss triggers one correction and double failure preserves the existing element (18697.720562ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":247,"reasoningChars":0,"usage":{}}
+✔ valid animated output passes one real browser round (6292.53571ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 49685.505248
+PASS wrong password rejected
+PASS registration and model-free composer gate
+PASS current settings navigation, model add, masked key and Escape
+PASS two visible prose stages before structured chat offer
+PASS ordinary imperative chat cannot build
+PASS explicit approval and real held build before artifact
+PASS real server persistence and reload without duplicate build
+PASS 390px interaction and persisted reload
+PASS approved correction correct: exactly two rounds, durable mobile reload, honest terminal state
+PASS approved correction fail: exactly two rounds, durable mobile reload, honest terminal state
+PASS browser-core: 10 checks; source=/opt/form

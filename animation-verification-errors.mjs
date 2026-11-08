@@ -1,5 +1,6 @@
 // Only app-owned codes/messages cross the verifier boundary, never guest exception text.
 const hints = Object.freeze({
+ HTML: 'Use supported HTML: safe IDs, allowed tags/attributes/input types; no inline handlers or URL values.',
  TARGET: 'Ensure every animation target exists exactly once after startup.',
  STARTUP: 'Fix guest startup errors; use only supported ui APIs and bounded computation.',
  BUDGET: 'Simplify declared clips to fit the total 16-second verification budget.',

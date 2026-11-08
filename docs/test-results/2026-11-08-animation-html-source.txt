@@ -1,0 +1,18 @@
+PASS initial animated HTML preflight: five rejected variants, supported SVG/table/input, privacy, legacy compatibility, cleanup
+✔ bounded numeric versioned animation schema (5.877147ms)
+✔ old artifact remains valid, invalid animation rejected at contract (1.125375ms)
+✔ bounded private verifier protocol (1576.476906ms)
+✔ only trusted correction hints cross the verifier boundary (28.119774ms)
+✔ admission retries bounded; target rejection never retried (258.251279ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2003.687456
+valid clip passed
+missing target
+abort cleanup
+PASS isolated startup + declared clips, missing/duplicate targets, runaway/global escape, abort cleanup, unavailable DB; original workflow NOT certified

@@ -33,6 +33,9 @@ export async function verifyAnimationArtifact(browser,artifact,{root=process.cwd
   });
   page=await context.newPage();if(cancelled)throw Error('cancelled');page.setDefaultTimeout(5000);
   await page.goto(ORIGIN);await page.waitForFunction(()=>typeof window.mountVerification==='function');
+  // Reject initial sanitizer losses before any guest code executes. Existing saved
+  // artifacts remain compatible; only the generation verifier calls this gate.
+  if(!await page.evaluate(html=>window.preflightVerificationHTML(html),artifact.html))throw verificationError('HTML','Initial HTML violates the supported sanitizer policy');
   const mount=async data=>{
    await page.evaluate(d=>window.mountVerification(d),data);
    await page.waitForFunction(()=>document.querySelector('iframe')?.dataset.ready==='true'||window.verification.errors.length);

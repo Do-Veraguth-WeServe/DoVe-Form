@@ -1,0 +1,42 @@
+✔ new missing and mismatched declarations rejected; stored legacy still loads (6.423353ms)
+✔ bounded private verifier protocol (1589.736543ms)
+✔ only trusted correction hints cross the verifier boundary (28.882054ms)
+✔ admission retries bounded; target rejection never retried (259.152068ms)
+✔ new output rejects every reported unsupported variation, existing artifacts remain readable and unchanged (20.466722ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":129,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":129,"reasoningChars":0,"usage":{}}
+✔ real SSE generation corrects unsupported CSS exactly once with policy evidence (120.635557ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":168,"reasoningChars":0,"usage":{}}
+✔ second unsupported output fails honestly with no render and no third attempt (17.2303ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":168,"reasoningChars":0,"usage":{}}
+[job] id=748fc380 failed after 2 round(s): invalid-artifact
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":129,"reasoningChars":0,"usage":{}}
+[job] id=72ed6727 user=b9ee3664 kind=refine dur=30ms rounds=2 finish=stop/stop chars=323 render=yes fail=invalid-artifact
+✔ persisted failed refinement preserves original; corrected build becomes ready (304.056216ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":146,"reasoningChars":0,"usage":{}}
+✔ supported output stays one round (8.932404ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2003.616231
+PASS schema, three independently moving surfaces, completion, cancellation, missing target and reduced motion in real QuickJS iframe bridge
+PASS wrong password rejected
+PASS registration and model-free composer gate
+PASS current settings navigation, model add, masked key and Escape
+PASS two visible prose stages before structured chat offer
+PASS ordinary imperative chat cannot build
+PASS explicit approval and real held build before artifact
+PASS real server persistence and reload without duplicate build
+PASS 390px interaction and persisted reload
+PASS approved correction correct: exactly two rounds, durable mobile reload, honest terminal state
+PASS approved correction fail: exactly two rounds, durable mobile reload, honest terminal state
+PASS browser-core: 10 checks; source=/root/.openclaw/workspace/projects/form

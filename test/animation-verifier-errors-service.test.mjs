@@ -5,6 +5,7 @@ import {requestAnimationVerification as verify} from '../animation-verifier-clie
 const fixture={version:1,html:'<div id="a">Synthetic</div>',css:'',js:'',state:{},animations:{version:1,clips:{fade:{type:'tween',target:'a',duration:200,easing:'linear',frames:[{opacity:1},{opacity:0}]}}}};
 test('sandboxed service returns safe specific rejection categories',async()=>{
  for(const [artifact,code] of [
+  [{...fixture,html:fixture.html+'<div id="title">PRIVATE_SENTINEL</div>'},'HTML'],
   [{...fixture,html:'<div>absent</div>'},'TARGET'],
   [{...fixture,html:fixture.html+fixture.html},'TARGET'],
   [{...fixture,js:'throw Error("PRIVATE_SENTINEL");'},'STARTUP'],
