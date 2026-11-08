@@ -1,0 +1,4 @@
+PASS three-account opt-in UI, desktop/mobile, shared state and rows live, reload, owner-only code, revocation clears sandbox
+PASS release manifest hashes; deployed commit dac5bd669ae7e7ec8ce684b3a11c71eb378c8e8f
+PASS health, anonymous grants denied and exact bundle: https://form.dove-it.net
+PASS health, anonymous grants denied and exact bundle: https://fhisling.tail11036c.ts.net:9444
