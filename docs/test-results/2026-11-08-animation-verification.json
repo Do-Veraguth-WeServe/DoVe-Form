@@ -1,0 +1,41 @@
+{
+  "status": "passed",
+  "scope": "startup-and-declared-clips",
+  "sourceHash": "42511cbb230e5f1d17514095dfdba8a19cf275e2f1fddb390beb1b53e8c9793e",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "clips": [
+    {
+      "clip": 0,
+      "targets": 3,
+      "samples": [
+        {
+          "transform": "matrix(0.87502, -0.104165, 0.112189, 0.942431, 11.2013, 2.71548)",
+          "opacity": "1",
+          "width": 95.58018493652344,
+          "height": 150.73941040039062
+        },
+        {
+          "transform": "matrix(0.820664, 0.168304, -0.186931, 0.911491, 5.56306, 5.09947)",
+          "opacity": "1",
+          "width": 101.89945983886719,
+          "height": 151.87103271484375
+        },
+        {
+          "transform": "matrix(0.749606, -0.245191, 0.28273, 0.864372, -34.4139, 8.45253)",
+          "opacity": "1",
+          "width": 109.8740234375,
+          "height": 151.7230224609375
+        }
+      ],
+      "status": "finished"
+    }
+  ],
+  "limitations": [
+    "No semantic visual-intent certification",
+    "No generated click/persistence workflow certification",
+    "Empty isolated data; no production actions"
+  ]
+}

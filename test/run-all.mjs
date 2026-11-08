@@ -26,6 +26,9 @@ const waitReady = (proc, tag, pattern = /ready/) => new Promise((resolve, reject
 });
 
 step('build (esbuild + bridge hash + wasm)', run('node', ['build.mjs']));
+step('animation schema and budgets',run('node',['--test','test/animation-policy.test.mjs']));
+step('animation stack interaction and persistence recovery',run('node',['test/animation.test.mjs']));
+step('isolated animation startup and declared-clip verifier',run('node',['test/animation-verification.test.mjs']));
 step('private/shared providers, admin users, deletion and browser account isolation',run('node',['test/accounts.test.mjs']));
 step('sidebar scrolling with delete controls',run('node',['test/sidebar-layout.test.mjs']));
 step('provider ACL and public network boundaries',run('node',['--test','test/model-access.test.mjs']));

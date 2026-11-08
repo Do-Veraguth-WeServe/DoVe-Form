@@ -9,7 +9,7 @@ if (!html.includes('</body>')) throw Error('index.html: </body> missing');
 html = html.replace('</body>', '<script type="module" src="/app.js"></script></body>');
 fs.writeFileSync('dist/index.html', html);
 
-await build({ entryPoints: ['src/app.js', 'src/worker.js'], bundle: true, outdir: 'dist', format: 'esm', platform: 'browser', minify: false });
+await build({ entryPoints: ['src/app.js', 'src/worker.js', 'src/animation-verification.js'], bundle: true, outdir: 'dist', format: 'esm', platform: 'browser', minify: false });
 
 // Extract the sandbox bridge function and hash it for the page CSP
 // (the srcdoc iframe inherits the parent CSP, so the trusted bootstrap
