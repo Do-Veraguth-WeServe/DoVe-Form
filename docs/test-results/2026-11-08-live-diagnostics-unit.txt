@@ -1,0 +1,17 @@
+✔ static CSS evidence is scoped, revision-bound, read-only and independent of stored counts (300.423377ms)
+✔ oversized CSS is explicitly unavailable; unchanged source hashes are deterministic (2.38311ms)
+✔ owner/session binding, one-use token and no source leakage (247.641441ms)
+✔ code AND state changes reject in-flight and stored observations (198.504969ms)
+✔ TTL and admission limits bound ephemeral retention (201.128024ms)
+✔ strict projection rejects arbitrary strings, fields, fractions and over-budget geometry (1.015454ms)
+✔ archive metadata cannot forge app-owned verification (237.712563ms)
+✔ no elements yields no diagnostic badge; legacy jobs remain compatible (0.510042ms)
+✔ only bounded static provenance is exposed; model-like fields cannot certify a repair (1.075562ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1038.168919

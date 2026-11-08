@@ -1,0 +1,23 @@
+1280 TRACE click <button type="button" class="icon" aria-label="Element öffnen" title="Element öffnen (Vollbild, Code, Versionen)">↗</button>
+1280 TRACE click <button type="button">Darstellung prüfen</button>
+1280 TRACE click <button type="button" aria-label="Element schliessen">✕</button>
+1280 TRACE overlay close
+1280 TRACE click <button class="send" id="send" aria-label="Nachricht senden">↑</button>
+1280 TRACE click <summary>Prüfgrundlage dieser Antwort</summary>
+overlay diagnostic  [] 0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.waitFor: Timeout 6000ms exceeded.
+Call log:
+  - waiting for locator('#overlay iframe[data-ready=true]') to be visible
+
+    at /root/.openclaw/workspace/projects/form/test/live-diagnostics-browser.mjs:14:131 {
+  log: [
+    "  - waiting for locator('#overlay iframe[data-ready=true]') to be visible"
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.22.2

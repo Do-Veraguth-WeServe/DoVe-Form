@@ -65,6 +65,11 @@ export function bridge(){
     port.onmessage=({data:ops})=>{
       if(!Array.isArray(ops)||ops.length>250)return;
       for(const o of ops){
+        if(o?.op==='observe-layout'&&typeof o.ref==='string'){
+          const root=document.documentElement,walker=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT);
+          let nodes=0,node;while(nodes<600&&(node=walker.nextNode()))if(node.tagName!=='SCRIPT')nodes++;
+          port.postMessage({type:'layout-observation',ref:o.ref,layout:{nodes,width:Math.min(10000,root.clientWidth),height:Math.min(100000,root.scrollHeight),overflowX:root.scrollWidth>root.clientWidth}});continue;
+        }
         if(o?.op==='animate'){startAnimation(o);continue;}
         if(o?.op==='cancel-animation'){const r=animations.get(o.ref);if(r)finish(r,'cancelled');continue;}
         if(o?.op==='stop-animations'){stopAll();continue;}
@@ -105,6 +110,10 @@ export function bridge(){
 
 
 export function renderUI(data,{onState,onSuggest,onError,onWarning=()=>{},onPing,onDb,onAction,onConnection,onInteraction=()=>{}}={}){
+  let runtimeError=false,htmlWarning=false,observationPending=null,destroyed=false;
+  const reportError=onError||(()=>{}),reportWarning=onWarning;
+  onError=text=>{runtimeError=true;reportError(text);};
+  onWarning=text=>{htmlWarning=true;reportWarning(text);};
   const f=document.createElement('iframe');
   f.className='render';
   f.style.visibility='hidden';f.setAttribute('aria-busy','true');
@@ -150,6 +159,10 @@ export function renderUI(data,{onState,onSuggest,onError,onWarning=()=>{},onPing
       }
     };
     port.onmessage=({data:d})=>{
+      if(d?.type==='layout-observation'&&observationPending?.ref===d.ref){
+        const pending=observationPending;observationPending=null;clearTimeout(pending.timer);
+        pending.resolve({runtimeError,htmlWarning,layout:d.layout});return;
+      }
       if(d?.type==='applied'){f.style.visibility='';f.removeAttribute('aria-busy');f.dataset.ready='true';}
       if(d?.type==='scroll-stop')cancelFeedMomentum();
       if(d?.type==='scroll-release'&&Number.isFinite(d.velocity)&&Math.abs(d.velocity)<=2.5)startFeedMomentum(f,d.velocity);
@@ -172,6 +185,7 @@ export function renderUI(data,{onState,onSuggest,onError,onWarning=()=>{},onPing
       if(d.type!=='ops'||!Array.isArray(d.ops)||d.ops.length>250){pumpAsync();return;}
       const dom=[];
       for(const o of d.ops){
+        if(o.op==='observe-layout')continue; // app-only; never a guest operation
         if(o.op==='animate'){
           if(!/^n[0-9]{1,8}$/.test(o.ref))continue;
           if(typeof o.name!=='string'||!Object.hasOwn(declarations?.clips||{},o.name)){onError?.('Animation nicht verfügbar: Im gespeicherten Element fehlt die Bewegungsdefinition. Bitte mit KI überarbeiten.');deliver('__animation:'+o.ref,'animation',{ok:false,status:'error',error:'Undeclared animation'});}
@@ -244,7 +258,17 @@ export function renderUI(data,{onState,onSuggest,onError,onWarning=()=>{},onPing
   f.srcdoc='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src &apos;none&apos;; script-src &apos;nonce-'+nonce+'&apos;; style-src &apos;unsafe-inline&apos;; connect-src &apos;none&apos;; img-src &apos;none&apos;; form-action &apos;none&apos;; base-uri &apos;none&apos;; frame-src &apos;none&apos;; object-src &apos;none&apos;"><style>*{box-sizing:border-box}html,body{margin:0;background:#141718;color:#e9e9de;font:15px/1.5 system-ui;overflow-x:hidden}body{padding:4px 0 20px}button,input,select{font:inherit;accent-color:#d4ef8b}button{cursor:pointer}svg{max-width:100%}'+css+'</style></head><body>'+html+'<script nonce="'+nonce+'" data-channel="'+channel+'">('+bridge.toString()+')();</scr'+'ipt></body></html>';
   return {
     element:f,
+    inspect(){
+      if(destroyed||!port||!f.isConnected||document.hidden||!f.dataset.ready||observationPending)return Promise.reject(Error('Darstellung noch nicht verfügbar.'));
+      return new Promise((resolve,reject)=>{
+        const ref=crypto.randomUUID();
+        const timer=setTimeout(()=>{observationPending=null;reject(Error('Darstellungsprüfung abgelaufen.'));},1500);
+        observationPending={ref,timer,resolve,reject};port.postMessage([{op:'observe-layout',ref}]);
+      });
+    },
     destroy(){
+      destroyed=true;
+      if(observationPending){clearTimeout(observationPending.timer);observationPending.reject(Error('Darstellung geschlossen.'));observationPending=null;}
       cancelFeedMomentum(f);
       removeEventListener('message',listener);
       clearTimeout(timer);

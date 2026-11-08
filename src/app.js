@@ -1,4 +1,5 @@
 import {rememberSelection,restoreSelection} from './session-selection.js';
+import {diagnosticButton} from './live-diagnostics.js';
 import {sessionEntry} from './session-entry.js';
 import {settingsLayout} from './settings-layout.js';
 import {sharedElements} from './shared-elements.js';
@@ -876,7 +877,9 @@ function fillOverlay(){
     const b2=document.createElement('button');b2.type='button';b2.textContent='Code bearbeiten';b2.onclick=()=>{overlayMode='code';fillOverlay()};
     const b3=document.createElement('button');b3.type='button';b3.textContent='Versionen';b3.onclick=()=>{overlayMode='versions';fillOverlay()};
     const copy=document.createElement('button');copy.type='button';copy.textContent='Element-Vorlage kopieren';copy.onclick=()=>formsUI.copyElement(m);
-    const share=document.createElement('button');share.type='button';share.textContent='Gemeinsam teilen';share.onclick=()=>sharingUI.offer(m);foot.append(b1,b2,b3,copy,share);body.append(foot);
+    const share=document.createElement('button');share.type='button';share.textContent='Gemeinsam teilen';share.onclick=()=>sharingUI.offer(m);foot.append(b1,b2,b3,copy,share);
+    if(overlayView.inspect)foot.append(diagnosticButton({message:m,conversationId:db.current,view:overlayView,request:uiRequest,note}));
+    body.append(foot);
     if(me?.role==='owner')void renderElementActions(body,m);
   }
 

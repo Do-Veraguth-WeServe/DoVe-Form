@@ -1,0 +1,1 @@
+PASS HTTP auth, Origin, CSRF, JSON/size, owner isolation, strict projection, one-use, stale revision, logout/body race.

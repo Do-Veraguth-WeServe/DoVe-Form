@@ -1,0 +1,1 @@
+PASS real private-channel snapshot, bounded/redacted fields, duplicate inspection, runtime error redaction, cancellation on teardown and destroyed denial

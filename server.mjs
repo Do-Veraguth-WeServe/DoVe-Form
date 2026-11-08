@@ -1,4 +1,5 @@
 import {Bugs} from './bugs.mjs';
+import {LiveDiagnostics} from './live-diagnostics.mjs';
 import {saveOwnedElement} from './owner-save.mjs';
 import {replyEvidence} from './reply-evidence.mjs';
 import {elementEvidence,ELEMENT_EVIDENCE_POLICY} from './element-context.mjs';
@@ -48,6 +49,7 @@ if (store.interruptedOnStart > 0)
 const forms=new Forms(store);
 const formSharing=new FormSharing(store,forms);
 const bugs=new Bugs(store);
+const liveDiagnostics=new LiveDiagnostics(store);
 const CHAT_TOTAL_MS = Number(process.env.FORM3_CHAT_TIMEOUT_MS || 0); // total job budget across BOTH rounds
 const mcp=new MCPConnections(path.join(DATA_DIR,'mcp.json'));
 const memory=new MemoryStore(store);
@@ -196,6 +198,21 @@ const server = http.createServer(async (req, res) => {
     if (req.headers.origin !== undefined && !ORIGINS.includes(req.headers.origin)) return reply(res, 403, { error: 'Ungültiger Ursprung.' });
     if (req.method !== 'DELETE' && req.headers['content-type'] !== 'application/json') return reply(res, 415, { error: 'JSON erwartet.' });
     if (req.headers['x-form-csrf'] !== sess.csrf) return reply(res, 403, { error: 'CSRF-Schutz fehlgeschlagen.' });
+  }
+
+  // Owner-only diagnostic transport; client observations never certify visual truth.
+  if(pathname.startsWith('/api/elements/diagnostics/')){
+    res.setHeader('Cache-Control','no-store');
+    if(req.method!=='POST')return reply(res,405,{error:'Methode nicht erlaubt.'});
+    const operation=pathname.slice('/api/elements/diagnostics/'.length);
+    if(!['start','record'].includes(operation))return reply(res,404,{error:'Nicht gefunden.'});
+    if(!rate('element-diagnostics:'+user.id,30,60000))return reply(res,429,{error:'Bitte kurz warten.'});
+    try{
+      const d=JSON.parse(await readBody(req,2048));
+      const fresh=store.getSession(cookieToken(req));
+      if(!fresh||fresh.user.id!==user.id||fresh.csrf!==sess.csrf)return reply(res,401,{error:'Anmeldung erforderlich.'});
+      return reply(res,200,liveDiagnostics[operation](user.id,sess.csrf,d));
+    }catch(e){return reply(res,[404,409,429].includes(e.status)?e.status:400,{error:[404,409,429].includes(e.status)?e.message:'Ungültige Beobachtung.'});}
   }
 
   // Shared-data identity always comes from the authenticated session and grant.
@@ -688,6 +705,7 @@ const server = http.createServer(async (req, res) => {
   const history = store.getHistory(d.sessionId);
   const states = store.getStates(d.sessionId);
   const evidence=elementEvidence(store,elementDB,user.id,d.sessionId,d.refineTarget?.id||null);
+  for(const element of evidence.elements){const observation=liveDiagnostics.read(user.id,sess.csrf,d.sessionId,element.id);if(observation)element.browserObservation=observation;}
 
   // persist the user message now (server is the source of truth)
   let userMessageId;

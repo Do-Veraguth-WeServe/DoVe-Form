@@ -34,6 +34,10 @@ step('initial static-only HTML preflight',run('node',['test/html-preflight.mjs']
 step('HTML removal diagnostics (bounded reasons, trusted desktop/mobile feedback)',run('node',['test/html-diagnostics.test.mjs']));
 step('dynamic namespace-aware HTML diagnostics',run('node',['test/dynamic-html-diagnostics.mjs']));
 step('scoped diagnostic chat browser',run('node',['test/element-diagnostics-browser.mjs']));
+step('bounded live diagnostics transport',run('node',['--test','test/live-diagnostics.test.mjs']));
+step('live diagnostic private-channel lifecycle',run('node',['test/live-diagnostics-renderer.mjs']));
+step('live diagnostics HTTP boundaries',run('node',['test/live-diagnostics-http.mjs']));
+step('explicit owner browser observation and chat provenance',run('node',['test/live-diagnostics-browser.mjs']));
 step('contextual planning offer browser',run('node',['test/guided-planning.test.mjs']));
 step('account-scoped conversation selection',run('node',['--test','test/session-selection.test.mjs']));
 step('DB-dependent Element initialization and reload',run('node',['test/db-element-lifecycle.test.mjs']));
