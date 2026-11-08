@@ -182,7 +182,9 @@ async function loadFromServer(){
     if(!r.ok)return false;
     const data=await r.json();
     stopElementSaves();
+    const selected=db.current;
     db=fromServer(data);
+    if(db.sessions.some(s=>s.id===selected))db.current=selected;
     if(!current()&&db.sessions.length)db.current=db.sessions[0].id;
     save();
     return true;
@@ -299,13 +301,14 @@ function applyJob(job,opts){
   if(job?.blueprint){const s=db.sessions.find(s=>s.id===job.conversationId);if(s&&(!s.blueprint||s.blueprint.revision<=job.blueprint.revision))s.blueprint=job.blueprint;}
   if(!job||!job.id)return;
   if(job.kind==='action')return;
-  if(job.kind==='plan'&&ACTIVE_JOB.includes(job.state)){const b=document.querySelector('.blueprint-execute');if(b)b.disabled=true;}
+  if(job.conversationId===db.current&&job.kind==='plan'&&ACTIVE_JOB.includes(job.state)){const b=document.querySelector('.blueprint-execute');if(b)b.disabled=true;}
   const rerender=opts?opts.rerender!==false:true;
   const prev=jobs.get(job.id);
   if(prev&&Number(prev.rev)===Number(job.rev)&&typeof job.prose==='string')prev.prose=job.prose; // prose checkpoints do not increment the state revision
   if(prev&&Number(prev.rev)>=Number(job.rev)&&prev.state!=='queued'&&job.state!=='ready')return; // stale event
   const wasActive=prev&&ACTIVE_JOB.includes(prev.state);
   jobs.set(job.id,job);
+  if(job.conversationId!==db.current)return; // never bind a background turn to another chat
   if(job.state!=='ready'){
     if(!prev){
       // first sighting mid-turn: bind the live view in place — no re-render
@@ -423,16 +426,16 @@ function connectJobs(){
 }
 function disconnectJobs(){try{jobStream&&jobStream.close()}catch{}jobStream=null;jobs=new Map()}
 // (sketchEl removed: live phases are the growing ⌑ wireframe + construction site)
-function busy(on){$('#stop').classList.toggle('hidden',!on)}
+function busy(){const active=[...pending].some(r=>r.conversationId===db.current)||[...jobs.values()].some(j=>j.conversationId===db.current&&['chat','plan'].includes(j.kind)&&ACTIVE_JOB.includes(j.state));$('#stop').classList.toggle('hidden',!active)}
 // NOTE: the send button stays visible while turns run — detached generation
 // allows further messages before an earlier answer finishes.
-async function stopAll(){await stop()}
 async function stop(){
-  if(!pending.size)return;
-  const jobs=[...pending].map(r=>r.jobId).filter(Boolean);
-  for(const r of pending)r.controller.abort(); // detach viewers only
-  pending=new Set();busy(false);
-  if(jobs.length){for(const id of jobs)await jobAction('cancel',id)} // the real stop: cancels the server jobs + provider calls
+  const requests=[...pending].filter(r=>r.conversationId===db.current);
+  const ids=new Set([...requests.map(r=>r.jobId),...[...jobs.values()].filter(j=>j.conversationId===db.current&&['chat','plan'].includes(j.kind)&&ACTIVE_JOB.includes(j.state)).map(j=>j.id)].filter(Boolean));
+  if(!requests.length&&!ids.size)return;
+  for(const r of requests){pending.delete(r);liveTurns.delete(r);r.controller.abort();} // detach only this conversation
+  busy();
+  if(ids.size){for(const id of ids)await jobAction('cancel',id)} // the real stop: cancels the server jobs + provider calls
   else toast('Antwort gestoppt.');
   await syncFromServer();
 }
@@ -452,7 +455,6 @@ async function deleteChat(s){
   }catch(e){toast(e.message||'Chat konnte nicht gelöscht werden.');}
 }
 async function newSession(){
-  if(pending.size)await stopAll();
   closeOverlay();
   if(db.sessions.length>=40)return toast('Maximal 40 Gedankengänge');
   try{
@@ -526,7 +528,7 @@ function render(){  views.forEach(v=>v.destroy());views=[];
   $('#sessions').replaceChildren();
   for(const s of db.sessions){
     const row=document.createElement('div');row.className='session-row';row.dataset.sid=s.id;
-    const b=document.createElement('button');b.className='session-open';b.textContent=s.title;b.setAttribute('aria-current',s.id===db.current);b.onclick=async()=>{await stop();closeOverlay();db.current=s.id;marked=null;save();render();$('#sidebar').classList.remove('open')};
+    const b=document.createElement('button');b.className='session-open';b.textContent=s.title;b.setAttribute('aria-current',s.id===db.current);b.onclick=()=>{closeOverlay();db.current=s.id;marked=null;save();render();$('#sidebar').classList.remove('open')};
     const del=document.createElement('button');del.className='session-delete';del.type='button';del.textContent='×';del.setAttribute('aria-label','Chat löschen: '+s.title);del.title='Chat löschen';del.onclick=()=>deleteChat(s);
     row.append(b,del);$('#sessions').append(row);
   }
@@ -540,6 +542,7 @@ function render(){  views.forEach(v=>v.destroy());views=[];
     if(visibleStart>0){const h=document.createElement('p');h.className='notice';h.textContent='Ältere Nachrichten ausgeblendet.';feed.append(h)}
     for(const entry of elementTimeline(s.messages,[...jobs.values()].filter(j=>j.conversationId===s.id)).slice(visibleStart)){
       const m=entry.message;
+      if([...pending].some(r=>r.conversationId===s.id&&jobs.get(r.jobId)?.messageId===m.id))continue; // live relay owns this placeholder
       const article=document.createElement('article');article.className='message '+(m.role==='user'?'user':'assistant');article.dataset.mid=m.id;
       if(m.role==='user'){const b=document.createElement('div');b.className='bubble';b.textContent=m.text;article.append(b)}
       else{
@@ -601,13 +604,14 @@ function render(){  views.forEach(v=>v.destroy());views=[];
     }
   }
   if(s?.blueprint)feed.append(blueprintEl(s));
-  for(const article of liveTurns.values())if(!article.isConnected)feed.append(article);
+  for(const [request,article] of liveTurns)if(request.conversationId===s?.id&&!article.isConnected)feed.append(article);
   feed.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>send(b.dataset.p));
   const add=$('#emptyadd');if(add)add.onclick=openSettings;
   renderElementList();
   renderQuickbar();
   renderChip();
   updateComposer();
+  busy();
   if($('#overlay').open){views.forEach(v=>v.destroy());views=[];}
 }
 
