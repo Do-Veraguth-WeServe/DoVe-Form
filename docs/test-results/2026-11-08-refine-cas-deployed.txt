@@ -1,0 +1,18 @@
+✔ completion rejects state changed after early hash check (226.520109ms)
+✔ completion rejects code changed after early hash check (196.216604ms)
+✔ completion rejects actions changed after early hash check (199.110766ms)
+✔ completion holds writer lock across hash read and replacement (263.350502ms)
+✔ cancelled completion never invokes apply (136.92799ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":104,"reasoningChars":0,"usage":{}}
+[job] id=c100956d user=bb564239 kind=refine dur=3989ms rounds=1 finish=stop chars=104 render=yes fail=-
+[build-budget] {"round":1,"finish":"stop","visibleChars":104,"reasoningChars":0,"usage":{}}
+[job] failed: 06884a78 Modellaufruf fehlgeschlagen: Das Element wurde während der Aktualisierung geändert — erneut versuchen.
+✔ runner turns the late transactional conflict into failed, never ready (8319.699462ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9766.292083

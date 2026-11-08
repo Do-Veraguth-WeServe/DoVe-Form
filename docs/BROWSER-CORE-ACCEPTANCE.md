@@ -60,3 +60,16 @@ This is acceptance migration only, not a runtime bug fix or a visual-animation r
 
 
 Verified: both fixtures pass desktop/mobile against source AND installed /opt/form modules (eight viewport runs). Existing unit suite passes 24 tests with one optional real-ping skip. Syntax/diff checks pass. Only tests/docs are synchronized; no runtime release, restart, configuration or production account/data/artifact changes. Initial ping fixture failure and all passing results retained as 2026-11-08-ping-*, db-crud-* and bridge-units.txt. All owned child processes and temporary data directories are cleaned. Test-source hashes are retained with the release logs. No full-suite pass or resolved-report claim.
+
+
+## Approval-bound in-place refinement — 2026-11-08
+
+Legacy6c is now covered by test/refinement-browser.test.mjs through the current UI: mark an existing synthetic Element, ordinary chat, contextual planning offer, separate plan and explicit build approval. Desktop1280 and mobile390 assert that chat/planning cannot mutate the Element or start a build. A genuinely held local provider response proves the original remains available while the durable refinement job targets the original message. Completion must replace that same Element exactly once, preserve state value7, visibly change its computed heading color, archive exactly one version and survive reload without a second provider request. Server-backed version restore must recover the original artifact. Browser page errors and external requests must remain empty.
+
+The old no-new-assistant-message assertion is not copied blindly: the current explicit chat/plan/build contract deliberately persists discussion and approval anchors. The preserved invariant is exactly one rendered Element with the original message ID, not the obsolete implicit-refinement conversation length. The legacy suite remains intact. Existing six refinement-cas tests additionally check late state/code/action conflicts, writer locking, cancellation and failed-not-ready runner semantics; both gates are now registered in run-all.
+
+This slice changes tests/docs only, not application behavior, production accounts/data or user-generated products. Local mock credentials are synthetic; no provider spend. Full npm-test and remaining legacy7b–7e,8–9,11/13 reconciliation remain open. Reports #a3daf406 and #e89344ad retain their unresolved status/reasons. Four initial CodeMode syntax errors dispatched no tools; an intermediate new test source had newline encoding corrected before its first syntax/test execution. No failing application assertion was removed. No new visual-animation certification is claimed.
+
+Verified: browser fixture passes desktop1280/mobile390 against source and installed /opt/form modules (four viewport runs); all six CAS regressions pass. Syntax and diff checks pass. Test/docs-only synchronization, no application restart or production data changes. Logs retained as 2026-11-08-refine-{source,deployed,cas}.txt; source hashes retained separately. All fixture processes/data cleaned.
+
+Installed CAS source was initially absent; synchronization stopped at cmp before any commit. Installed the existing tracked test, then all six CAS tests passed against installed modules too; no application dependency was changed. Repeated file comparisons pass.
