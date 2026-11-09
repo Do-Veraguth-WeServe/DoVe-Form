@@ -6,7 +6,7 @@ Report 6911dd6f is NOT fully resolved. This slice adds independent Form library 
 
 ## Copy semantics
 
-- In Forms choose **Kopie anbieten**, enter the exact recipient username and confirm. **Form-Zustand kopieren** on a custom Form in chat captures its persisted state instead of library defaults. The originating Form must still exist in the owner library.
+- In the Form library choose **Teilen**, enter the exact recipient username and confirm. The originating Form must still exist in the owner library. (Until 2026-11-09 the chat additionally offered Form-Zustand kopieren; that chat control was removed on request — sharing lives in the library only. The server-side state-offer API remains covered by tests.)
 - The recipient explicitly accepts in Forms. A fresh recipient-owned, initially disabled Form is created; inspect/edit/activate it. Repeated acceptance returns the same ID.
 - Offers can be declined/withdrawn before acceptance. Accepted independent copies cannot be recalled; source edits/deletion do not affect them. This is NOT a revocable shared-data grant.
 - Snapshots contain only definition and validated template/state. No conversations, history, tables, provider keys or linked tool capabilities transfer. Declarative actions are stripped. Existing sandbox restrictions remain.

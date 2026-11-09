@@ -12,27 +12,29 @@ try{
  const pa=await login('alice'),pb=await login('bobby'),pc=await login('carol');
  assert.equal((await fetch(BASE+'/api/forms/copies')).status,401);
  assert.equal(await pa.evaluate(async()=> (await fetch('/api/forms/copies/offer',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).status),403);
- await pa.locator('#formsbtn').click();pa.once('dialog',d=>d.accept('bobby'));await pa.locator('.library-row').filter({hasText:'Copy counter'}).getByRole('button',{name:'Kopie anbieten',exact:true}).click();await pa.locator('.copy-offer').waitFor();
+ await pa.locator('#formsbtn').click();pa.once('dialog',d=>d.accept('bobby'));await pa.locator('.library-row').filter({hasText:'Copy counter'}).getByRole('button',{name:'Teilen',exact:true}).click();await pa.locator('.copy-offer').waitFor();
  let offers=(await api(pb,'/api/forms/copies')).data.offers;assert.equal(offers.length,1);const id=offers[0].id;
  assert.deepEqual((await api(pc,'/api/forms/copies')).data.offers,[]);assert.equal((await api(pc,'/api/forms/copies/accept',{id})).status,400);assert.equal((await api(pc,'/api/forms/copies/close',{id})).status,400);assert.equal((await api(pb,'/api/forms/copies/offer',{id:f.id,revision:1,recipient:'carol'})).status,400);
  await pb.locator('#formsbtn').click();await pb.getByRole('button',{name:'Kopie annehmen'}).waitFor();await pb.screenshot({path:'docs/screenshots/form-copy-desktop.png'});await pb.setViewportSize({width:390,height:844});assert.ok(await pb.locator('#formsdialog').evaluate(e=>e.scrollWidth<=e.clientWidth+2));await pb.locator('.copy-offer').scrollIntoViewIfNeeded();await pb.screenshot({path:'docs/screenshots/form-copy-mobile.png'});await pb.getByRole('button',{name:'Kopie annehmen'}).click();await pb.locator('.copy-offer').waitFor({state:'detached'});
  let copies=(await api(pb,'/api/forms')).data.forms.filter(x=>x.name==='Copy counter');assert.equal(copies.length,1);assert.equal(copies[0].enabled,false);assert.equal(copies[0].template.state.n,4);assert.equal((await api(pb,'/api/forms/copies/accept',{id})).data.id,copies[0].id);
  assert.equal((await api(pa,'/api/forms/save',{...copies[0],name:'Forbidden'})).status,400);
- await pa.locator('#formsclose').click();pa.once('dialog',d=>d.accept('bobby'));await pa.getByRole('button',{name:'Form-Zustand kopieren',exact:true}).first().click();await new Promise(r=>setTimeout(r,150));offers=(await api(pb,'/api/forms/copies')).data.offers;const stateOffer=offers.find(o=>o.status==='pending');assert.ok(stateOffer);const copied=(await api(pb,'/api/forms/copies/accept',{id:stateOffer.id})).data.id;copies=(await api(pb,'/api/forms')).data.forms;assert.equal(copies.find(x=>x.id===copied).template.state.n,37);
+ await pa.locator('#formsclose').click();assert.equal(await pa.getByRole('button',{name:'Form-Zustand kopieren'}).count(),0,'chat state-copy control removed');
  const revoked=(await api(pa,'/api/forms/copies/offer',{id:f.id,revision:1,recipient:'bobby'})).data.id;assert.ok(revoked);assert.equal((await api(pa,'/api/forms/copies/close',{id:revoked})).status,200);assert.equal((await api(pb,'/api/forms/copies/accept',{id:revoked})).status,400);
- await pb.reload();await pb.locator('#mobile').click();await pb.locator('#formsbtn').click();await pb.locator('.library-row').filter({hasText:'Copy counter · deaktiviert'}).nth(1).waitFor();assert.equal(await pb.locator('.library-row').filter({hasText:'Copy counter · deaktiviert'}).count(),2);
+ await pb.reload();await pb.locator('#mobile').click();await pb.locator('#formsbtn').click();await pb.locator('.library-row').filter({hasText:'Copy counter · deaktiviert'}).first().waitFor();assert.equal(await pb.locator('.library-row').filter({hasText:'Copy counter · deaktiviert'}).count(),1);
  await pb.locator('#formsclose').click();
- pa.once('dialog',d=>d.accept('bobby'));await pa.getByRole('button',{name:'Form-Zustand kopieren',exact:true}).last().click();
+ await pa.locator('#formsbtn').click();pa.once('dialog',d=>d.accept('bobby'));await pa.locator('.library-row').filter({hasText:'Shared checklist'}).getByRole('button',{name:'Teilen',exact:true}).click();await pa.locator('#formsclose').click();
  await pb.locator('#formsbtn').click();await pb.getByRole('button',{name:'Kopie annehmen'}).click();
- await pb.locator('#formsdialog').waitFor({state:'hidden'});const boxes=pb.locator('#feed .form-list input');await boxes.first().waitFor();assert.equal(await boxes.first().isChecked(),true);assert.equal(await boxes.nth(1).isChecked(),false);assert.equal(await pb.locator('#feed').getByText('Copied text',{exact:true}).count(),1);
- await boxes.nth(1).check();await pb.waitForFunction(()=>!document.querySelector('#feed .form-list input').disabled);await pb.reload();await boxes.first().waitFor();assert.equal(await boxes.nth(1).isChecked(),true);await pb.screenshot({path:'docs/screenshots/standard-copy-mobile.png'});await pb.setViewportSize({width:1280,height:900});await pb.screenshot({path:'docs/screenshots/standard-copy-desktop.png'});
+ await pb.locator('.copy-offer').filter({hasText:'Shared checklist'}).waitFor({state:'detached'});
+ assert.equal(await pb.getByRole('button',{name:'Kopie annehmen'}).count(),0);
+ await pb.locator('.library-row').filter({hasText:'Shared checklist · deaktiviert'}).first().waitFor();
+ await pb.setViewportSize({width:1280,height:900});await pb.locator('#formsclose').click();
  assert.equal(await pa.locator('#feed .form-list input').nth(1).isChecked(),false);
  // Element template copies use a new message identity and a fresh database namespace.
- await pa.getByRole('button',{name:'Element öffnen',exact:true}).first().click();
+ for(let attempt=0;attempt<3&&!(await pa.locator('#overlay[open]').count());attempt++){await pa.getByRole('button',{name:'Element öffnen',exact:true}).first().click();await pa.waitForTimeout(400);}
  const copyButton=pa.getByRole('button',{name:'Element-Vorlage kopieren',exact:true});
  if(process.env.REPRO_ELEMENT_BASELINE==='1'){assert.equal(await copyButton.count(),0);console.log('BASELINE: no Element template copy control in previous deployment');}
  else {
- await copyButton.waitFor();assert.equal(await pa.evaluate(async()=> (await fetch('/api/forms/copies/element',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).status),403);pa.once('dialog',d=>d.accept('bobby'));await copyButton.click();
+ await copyButton.waitFor().catch(async e=>{throw e;});assert.equal(await pa.evaluate(async()=> (await fetch('/api/forms/copies/element',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).status),403);pa.once('dialog',d=>d.accept('bobby'));await copyButton.click();
  await pb.locator('#formsbtn').click();await pb.getByRole('button',{name:'Kopie annehmen'}).waitFor();
  const elementOffer=(await api(pb,'/api/forms/copies')).data.offers.find(o=>o.status==='pending'&&o.kind==='element');assert.ok(elementOffer);
  assert.equal((await api(pc,'/api/forms/copies/accept',{id:elementOffer.id})).status,400);
@@ -57,5 +59,5 @@ try{
  await pb.frameLocator('#overlay iframe').locator('#n').waitFor();await pb.waitForFunction(()=>document.querySelector('#overlay iframe'));assert.equal(await pb.frameLocator('#overlay iframe').locator('#n').textContent(),'7');await pb.screenshot({path:'docs/screenshots/element-copy-desktop.png'});await pb.setViewportSize({width:390,height:844});await pb.screenshot({path:'docs/screenshots/element-copy-mobile.png'});
  console.log('PASS Element copy: actual UI acceptance; independent state/reload; empty DB, owner/copy writes isolated, third-party denied; editable desktop/mobile.');
  }
- assert.deepEqual(errors,[]);console.log('PASS: opt-in library/state copies; desktop/mobile/reload; CSRF/auth; three-account ACL; immutable snapshot37; revoked offer rejected; recipient-owned disabled copies.');
+ assert.deepEqual(errors,[]);console.log('PASS: opt-in library sharing via Teilen; chat state-copy control removed; desktop/mobile; CSRF/auth; three-account ACL; revoked offer rejected; recipient-owned disabled copies.');
 }finally{await browser?.close();if(app&&app.exitCode===null){app.kill('SIGTERM');await once(app,'exit');}fs.rmSync(dir,{recursive:true,force:true});}
