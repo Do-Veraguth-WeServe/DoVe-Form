@@ -1,0 +1,2 @@
+PASS favorite stable 1280: pin/unpin anchors, draft/frame, failure rollback, duplicate suppression, overlay, persisted reload
+PASS favorite stable 390: pin/unpin anchors, draft/frame, failure rollback, duplicate suppression, overlay, persisted reload

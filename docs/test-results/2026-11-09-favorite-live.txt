@@ -1,0 +1,2 @@
+PASS health, exact bundle, CSP, unauthenticated denial http://127.0.0.1:5177 44704c4672d4c8c7afd74f9a8a6e489fe8cbd886190a96b703ff0b65c69a7305
+PASS health, exact bundle, CSP, unauthenticated denial https://fhisling.tail11036c.ts.net:9444 44704c4672d4c8c7afd74f9a8a6e489fe8cbd886190a96b703ff0b65c69a7305

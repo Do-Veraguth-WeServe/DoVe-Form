@@ -1,0 +1,53 @@
+PASS desktop/mobile: background/repeated/terminal/empty snapshots and unrelated updates after ui.persist preserve frame+draft; selection/overlay invalidate; browser reload initializes once/restores state; scrolling stable; failed save recovers canonical snapshot.
+PASS 1280 named pin persisted, overlay teardown and feed restoration
+PASS 1280 invalid JSON rejected, confirmed edit/reload and server version restore
+PASS 1280 editor injection sanitized on apply/reload, zero external requests or page errors
+PASS 390 named pin persisted, overlay teardown and feed restoration
+PASS 390 invalid JSON rejected, confirmed edit/reload and server version restore
+PASS 390 editor injection sanitized on apply/reload, zero external requests or page errors
+PASS editor lifecycle: source=/root/.openclaw/workspace/projects/form
+PASS 1280 cross-conversation Alpha element: exact owner context/state request, other data unchanged, reload, surface and overflow
+PASS 1280 cross-conversation Beta element: exact owner context/state request, other data unchanged, reload, surface and overflow
+PASS 390 cross-conversation Alpha element: exact owner context/state request, other data unchanged, reload, surface and overflow
+PASS 390 cross-conversation Beta element: exact owner context/state request, other data unchanged, reload, surface and overflow
+PASS mobile menu right, touch open/close
+PASS collection acceptance: /root/.openclaw/workspace/projects/form
+PASS wrong password rejected
+PASS registration and model-free composer gate
+PASS current settings navigation, model add, masked key and Escape
+PASS two visible prose stages before structured chat offer
+PASS ordinary imperative chat cannot build
+PASS concurrent chat completes before held build; desktop/mobile reload retain one identical job
+PASS tab-close build completion without viewer; desktop/mobile reopen one persisted Element, no regeneration
+PASS explicit approval and real held build before artifact
+PASS real server persistence and reload without duplicate build
+PASS 390px interaction and persisted reload
+PASS prose-only 1280: no build, no live iframe remount, unchanged persisted Element and reload
+PASS prose-only 390: no build, no live iframe remount, unchanged persisted Element and reload
+PASS explicit Stop 1280: upstream aborted, durable cancellation, static reduced motion, Element preserved
+PASS explicit Stop 390: upstream aborted, durable cancellation, static reduced motion, Element preserved
+PASS approved correction correct: exactly two rounds, durable mobile reload, honest terminal state
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.screenshot: Element is not attached to the DOM
+Call log:
+  - taking element screenshot
+  - waiting for fonts to load...
+  - fonts loaded
+  - attempting scroll into view action
+    - waiting for element to be stable
+
+    at /root/.openclaw/workspace/projects/form/test/browser-core.test.mjs:211:28 {
+  log: [
+    '  - taking element screenshot',
+    '  - waiting for fonts to load...',
+    '  - fonts loaded',
+    '  - attempting scroll into view action',
+    '    - waiting for element to be stable'
+  ],
+  name: 'Error'
+}
+
+Node.js v24.22.2

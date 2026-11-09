@@ -243,14 +243,24 @@ async function syncRender(m,next){
   if(!await persistence(m).save({render:next}))return false;
   pushVersion(m,m.render);m.render=next;save();render();return true;
 }
-function togglePin(m){
-  const i=db.elements.pins.indexOf(m.id);
-  const pin=i===-1;
-  if(pin)db.elements.pins.push(m.id);else db.elements.pins.splice(i,1);
-  save();
-  fetch('/api/pin',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify({messageId:m.id,pinned:pin})})
-    .then(r=>{if(!r.ok)throw 0})
-    .catch(()=>{if(pin)db.elements.pins.splice(db.elements.pins.indexOf(m.id),1);else db.elements.pins.push(m.id);save();render();toast('Anpinnen fehlgeschlagen.')});
+const pinPending=new Set();
+function refreshPins(m){
+  for(const b of document.querySelectorAll('[data-pin-id]'))if(b.dataset.pinId===m.id){b.disabled=pinPending.has(m.id);b.textContent=isPinned(m)?'★':'☆';b.setAttribute('aria-pressed',String(isPinned(m)));b.setAttribute('aria-label',isPinned(m)?'Element lösen':'Element anpinnen');}
+  renderQuickbar();renderElementList();
+}
+function setPin(m,pin){
+  const st=scrollState();
+  const cached=[...feedCache.values()].filter(c=>c.element.id===m.id&&c.signature===feedSignature(c.message,c.element));
+  db.elements.pins=db.elements.pins.filter(id=>id!==m.id);if(pin)db.elements.pins.push(m.id);
+  for(const c of cached)c.signature=feedSignature(c.message,c.element);
+  save();refreshPins(m);restoreScroll(st);
+}
+async function togglePin(m){
+  if(pinPending.has(m.id))return;
+  const previous=isPinned(m);pinPending.add(m.id);setPin(m,!previous);
+  try{const r=await fetch('/api/pin',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify({messageId:m.id,pinned:!previous})});if(!r.ok)throw Error('pin');}
+  catch{setPin(m,previous);toast('Anpinnen fehlgeschlagen.');}
+  finally{pinPending.delete(m.id);refreshPins(m);}
 }
 function markInfo(){
   if(!marked||marked.sessionId!==db.current)return null;
@@ -615,7 +625,7 @@ function render(){stopEntry();
             pinB.textContent=isPinned(m)?'★':'☆';
             pinB.setAttribute('aria-pressed',String(isPinned(m)));
             pinB.setAttribute('aria-label',isPinned(m)?'Element lösen':'Element anpinnen');
-            pinB.onclick=()=>{togglePin(m);render();if($('#overlay').open)fillOverlay()};
+            pinB.dataset.pinId=m.id;pinB.disabled=pinPending.has(m.id);pinB.onclick=()=>togglePin(m);
             const exp=document.createElement('button');exp.type='button';exp.className='icon';exp.textContent='↗';
             exp.setAttribute('aria-label','Element öffnen');exp.title='Element öffnen (Vollbild, Code, Versionen)';
             exp.onclick=()=>openOverlay(m);
@@ -860,7 +870,7 @@ function fillOverlay(){
   const pin=document.createElement('button');pin.type='button';pin.className='icon';pin.textContent=isPinned(m)?'★':'☆';
   pin.setAttribute('aria-pressed',String(isPinned(m)));
   pin.setAttribute('aria-label',isPinned(m)?'Element lösen':'Element anpinnen');
-  pin.onclick=()=>{togglePin(m);render();fillOverlay()};
+  pin.dataset.pinId=m.id;pin.disabled=pinPending.has(m.id);pin.onclick=()=>togglePin(m);
   const close=document.createElement('button');close.type='button';close.textContent='✕';close.setAttribute('aria-label','Element schliessen');close.onclick=closeOverlay;
   head.append(t,pin,close);if(m.render.settings)head.append(connectionsUI.button(m));
   const body=document.createElement('div');body.className='ovbody';
