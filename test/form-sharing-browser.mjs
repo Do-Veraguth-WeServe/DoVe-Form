@@ -1,3 +1,4 @@
+import {answerDialog} from './dialog-fixture.mjs';
 import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import assert from 'node:assert/strict';import {spawn} from 'node:child_process';import {once} from 'node:events';import {chromium} from 'playwright-core';import {Store} from '../store.mjs';import {Forms} from '../forms.mjs';
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'form-sharing-browser-')),BASE='http://127.0.0.1:4766';let app,browser;
 const store=new Store(dir),a=store.createUser('alice','password123'),b=store.createUser('bobby','password123'),c=store.createUser('carol','password123'),forms=new Forms(store),conv=store.createConversation(a.id);
@@ -12,7 +13,7 @@ try{
  const pa=await login('alice'),pb=await login('bobby'),pc=await login('carol');
  assert.equal((await fetch(BASE+'/api/forms/copies')).status,401);
  assert.equal(await pa.evaluate(async()=> (await fetch('/api/forms/copies/offer',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).status),403);
- await pa.locator('#formsbtn').click();pa.once('dialog',d=>d.accept('bobby'));await pa.locator('.library-row').filter({hasText:'Copy counter'}).getByRole('button',{name:'Teilen',exact:true}).click();await pa.locator('.copy-offer').waitFor();
+ await pa.locator('#formsbtn').click();await pa.locator('.library-row').filter({hasText:'Copy counter'}).getByRole('button',{name:'Teilen',exact:true}).click();await answerDialog(pa,'bobby');await pa.locator('.copy-offer').waitFor();
  let offers=(await api(pb,'/api/forms/copies')).data.offers;assert.equal(offers.length,1);const id=offers[0].id;
  assert.deepEqual((await api(pc,'/api/forms/copies')).data.offers,[]);assert.equal((await api(pc,'/api/forms/copies/accept',{id})).status,400);assert.equal((await api(pc,'/api/forms/copies/close',{id})).status,400);assert.equal((await api(pb,'/api/forms/copies/offer',{id:f.id,revision:1,recipient:'carol'})).status,400);
  await pb.locator('#formsbtn').click();await pb.getByRole('button',{name:'Kopie annehmen'}).waitFor();await pb.screenshot({path:'docs/screenshots/form-copy-desktop.png'});await pb.setViewportSize({width:390,height:844});assert.ok(await pb.locator('#formsdialog').evaluate(e=>e.scrollWidth<=e.clientWidth+2));await pb.locator('.copy-offer').scrollIntoViewIfNeeded();await pb.screenshot({path:'docs/screenshots/form-copy-mobile.png'});await pb.getByRole('button',{name:'Kopie annehmen'}).click();await pb.locator('.copy-offer').waitFor({state:'detached'});
@@ -22,7 +23,7 @@ try{
  const revoked=(await api(pa,'/api/forms/copies/offer',{id:f.id,revision:1,recipient:'bobby'})).data.id;assert.ok(revoked);assert.equal((await api(pa,'/api/forms/copies/close',{id:revoked})).status,200);assert.equal((await api(pb,'/api/forms/copies/accept',{id:revoked})).status,400);
  await pb.reload();await pb.locator('#mobile').click();await pb.locator('#formsbtn').click();await pb.locator('.library-row').filter({hasText:'Copy counter · deaktiviert'}).first().waitFor();assert.equal(await pb.locator('.library-row').filter({hasText:'Copy counter · deaktiviert'}).count(),1);
  await pb.locator('#formsclose').click();
- await pa.locator('#formsbtn').click();pa.once('dialog',d=>d.accept('bobby'));await pa.locator('.library-row').filter({hasText:'Shared checklist'}).getByRole('button',{name:'Teilen',exact:true}).click();await pa.locator('#formsclose').click();
+ await pa.locator('#formsbtn').click();await pa.locator('.library-row').filter({hasText:'Shared checklist'}).getByRole('button',{name:'Teilen',exact:true}).click();await answerDialog(pa,'bobby');await pa.locator('#formsclose').click();
  await pb.locator('#formsbtn').click();await pb.getByRole('button',{name:'Kopie annehmen'}).click();
  await pb.locator('.copy-offer').filter({hasText:'Shared checklist'}).waitFor({state:'detached'});
  assert.equal(await pb.getByRole('button',{name:'Kopie annehmen'}).count(),0);
@@ -34,7 +35,7 @@ try{
  const copyButton=pa.getByRole('button',{name:'Element-Vorlage kopieren',exact:true});
  if(process.env.REPRO_ELEMENT_BASELINE==='1'){assert.equal(await copyButton.count(),0);console.log('BASELINE: no Element template copy control in previous deployment');}
  else {
- await copyButton.waitFor().catch(async e=>{throw e;});assert.equal(await pa.evaluate(async()=> (await fetch('/api/forms/copies/element',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).status),403);pa.once('dialog',d=>d.accept('bobby'));await copyButton.click();
+ await copyButton.waitFor().catch(async e=>{throw e;});assert.equal(await pa.evaluate(async()=> (await fetch('/api/forms/copies/element',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).status),403);await copyButton.click();await answerDialog(pa,'bobby');
  await pb.locator('#formsbtn').click();await pb.getByRole('button',{name:'Kopie annehmen'}).waitFor();
  const elementOffer=(await api(pb,'/api/forms/copies')).data.offers.find(o=>o.status==='pending'&&o.kind==='element');assert.ok(elementOffer);
  assert.equal((await api(pc,'/api/forms/copies/accept',{id:elementOffer.id})).status,400);

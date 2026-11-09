@@ -1,0 +1,5 @@
+idle checkpoint 2026-11-09T17:24:53.693Z
+Scoped atomic app bundle replaced; no process restart; rollback /opt/form/.rollback/20261109-app-dialogs
+SHA256 3b9b5cc5ba3dea92ce08be3b53db0464e7424e10cdc30119d9b0efbc0493a2f4
+PASS live home/CSP/exact bundle/anonymous401/health http://127.0.0.1:5177
+PASS live home/CSP/exact bundle/anonymous401/health https://fhisling.tail11036c.ts.net:9444

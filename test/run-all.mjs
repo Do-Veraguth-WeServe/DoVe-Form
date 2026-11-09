@@ -30,6 +30,8 @@ step('question contract',run('node',['--test','test/question-contract.test.mjs']
 step('direct multi-question answers',run('node',['test/question-flow.test.mjs']));
 step('guided planning metadata',run('node',['--test','test/planning-offer.test.mjs','test/planning-offer-state.test.mjs']));
 step('build (esbuild + bridge hash + wasm)', run('node', ['build.mjs']));
+step('app modal safety',run('node',['test/dialogs-policy.mjs']));
+step('app modal memory desktop/mobile',run('node',['test/dialogs-browser.mjs']));
 step('current-contract browser core (login, settings, approval, streaming, persistence)',run('node',['test/browser-core.test.mjs']));
 step('chat and plan activity transitions, reduced motion and cleanup',run('node',['test/activity.test.mjs']));
 step('favorite scroll and sandbox stability',run('node',['test/favorite-stability.test.mjs']));

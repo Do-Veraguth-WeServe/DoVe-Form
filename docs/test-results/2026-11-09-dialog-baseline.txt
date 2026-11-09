@@ -1,0 +1,1 @@
+REPRODUCED: memory delete opens native browser confirmation

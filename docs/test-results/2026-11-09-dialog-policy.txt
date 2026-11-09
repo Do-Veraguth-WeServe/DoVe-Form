@@ -1,0 +1,2 @@
+PASS external write consent withheld until explicit approval; cancellation sends no grant;
+PASS duplicate fails closed; text-only injection; empty prompt rejected; trimmed input and Enter; Escape null; external close false; no native callsites

@@ -1,0 +1,1 @@
+PASS trusted panel, private creation, secret not echoed, settings persistence, real QuickJS settings callback, desktop/mobile

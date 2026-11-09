@@ -1,0 +1,16 @@
+PASS Element copy: actual UI acceptance; independent state/reload; empty DB, owner/copy writes isolated, third-party denied; editable desktop/mobile.
+PASS: opt-in library sharing via Teilen; chat state-copy control removed; desktop/mobile; CSRF/auth; three-account ACL; revoked offer rejected; recipient-owned disabled copies.
+PASS three-account opt-in UI, desktop/mobile, shared state and rows live, reload, owner-only code, revocation clears sandbox
+PASS shared artifact built
+persisted [{"value":8}]
+[job] failed: cb54478a Modellaufruf fehlgeschlagen: Modell nicht mehr konfiguriert.
+PASS owner/admin user creation; private/shared providers; real model dropdown and artifact interaction/reload; isolation; deletion confirmation/persistence; revocation; key secrecy; private legacy migration
+✔ Form UI configures MCP, plans without tools, explicitly executes blueprint and receives final answer (10776.342824ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11641.968009

@@ -1,0 +1,1 @@
+PASS actual memory deletion: desktop/mobile app modal, cancel/Enter-safe-default/Escape no mutation, focus restored, parent preserved, explicit confirmation deletes, no native dialogs

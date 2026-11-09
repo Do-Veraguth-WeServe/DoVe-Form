@@ -1,3 +1,4 @@
+import {confirmAction} from './dialogs.js';
 import {questionForm} from './question-form.js';
 import {planningOfferUI} from './planning-offer-ui.js';
 import {rememberSelection,restoreSelection} from './session-selection.js';
@@ -474,7 +475,7 @@ async function stop(){
 }
 async function syncFromServer(){if(await loadFromServer())renderPreservingScroll()}
 async function deleteChat(s){
-  if(!confirm('Chat „'+s.title+'“ mit allen Nachrichten und Elementen endgültig löschen?'))return;
+  if(!await confirmAction('Chat „'+s.title+'“ mit allen Nachrichten und Elementen endgültig löschen?'))return;
   try{
     const r=await fetch('/api/conversations/'+s.id,{method:'DELETE',headers:{'X-Form-CSRF':csrf}});
     if(!r.ok)throw Error((await r.json()).error||'Löschen fehlgeschlagen.');
@@ -996,7 +997,7 @@ function renderModelList(){
     if(m.owned){
       const actions=document.createElement('div');actions.className='model-actions';
       if(m.canShare){const share=document.createElement('button');share.textContent=m.shared?'Freigabe beenden':'Für alle teilen';share.setAttribute('aria-label',(m.shared?'Freigabe beenden: ':'Provider teilen: ')+m.label);share.onclick=async()=>{try{const r=await fetch('/api/models/share',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify({id:m.id,shared:!m.shared})});if(!r.ok)throw Error((await r.json()).error);await refreshModels();toast(m.shared?'Freigabe beendet.':'Provider freigegeben.');}catch(e){toast(e.message||'Freigabe fehlgeschlagen.');}};actions.append(share);}
-      const del=document.createElement('button');del.textContent='Löschen';del.setAttribute('aria-label','Modell '+m.label+' löschen');del.onclick=async()=>{if(!confirm('Provider „'+m.label+'“ löschen?'))return;try{const r=await fetch('/api/models/'+m.id,{method:'DELETE',headers:{'X-Form-CSRF':csrf}});if(!r.ok)throw Error((await r.json()).error);await refreshModels();toast('Modell gelöscht.');}catch(e){toast(e.message||'Löschen fehlgeschlagen.');}};actions.append(del);row.append(actions);
+      const del=document.createElement('button');del.textContent='Löschen';del.setAttribute('aria-label','Modell '+m.label+' löschen');del.onclick=async()=>{if(!await confirmAction('Provider „'+m.label+'“ löschen?'))return;try{const r=await fetch('/api/models/'+m.id,{method:'DELETE',headers:{'X-Form-CSRF':csrf}});if(!r.ok)throw Error((await r.json()).error);await refreshModels();toast('Modell gelöscht.');}catch(e){toast(e.message||'Löschen fehlgeschlagen.');}};actions.append(del);row.append(actions);
     }
     box.append(row);
   }
@@ -1075,7 +1076,7 @@ $('#mcpadd').onsubmit=async e=>{e.preventDefault();const f=e.target;try{await mc
 // Tool execution is automatic; the journal remains server-side.
 async function refreshApprovals(){}
 async function httpRequest(route,data){const r=await fetch('/api/http'+route,data===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify(data)});const t=await r.json();if(!r.ok)throw Error(t.error);return t;}
-async function showHTTP(){try{const {connections}=await httpRequest('');const list=$('#httplist');list.replaceChildren();for(const c of connections){const row=document.createElement('section');row.className='notice';const title=document.createElement('p');title.textContent=c.name+' · '+c.method+' '+c.url;const toggle=document.createElement('button');toggle.textContent=c.enabled?'Deaktivieren':'Aktivieren';toggle.onclick=async()=>{try{await httpRequest('/configure',{id:c.id,enabled:!c.enabled});await showHTTP()}catch(e){toast(e.message)}};const del=document.createElement('button');del.textContent='Entfernen';del.onclick=async()=>{if(!confirm('HTTP-Verbindung entfernen?'))return;try{await httpRequest('/remove',{id:c.id});await showHTTP()}catch(e){toast(e.message)}};row.append(title,toggle,del);list.append(row)}if(!$('#httpdialog').open)$('#httpdialog').showModal()}catch(e){toast(e.message)}}
+async function showHTTP(){try{const {connections}=await httpRequest('');const list=$('#httplist');list.replaceChildren();for(const c of connections){const row=document.createElement('section');row.className='notice';const title=document.createElement('p');title.textContent=c.name+' · '+c.method+' '+c.url;const toggle=document.createElement('button');toggle.textContent=c.enabled?'Deaktivieren':'Aktivieren';toggle.onclick=async()=>{try{await httpRequest('/configure',{id:c.id,enabled:!c.enabled});await showHTTP()}catch(e){toast(e.message)}};const del=document.createElement('button');del.textContent='Entfernen';del.onclick=async()=>{if(!await confirmAction('HTTP-Verbindung entfernen?'))return;try{await httpRequest('/remove',{id:c.id});await showHTTP()}catch(e){toast(e.message)}};row.append(title,toggle,del);list.append(row)}if(!$('#httpdialog').open)$('#httpdialog').showModal()}catch(e){toast(e.message)}}
 $('#httpbtn').onclick=()=>{$('#mcpdialog').close();void showHTTP()};$('#httpclose').onclick=()=>$('#httpdialog').close();
 $('#httpadd').onsubmit=async e=>{e.preventDefault();const f=e.target;try{await httpRequest('',{name:f.name.value,url:f.url.value,method:f.method.value,headers:JSON.parse(f.headers.value||'{}')});f.reset();await showHTTP()}catch(err){toast(err.message)}};
 async function runBoundAction(m,name,inputs){
@@ -1105,7 +1106,7 @@ async function renderElementActions(body,m){
 }
 async function memoryRequest(route,data){const r=await fetch('/api/memory'+route,data===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify(data)});const t=await r.json();if(!r.ok)throw Error(t.error);return t;}
 async function showMemory(){try{const data=await memoryRequest('');$('#memoryenabled').checked=data.enabled;await renderMemories();$('#memorydialog').showModal?.()}catch(e){toast(e.message)}}
-async function renderMemories(){try{const data=await memoryRequest('/search',{query:$('#memorysearch').value,limit:50});const list=$('#memorylist');list.replaceChildren();for(const m of data.memories){const row=document.createElement('section');row.className='notice';const text=document.createElement('textarea');text.value=m.content;text.maxLength=4000;text.setAttribute('aria-label','Erinnerung bearbeiten');const save=document.createElement('button');save.textContent='Speichern';save.onclick=async()=>{try{await memoryRequest('/save',{id:m.id,content:text.value,project:m.project});toast('Gespeichert.')}catch(e){toast(e.message)}};const del=document.createElement('button');del.textContent='Löschen';del.onclick=async()=>{if(!confirm('Erinnerung löschen?'))return;try{await memoryRequest('/delete',{id:m.id});await renderMemories()}catch(e){toast(e.message)}};row.append(text,save,del);list.append(row)}}catch(e){toast(e.message)}}
+async function renderMemories(){try{const data=await memoryRequest('/search',{query:$('#memorysearch').value,limit:50});const list=$('#memorylist');list.replaceChildren();for(const m of data.memories){const row=document.createElement('section');row.className='notice';const text=document.createElement('textarea');text.value=m.content;text.maxLength=4000;text.setAttribute('aria-label','Erinnerung bearbeiten');const save=document.createElement('button');save.textContent='Speichern';save.onclick=async()=>{try{await memoryRequest('/save',{id:m.id,content:text.value,project:m.project});toast('Gespeichert.')}catch(e){toast(e.message)}};const del=document.createElement('button');del.textContent='Löschen';del.onclick=async()=>{if(!await confirmAction('Erinnerung löschen?'))return;try{await memoryRequest('/delete',{id:m.id});await renderMemories()}catch(e){toast(e.message)}};row.append(text,save,del);list.append(row)}}catch(e){toast(e.message)}}
 $('#memorybtn').onclick=showMemory;$('#memoryclose').onclick=()=>$('#memorydialog').close();
 $('#memoryenabled').onchange=async e=>{try{await memoryRequest('/enabled',{enabled:e.target.checked})}catch(err){e.target.checked=!e.target.checked;toast(err.message)}};
 $('#memorysearch').onchange=renderMemories;
