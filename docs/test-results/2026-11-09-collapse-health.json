@@ -1,0 +1,18 @@
+[
+  {
+    "base": "http://127.0.0.1:5177",
+    "home": 200,
+    "csp": true,
+    "bundleSHA256": "8361e91cc37a7ef6f7c2a8a2d164f6804e1c83449b21a0e04bd1dfcad8f54bbb",
+    "registration": false,
+    "anonymous": 401
+  },
+  {
+    "base": "https://fhisling.tail11036c.ts.net:9444",
+    "home": 200,
+    "csp": true,
+    "bundleSHA256": "8361e91cc37a7ef6f7c2a8a2d164f6804e1c83449b21a0e04bd1dfcad8f54bbb",
+    "registration": false,
+    "anonymous": 401
+  }
+]

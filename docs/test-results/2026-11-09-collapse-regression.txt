@@ -1,0 +1,19 @@
+PASS auto-open questions; submit collapse; persisted collapse; resolved revision collapsed; keyboard reopen; new questions reopen; reduced motion; mobile
+✔ unanswered questions override optimistic model readiness (3.898681ms)
+✔ resolved questions allow an otherwise ready plan (0.762607ms)
+✔ question count, length, schema and nonempty text are bounded (2.945579ms)
+✔ stored pre-questions format remains readable (0.475957ms)
+✔ structured planner options remain data and block build readiness (5.931094ms)
+✔ 20 questions supported with bounded options, strings remain compatible (3.645664ms)
+✔ ordinary choices persist grouped questions; legacy item choices upgraded (5.36431ms)
+✔ chat blueprint envelope suppresses standalone forms and offers (1.392823ms)
+✔ provider omitted reply wrapper normalizes without accepting executable/missing fields (0.61106ms)
+✔ missing-update claim consistency guard excludes ordinary and negated discussion (2.034005ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 194.593733

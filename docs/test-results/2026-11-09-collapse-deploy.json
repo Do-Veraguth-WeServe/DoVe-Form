@@ -1,0 +1,11 @@
+{
+  "rollback": "/opt/form/.rollback/20261109-blueprint-collapse",
+  "activeJobs": 0,
+  "restart": false,
+  "files": {
+    "src/app.js": "86e5a5ea308b7c1a89a178d6aa173712fde517390e5308abc2285b0743f1873e",
+    "dist/app.js": "8361e91cc37a7ef6f7c2a8a2d164f6804e1c83449b21a0e04bd1dfcad8f54bbb",
+    "test/question-flow.test.mjs": "101f41edd16a08db4b3eee6c3788847031b4bcee8e0d149543ea123a6268498a",
+    "docs/QUESTION-FORMS.md": "66035ee98487463333f73bc6dcd8c788a2efc3101a183e8bc69583ccf6b5b4a4"
+  }
+}
