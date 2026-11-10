@@ -1,0 +1,49 @@
+✔ exact own write advances only DB revision (8.14015ms)
+✔ remote write before or after local commit is not swallowed (0.596503ms)
+✔ missing baseline, failed, malformed, duplicate and reordered acknowledgements stay conservative (0.803751ms)
+✔ receipts capture transaction boundaries, exclude reads and failed writes (39.076618ms)
+✔ published frontend accepts backend receipt, CAS rejects stale state and foreign users (467.96876ms)
+✔ owner snapshot and revision events are authorized inside the delivery lock (10.355839ms)
+✔ no partial batch leaks when one element is unavailable (1.284156ms)
+✔ bounded ids, duplicate rejection and private snapshot ownership (1.69813ms)
+✔ slow readers close without buffering, caps release on close (2.830382ms)
+✔ session expiry and lock errors redact details and free capacity (0.892729ms)
+✔ strict revision contract and separate state/code/database changes (5.531845ms)
+✔ one batched stream, explicit capacity, teardown and stale callbacks (6.107897ms)
+✔ own acknowledged event is not remounted; remote changes fetch fresh snapshot (2.875219ms)
+✔ pending local writes defer remote fetch; settlement fetches latest, never event payload (1.811444ms)
+✔ local operation invalidates a snapshot even when already settled before response (4.330853ms)
+✔ new event during fetch discards response and coalesces to one fresh fetch (1.494914ms)
+✔ stale response cannot apply after offline (0.884139ms)
+✔ stale response cannot apply after invalidated (0.58615ms)
+✔ stale response cannot apply after error (0.921893ms)
+✔ stale response cannot apply after lease (1.734145ms)
+✔ stale response cannot apply after destroy (0.40404ms)
+✔ stale response cannot apply after unmount (0.359093ms)
+✔ malformed or foreign revision batch fails closed [] (0.35216ms)
+✔ malformed or foreign revision batch fails closed [{"id":"foreign","stateRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0","ownerCodeRevision":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","dbRevision":0}] (0.229409ms)
+✔ malformed or foreign revision batch fails closed [{"id":"a","stateRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0","ownerCodeRevision":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","dbRevision":0},{"id":"a","stateRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0","ownerCodeRevision":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","dbRevision":0}] (0.203602ms)
+✔ malformed or foreign revision batch fails closed [{"id":"a","stateRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0","ownerCodeRevision":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","dbRevision":"0"}] (0.184382ms)
+✔ snapshot rejection fails closed foreign (0.789183ms)
+✔ snapshot rejection fails closed malformed (0.306364ms)
+✔ snapshot rejection fails closed network (0.284422ms)
+✔ explicit reconnect permits fresh snapshot, old stream callbacks stay inert (0.799865ms)
+✔ batch membership change during fetch cannot lose outstanding revision (1.070923ms)
+✔ explicit reconnect notifies every mounted view, never on unsolicited revisions (2.962197ms)
+✔ ready drains deferred remote event without redundant canonical fetch (1.103351ms)
+✔ optimistic state invalidation reconciles a return to the old content hash (0.972291ms)
+ℹ tests 34
+ℹ suites 0
+ℹ pass 34
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1116.170107
+PASS initial canonical baseline before guest startup, concurrent DB revision reconciled
+PASS two-tab stream budget, third tab fails visibly and reconnects after slot release
+PASS desktop/mobile conversation navigation tears down old owner and restores canonical DB view
+PASS logout/account switch/relogin closes owner renderers and isolates canonical data
+PASS source deletion invalidates live owner surface without stale iframe
+PASS preload 1280: detached WASM, no early guest, forged ready, one init, interaction, teardown, early failure
+PASS preload 390: detached WASM, no early guest, forged ready, one init, interaction, teardown, early failure

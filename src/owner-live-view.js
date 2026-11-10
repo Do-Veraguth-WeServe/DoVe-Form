@@ -45,7 +45,7 @@ export function ownerLiveView({id,render,getRender,adopt,subscriptions,callbacks
      return result;
     });
    },
-   onError:text=>{if(alive())invalidate(text);},
+   onError:(text,detail)=>{if(!alive())return;if(detail?.fatal===false)callbacks.onError?.(text);else invalidate(text);},
    onReady:()=>{if(!alive())return;clearTimeout(timer);loading.remove();retained?.remove();retained=null;raw.element.style.position='';raw.element.style.inset='';raw.element.style.opacity='';raw.element.inert=false;delete raw.element.dataset.staging;staging=false;element.dataset.ownerStaging='false';subscription?.ready();}
   });
   if(retained){raw.element.dataset.staging='true';raw.element.inert=true;Object.assign(raw.element.style,{position:'absolute',inset:'0 auto auto 0',width:'100%',opacity:'0'});}

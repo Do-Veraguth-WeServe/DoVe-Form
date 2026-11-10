@@ -17,6 +17,7 @@ try{
  console.log('missing target');
  await assert.rejects(verifyAnimationArtifact(browser,{...fixture,html:'<div>missing</div>'}),{verificationCode:'TARGET'});
  await assert.rejects(verifyAnimationArtifact(browser,{...fixture,html:fixture.html+'<div id="a">duplicate</div>'}),{verificationCode:'TARGET'});
+ await assert.rejects(verifyAnimationArtifact(browser,{...fixture,js:'ui.value("a","not an input");'}),{verificationCode:'STARTUP'});
  await assert.rejects(verifyAnimationArtifact(browser,{...fixture,js:'while(true){}'}),{verificationCode:'STARTUP'});
  await assert.rejects(verifyAnimationArtifact(browser,{...fixture,js:'document.body.innerHTML="escape"'}),{verificationCode:'STARTUP'});
  console.log('abort cleanup');

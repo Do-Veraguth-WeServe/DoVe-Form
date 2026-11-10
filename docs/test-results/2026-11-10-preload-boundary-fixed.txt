@@ -1,0 +1,23 @@
+build ok: dist/
+overlay pointer trace 1280 ["Element öffnen (Vollbild, Code, Versionen)"]
+PASS 1280: foreign-account seeded owner cache ignored, own canonical/cache/DOM after login+reload, no auto-import or mutation
+PASS 1280: guest globals, dynamic HTML/SVG, suggestion without submit, opaque parent/network denial, forged resize, masked key/cache/CSRF, persisted state and overflow
+overlay pointer trace 390 ["Element öffnen (Vollbild, Code, Versionen)"]
+PASS 390: foreign-account seeded owner cache ignored, own canonical/cache/DOM after login+reload, no auto-import or mutation
+PASS 390: guest globals, dynamic HTML/SVG, suggestion without submit, opaque parent/network denial, forged resize, masked key/cache/CSRF, persisted state and overflow
+PASS sandbox boundary browser source=/root/.openclaw/workspace/projects/form
+PASS owner loading 1280: initial/engine notice, ready interaction, runaway failure, teardown
+PASS owner loading 390: initial/engine notice, ready interaction, runaway failure, teardown
+valid clip passed
+missing target
+abort cleanup
+PASS isolated startup + declared clips, missing/duplicate targets, runaway/global escape, abort cleanup, unavailable DB; original workflow NOT certified
+PASS pending owner acknowledgement defers remote replacement and resumes fresh CAS writes delta=10
+PASS pending owner acknowledgement defers remote replacement and resumes fresh CAS writes delta=-1
+PASS inert frozen owner handoff during delayed Worker desktop/mobile
+PASS remote code/DB updates desktop/mobile, startup mutation suppression and offline explicit reconnect
+PASS one explicit reconnect recovers all mounted owner views
+PASS own DB callback survives owner revision echo
+PASS real recipient DB writes before/after held owner receipt are reconciled, not swallowed
+PASS overlay DB remote refresh and local callback continuity
+PASS owner state sync and fresh owner write desktop/mobile feed/overlay

@@ -1,0 +1,5 @@
+valid clip passed
+missing target
+abort cleanup
+PASS isolated startup + declared clips, missing/duplicate targets, runaway/global escape, abort cleanup, unavailable DB; original workflow NOT certified
+PASS schema, three independently moving surfaces, completion, cancellation, missing target, desktop/mobile real touch duplicate guard, restored transforms, reduced motion and reload persistence in real QuickJS iframe bridge

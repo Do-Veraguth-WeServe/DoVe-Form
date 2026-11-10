@@ -1,0 +1,28 @@
+{
+  "ok": true,
+  "rollback": "/opt/form/.rollback/20261110-renderer-preload",
+  "restart": false,
+  "files": [
+    {
+      "path": "/opt/form/src/renderer.js",
+      "sha256": "3611dbb62c19eb8c4744e67ea1372ae26265f2eb70a330937948e9d6e9e1ca86"
+    },
+    {
+      "path": "/opt/form/src/owner-live-view.js",
+      "sha256": "2bce4bc8671a846b28b8bc41278d98d348a0216d50dc12a2d4881df5079ec8e8"
+    },
+    {
+      "path": "/opt/form/dist/app.js",
+      "sha256": "ddb416c5904c2b31a713b3866601f6e63f1a30c18584caabd038c5e52d6831a1"
+    },
+    {
+      "path": "/opt/form/dist/animation-verification.js",
+      "sha256": "044bd6dd016023f2b55edaecc3fd21787530c05fe30e715520a49fb6e7fe184c"
+    },
+    {
+      "path": "/opt/form-verifier/dist/animation-verification.js",
+      "sha256": "044bd6dd016023f2b55edaecc3fd21787530c05fe30e715520a49fb6e7fe184c"
+    }
+  ],
+  "proof": "two idle checks; atomic code replacement; Worker/bridge/HTML unchanged"
+}

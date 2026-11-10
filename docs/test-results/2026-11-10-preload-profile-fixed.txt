@@ -1,0 +1,333 @@
+{
+  "kind": "synthetic-loopback-startup-profile",
+  "notes": [
+    "Times include Playwright click dispatch; not a real-user latency SLA.",
+    "Frame-ready marks first DOM application, not all asynchronous database work.",
+    "Parent Resource Timing does not include WASM requests owned by Worker.",
+    "No network emulation; mobile viewport is not mobile CPU/network."
+  ],
+  "results": [
+    {
+      "width": 1280,
+      "label": "login-feed",
+      "toAttachedMs": 257.80000019073486,
+      "toReadyMs": 372.40000009536743,
+      "engineAndBridgeMs": 114.59999990463257,
+      "resources": [
+        {
+          "path": "/api/elements/owner/view",
+          "start": 238.20000004768372,
+          "duration": 5.6000001430511475,
+          "transfer": 709,
+          "body": 409
+        },
+        {
+          "path": "/worker.js",
+          "start": 290,
+          "duration": -27.899999856948853,
+          "transfer": 92674,
+          "body": 92374
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "label": "overlay-0",
+      "toAttachedMs": 102.69999980926514,
+      "toReadyMs": 198.29999995231628,
+      "engineAndBridgeMs": 95.60000014305115,
+      "resources": [
+        {
+          "path": "/api/elements/owner/view",
+          "start": 91.59999990463257,
+          "duration": 6.099999904632568,
+          "transfer": 709,
+          "body": 409
+        },
+        {
+          "path": "/worker.js",
+          "start": 124.59999990463257,
+          "duration": -19,
+          "transfer": 300,
+          "body": 92374
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "label": "feed-return-0",
+      "toAttachedMs": 116.60000014305115,
+      "toReadyMs": 230,
+      "engineAndBridgeMs": 113.39999985694885,
+      "resources": [
+        {
+          "path": "/api/elements/owner/view",
+          "start": 102.20000004768372,
+          "duration": 8.700000047683716,
+          "transfer": 709,
+          "body": 409
+        },
+        {
+          "path": "/worker.js",
+          "start": 144.29999995231628,
+          "duration": -14.599999904632568,
+          "transfer": 300,
+          "body": 92374
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "label": "overlay-1",
+      "toAttachedMs": 88.79999995231628,
+      "toReadyMs": 199.79999995231628,
+      "engineAndBridgeMs": 111,
+      "resources": [
+        {
+          "path": "/api/elements/owner/view",
+          "start": 71.5,
+          "duration": 10.399999856948853,
+          "transfer": 709,
+          "body": 409
+        },
+        {
+          "path": "/worker.js",
+          "start": 115.79999995231628,
+          "duration": -23.799999952316284,
+          "transfer": 300,
+          "body": 92374
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "label": "feed-return-1",
+      "toAttachedMs": 109.5,
+      "toReadyMs": 274.69999980926514,
+      "engineAndBridgeMs": 165.19999980926514,
+      "resources": [
+        {
+          "path": "/api/elements/owner/view",
+          "start": 95.39999985694885,
+          "duration": 7.200000047683716,
+          "transfer": 709,
+          "body": 409
+        },
+        {
+          "path": "/worker.js",
+          "start": 143.09999990463257,
+          "duration": -16.59999990463257,
+          "transfer": 300,
+          "body": 92374
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "label": "overlay-2",
+      "toAttachedMs": 118.09999990463257,
+      "toReadyMs": 224.70000004768372,
+      "engineAndBridgeMs": 106.60000014305115,
+      "resources": [
+        {
+          "path": "/api/elements/owner/view",
+          "start": 101.59999990463257,
+          "duration": 9.100000143051147,
+          "transfer": 709,
+          "body": 409
+        },
+        {
+          "path": "/worker.js",
+          "start": 152.59999990463257,
+          "duration": -14.899999856948853,
+          "transfer": 300,
+          "body": 92374
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "label": "feed-return-2",
+      "toAttachedMs": 76.5,
+      "toReadyMs": 192.5,
+      "engineAndBridgeMs": 116,
+      "resources": [
+        {
+          "path": "/api/elements/owner/view",
+          "start": 65.69999980926514,
+          "duration": 5.700000047683716,
+          "transfer": 709,
+          "body": 409
+        },
+        {
+          "path": "/worker.js",
+          "start": 101.29999995231628,
+          "duration": -20.299999952316284,
+          "transfer": 300,
+          "body": 92374
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "label": "login-feed",
+      "toAttachedMs": 260.89999985694885,
+      "toReadyMs": 395.19999980926514,
+      "engineAndBridgeMs": 134.29999995231628,
+      "resources": [
+        {
+          "path": "/api/elements/owner/view",
+          "start": 229.29999995231628,
+          "duration": 8.700000047683716,
+          "transfer": 709,
+          "body": 409
+        },
+        {
+          "path": "/worker.js",
+          "start": 278.59999990463257,
+          "duration": -13.700000047683716,
+          "transfer": 92674,
+          "body": 92374
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "label": "overlay-0",
+      "toAttachedMs": 117.20000004768372,
+      "toReadyMs": 219.79999995231628,
+      "engineAndBridgeMs": 102.59999990463257,
+      "resources": [
+        {
+          "path": "/api/elements/owner/view",
+          "start": 104,
+          "duration": 6,
+          "transfer": 709,
+          "body": 409
+        },
+        {
+          "path": "/worker.js",
+          "start": 143.29999995231628,
+          "duration": -22.5,
+          "transfer": 300,
+          "body": 92374
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "label": "feed-return-0",
+      "toAttachedMs": 138.39999985694885,
+      "toReadyMs": 248.29999995231628,
+      "engineAndBridgeMs": 109.90000009536743,
+      "resources": [
+        {
+          "path": "/api/elements/owner/view",
+          "start": 114.79999995231628,
+          "duration": 8.799999952316284,
+          "transfer": 709,
+          "body": 409
+        },
+        {
+          "path": "/worker.js",
+          "start": 168,
+          "duration": -31.800000190734863,
+          "transfer": 300,
+          "body": 92374
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "label": "overlay-1",
+      "toAttachedMs": 112.09999990463257,
+      "toReadyMs": 255.20000004768372,
+      "engineAndBridgeMs": 143.10000014305115,
+      "resources": [
+        {
+          "path": "/api/elements/owner/view",
+          "start": 85.20000004768372,
+          "duration": 18.09999990463257,
+          "transfer": 709,
+          "body": 409
+        },
+        {
+          "path": "/worker.js",
+          "start": 145.39999985694885,
+          "duration": -20.5,
+          "transfer": 300,
+          "body": 92374
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "label": "feed-return-1",
+      "toAttachedMs": 120.89999985694885,
+      "toReadyMs": 276.2999999523163,
+      "engineAndBridgeMs": 155.40000009536743,
+      "resources": [
+        {
+          "path": "/api/elements/owner/view",
+          "start": 106.20000004768372,
+          "duration": 7.199999809265137,
+          "transfer": 709,
+          "body": 409
+        },
+        {
+          "path": "/worker.js",
+          "start": 154.5,
+          "duration": -29.40000009536743,
+          "transfer": 300,
+          "body": 92374
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "label": "overlay-2",
+      "toAttachedMs": 165,
+      "toReadyMs": 346.40000009536743,
+      "engineAndBridgeMs": 181.40000009536743,
+      "resources": [
+        {
+          "path": "/api/elements/owner/view",
+          "start": 134.60000014305115,
+          "duration": 12.299999952316284,
+          "transfer": 709,
+          "body": 409
+        },
+        {
+          "path": "/worker.js",
+          "start": 203,
+          "duration": -32.5,
+          "transfer": 300,
+          "body": 92374
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "label": "feed-return-2",
+      "toAttachedMs": 183.59999990463257,
+      "toReadyMs": 301.2000000476837,
+      "engineAndBridgeMs": 117.60000014305115,
+      "resources": [
+        {
+          "path": "/api/elements/owner/view",
+          "start": 159.59999990463257,
+          "duration": 10,
+          "transfer": 709,
+          "body": 409
+        },
+        {
+          "path": "/worker.js",
+          "start": 212.70000004768372,
+          "duration": -14.200000047683716,
+          "transfer": 300,
+          "body": 92374
+        }
+      ]
+    }
+  ]
+}

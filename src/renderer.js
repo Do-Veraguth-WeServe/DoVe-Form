@@ -89,7 +89,7 @@ export function bridge(installScrollInput){
 export function renderUI(data,{onState,onSuggest,onError,onWarning=()=>{},onPing,onDb,onAction,onConnection,onInteraction=()=>{},onReady=()=>{}}={}){
   let runtimeError=false,htmlWarning=false,observationPending=null,destroyed=false;
   const reportError=onError||(()=>{}),reportWarning=onWarning;
-  onError=text=>{runtimeError=true;reportError(text);};
+  onError=(text,detail)=>{runtimeError=true;reportError(text,detail);};
   onWarning=text=>{htmlWarning=true;reportWarning(text);};
   const f=document.createElement('iframe');
   f.className='render';
@@ -106,14 +106,18 @@ export function renderUI(data,{onState,onSuggest,onError,onWarning=()=>{},onPing
   const prepare=prepareAnimation;
   const inspected=inspectHTML(data.html),html=inspected.html,css=safeCSS(data.css);
   if(inspected.removedCount)onWarning('Darstellung eingeschränkt: HTML-Bestandteile wurden aus Sicherheitsgründen entfernt oder angepasst.'+(inspected.diagnostics.some(d=>d.reason==='id-removed')?' Eine Element-ID wurde entfernt; zugehörige Interaktionen können fehlen.':''));
+  // Load app-owned engine bytes concurrently with iframe setup. No artifact
+  // source/state is sent before the opaque frame's validated private handshake.
+  worker=new Worker('/worker.js',{type:'module'});
+  worker.onerror=()=>{if(destroyed||stopped)return;stopped=true;clearTimeout(timer);worker.terminate();onError('Interaktion konnte nicht gestartet werden.');};
+  timer=setTimeout(()=>{if(destroyed||stopped)return;stopped=true;worker.terminate();onError('Interaktions-Engine konnte nicht rechtzeitig geladen werden. Bitte erneut öffnen.');},30000);
   const listener=e=>{
     if(e.source!==f.contentWindow||e.origin!=='null'||e.data?.channel!==channel)return;
     if(e.data.type==='resize')f.style.height=Math.min(2400,Math.max(120,Number(e.data.height)||120))+'px';
-    if(e.data.type!=='ready'||worker)return;
+    if(e.data.type!=='ready'||port||stopped||destroyed)return;
     const ch=new MessageChannel();
     port=ch.port1;
     f.contentWindow.postMessage({channel,scrollParent:!!f.closest('#feed')},'*',[ch.port2]);
-    worker=new Worker('/worker.js',{type:'module'});
     const dispatch=d=>{
       if(!worker||stopped)return;
       if(inflight){if(d.type==='event'&&asyncQ.length<32)asyncQ.push({id:d.id,event:d.event,value:d.value});return;}
@@ -150,7 +154,7 @@ export function renderUI(data,{onState,onSuggest,onError,onWarning=()=>{},onPing
       if(d?.type==='animation-result'&&/^n[0-9]{1,8}$/.test(d.ref)&&['finished','cancelled','error'].includes(d.status))deliver('__animation:'+d.ref,'animation',{ok:d.ok===true,status:d.status,error:typeof d.error==='string'?d.error.slice(0,120):undefined});
       if(d?.type==='event'){onInteraction();dispatch(d);}
       if(d?.type==='html-warning')onWarning('Darstellung eingeschränkt: Dynamische HTML-Bestandteile wurden aus Sicherheitsgründen entfernt oder angepasst.'+(d.idRemoved===true?' Eine Element-ID wurde entfernt; zugehörige Interaktionen können fehlen.':''));
-      if(d?.type==='misuse')onError('Hinweis: ui.value gilt nur für Eingabefelder — dynamische Inhalte gehören in ui.html.');
+      if(d?.type==='misuse')onError('Hinweis: ui.value gilt nur für Eingabefelder — dynamische Inhalte gehören in ui.html.',{fatal:false});
     };
     worker.onmessage=({data:d})=>{
       if(d.type==='engine-ready'){

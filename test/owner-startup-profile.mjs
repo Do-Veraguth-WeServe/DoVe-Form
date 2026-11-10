@@ -25,6 +25,10 @@ try {
   await p.goto('http://127.0.0.1:4788');
   await p.locator('#loginform [name=username]').fill('profilefixture');await p.locator('#loginform [name=password]').fill('password123');
   const collect=async(label,start,surface)=>{
+   // Dialog close is asynchronous; the old destroyed feed iframe may still
+   // match a ready locator until the close event replaces it. Wait for this
+   // transition's observed lifecycle, never reuse the prior frame's readiness.
+   await p.waitForFunction(({start,surface})=>window.startupMarks.some(m=>m.t>=start&&m.surface===surface&&m.phase==='frame-ready'),{start,surface});
    await p.locator('#'+surface+' iframe[data-ready=true]').waitFor();
    const evidence=await p.evaluate(({start,surface})=>({marks:window.startupMarks.filter(m=>m.t>=start&&m.surface===surface),resources:performance.getEntriesByType('resource').filter(e=>e.startTime>=start&&(['/owner/view','/worker.js','/quickjs.wasm'].some(part=>e.name.includes(part)))).map(e=>({path:new URL(e.name).pathname,start:e.startTime-start,duration:e.duration,transfer:e.transferSize,body:e.encodedBodySize}))}),{start,surface});
    const attached=evidence.marks.find(m=>m.phase==='frame-attached'),ready=evidence.marks.find(m=>m.phase==='frame-ready');
