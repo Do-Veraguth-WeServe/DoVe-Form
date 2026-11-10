@@ -1,0 +1,20 @@
+✔ bare, fenced, chunks, malformed, foreign and ordinary JSON (14.928364ms)
+✔ accepted marker is conversation scoped, once-only and transactional (5.332191ms)
+✔ bounded inert offer rejects commands and malformed values (5.198799ms)
+✔ metadata-only fenced and chunked offers do not leak into prose (8.808804ms)
+✔ clear legacy prose offers have fallback but ordinary discussion does not (2.146579ms)
+✔ prompt requires contextual offers and separate explicit build approval (0.952834ms)
+✔ structured planner options remain data and block build readiness (5.101272ms)
+✔ 20 questions supported with bounded options, strings remain compatible (1.518708ms)
+✔ ordinary choices persist grouped questions; legacy item choices upgraded (7.167956ms)
+✔ chat blueprint envelope suppresses standalone forms and offers (0.799107ms)
+✔ provider omitted reply wrapper normalizes without accepting executable/missing fields (0.378642ms)
+✔ missing-update claim consistency guard excludes ordinary and negated discussion (1.65166ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 224.036688

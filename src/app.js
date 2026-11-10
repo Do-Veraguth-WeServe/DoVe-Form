@@ -757,7 +757,7 @@ async function send(text,mode='chat',options={}){
       if(!pending.has(request))return;
       if(event==='prose-chunk'&&typeof data.text==='string'){prose+=data.text.slice(0,4000);live.prose(prose)}
       else if(event==='artifact-start'){live.site(jobStarted)} // Phase 3 beginnt mit dem Artefakt
-      else if(event==='retry')live.note(data.code==='transport'?data.reason:'Ungültiges Artefakt — ein Korrekturversuch läuft …');
+      else if(event==='retry')live.note(data.code==='transport'?data.reason:data.code==='invalid-blueprint'?'Blueprint wird geprüft und einmal korrigiert …':'Ungültiges Artefakt — ein Korrekturversuch läuft …');
       else if(event==='element-job'&&data.job&&data.job.id){jobStarted=data.job;request.jobId=data.job.id;options.onAccepted?.(data.job);live.site(data.job);applyJob(data.job)}
       else if(event==='render'){try{artifact=validateRender(data.render)}catch{errorMsg='Ungültige Antwort der Gegenseite.'}}
       else if(event==='error'){errorMsg=String(data.message||'Antwort fehlgeschlagen.');}

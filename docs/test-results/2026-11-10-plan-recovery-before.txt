@@ -1,0 +1,137 @@
+[job] failed: 5c0b97f0 Modellaufruf fehlgeschlagen: Ungültiger Blueprint. Bitte erneut besprechen.
+✖ malformed planner output receives exactly one validated correction (252.765309ms)
+[job] failed: 020566e0 Modellaufruf fehlgeschlagen: Blueprint-Antwort zu lang. Bitte erneut versuchen.
+✖ truncated planner output receives exactly one validated correction (167.550981ms)
+[job] failed: 98c71365 Modellaufruf fehlgeschlagen: Ungültige Frage.
+✖ questions planner output receives exactly one validated correction (142.290716ms)
+[job] failed: 6fa51b37 Modellaufruf fehlgeschlagen: Ungültiger Blueprint. Bitte erneut besprechen.
+✖ oversized planner output receives exactly one validated correction (150.032182ms)
+[job] failed: dededb97 Modellaufruf fehlgeschlagen: Ungültiger Blueprint. Bitte erneut besprechen.
+✖ double invalid response fails closed and preserves previous blueprint (133.63308ms)
+✔ valid first response needs no correction (133.627179ms)
+[job] failed: d92d6010 Modellaufruf fehlgeschlagen: Ungültiger Blueprint. Bitte erneut besprechen.
+✖ cancellation during correction cannot publish (153.173204ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 1
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1593.153408
+
+✖ failing tests:
+
+test at test/plan-recovery.test.mjs:38:2
+✖ malformed planner output receives exactly one validated correction (252.765309ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  1 !== 2
+
+      at file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:39:10
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:31:9)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/plan-recovery.test.mjs:38:2
+✖ truncated planner output receives exactly one validated correction (167.550981ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  1 !== 2
+
+      at file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:39:10
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:31:9)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/plan-recovery.test.mjs:38:2
+✖ questions planner output receives exactly one validated correction (142.290716ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  1 !== 2
+
+      at file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:39:10
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:31:9)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/plan-recovery.test.mjs:38:2
+✖ oversized planner output receives exactly one validated correction (150.032182ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  1 !== 2
+
+      at file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:39:10
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:31:9)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/plan-recovery.test.mjs:44:1
+✖ double invalid response fails closed and preserves previous blueprint (133.63308ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  1 !== 2
+
+      at file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:44:140
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:31:9)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/plan-recovery.test.mjs:46:1
+✖ cancellation during correction cannot publish (153.173204ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  1 !== 2
+
+      at fixture.cancel (file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:46:116)
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:31:9)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

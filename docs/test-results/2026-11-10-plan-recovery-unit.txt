@@ -1,0 +1,37 @@
+✔ unanswered questions override optimistic model readiness (5.849791ms)
+✔ resolved questions allow an otherwise ready plan (0.956562ms)
+✔ question count, length, schema and nonempty text are bounded (3.240169ms)
+✔ stored pre-questions format remains readable (0.499176ms)
+✔ malformed planner output receives exactly one validated correction (275.465105ms)
+✔ truncated planner output receives exactly one validated correction (174.81424ms)
+✔ questions planner output receives exactly one validated correction (153.311393ms)
+✔ oversized planner output receives exactly one validated correction (139.569682ms)
+[job] failed: f3e17196 Modellaufruf fehlgeschlagen: Ungültiger Blueprint. Bitte erneut besprechen.
+✔ double invalid response fails closed and preserves previous blueprint (168.056363ms)
+✔ valid first response needs no correction (116.53049ms)
+✔ cancellation during correction cannot publish (149.998092ms)
+✔ clean round: prose parsed, finish_reason stop, actual content captured (no SSE envelopes) (86.131895ms)
+✔ finish_reason=length sets truncated; unterminated artifact reported as invalid (21.277881ms)
+✔ malformed SSE frames are ignored, valid frames still parsed (7.785602ms)
+✔ explicit provider error frame throws ProviderError (distinct from malformed frames) (8.411635ms)
+✔ final unterminated SSE line is parsed (7.650595ms)
+✔ UTF-8 multibyte char split across reads is reassembled (5.842506ms)
+✔ upstream 401 becomes ProviderError with status (permanent, caller must not retry) (6.139606ms)
+✔ content cap (accumulated deltas) throws SizeError (5.570235ms)
+✔ transport cap (raw SSE bytes) throws SizeError even with tiny visible content (7.36464ms)
+✔ round deadline expiry maps to abortKind timeout (307.370852ms)
+[provider] retry empty interrupted stream code=ECONNRESET
+[provider] retry empty interrupted stream code=ECONNRESET
+✔ external abort maps to abortKind external, not timeout (154.245065ms)
+✔ already-expired deadline fails fast with timeout kind (1.16073ms)
+✔ job generation has no default or zero-configured deadline (14.173258ms)
+✔ empty ECONNRESET retries once and completes, permanent reset stays bounded (2.901427ms)
+✔ connection reset after visible prose is not replayed (22.665861ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4041.986278

@@ -1,0 +1,16 @@
+✔ malformed planner output receives exactly one validated correction (283.953494ms)
+✔ truncated planner output receives exactly one validated correction (181.661613ms)
+✔ questions planner output receives exactly one validated correction (110.303677ms)
+✔ oversized planner output receives exactly one validated correction (148.248091ms)
+[job] failed: 51b11457 Modellaufruf fehlgeschlagen: Ungültiger Blueprint. Bitte erneut besprechen.
+✔ double invalid response fails closed and preserves previous blueprint (126.167924ms)
+✔ valid first response needs no correction (135.031894ms)
+✔ cancellation during correction cannot publish (116.978507ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1561.775582
