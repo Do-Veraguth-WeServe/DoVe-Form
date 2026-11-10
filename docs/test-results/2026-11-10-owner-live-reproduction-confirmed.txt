@@ -1,0 +1,5 @@
+REPRODUCED stale owner feed width=1280
+REPRODUCED stale owner overlay width=1280
+REPRODUCED stale owner feed width=390
+REPRODUCED stale owner overlay width=390
+Baseline reproduced only; NOT fixed

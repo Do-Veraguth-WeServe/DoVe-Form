@@ -9,6 +9,7 @@ import {Forms,chatPrompt} from './forms.mjs';
 import {FormSharing} from './form-sharing.mjs';
 import {ElementSharing} from './element-sharing.mjs';
 import {ElementStreams} from './element-stream.mjs';
+import {OwnerElementStreams} from './owner-stream.mjs';
 import {ConnectionVault} from './connection-vault.mjs';
 import {ElementConnections} from './element-connections.mjs';
 import {planningPrompt} from './blueprints.mjs';
@@ -82,6 +83,7 @@ claimLegacy();
 const elementDB = new ElementDB(path.join(DATA_DIR, 'elements.sqlite'));
 const elementSharing = new ElementSharing(store, elementDB);
 const elementStreams = new ElementStreams(elementSharing);
+const ownerStreams = new OwnerElementStreams(elementSharing);
 const privateConnections=new ConnectionVault(store.db,path.join(DATA_DIR,'connection-master.key'));
 const elementConnections=new ElementConnections(store,privateConnections);
 const DB_RATE = Number(process.env.FORM3_DB_RATE || 120);
@@ -215,6 +217,21 @@ const server = http.createServer(async (req, res) => {
       if(!fresh||fresh.user.id!==user.id||fresh.csrf!==sess.csrf)return reply(res,401,{error:'Anmeldung erforderlich.'});
       return reply(res,200,liveDiagnostics[operation](user.id,sess.csrf,d));
     }catch(e){return reply(res,[404,409,429].includes(e.status)?e.status:400,{error:[404,409,429].includes(e.status)?e.message:'Ungültige Beobachtung.'});}
+  }
+
+  // Owner-only transport; grant recipients must use the grant-scoped routes.
+  if(pathname==='/api/elements/owner/stream'||pathname==='/api/elements/owner/view'){
+    res.setHeader('Cache-Control','no-store');
+    if(req.method!=='GET')return reply(res,405,{error:'Methode nicht erlaubt.'});
+    if(req.headers.origin!==undefined&&!ORIGINS.includes(req.headers.origin))return reply(res,403,{error:'Ungültiger Ursprung.'});
+    if(!rate('owner-elements:'+user.id,60,60000))return reply(res,429,{error:'Bitte kurz warten.'});
+    try{
+      if(pathname.endsWith('/view'))return reply(res,200,ownerStreams.snapshot(user.id,url.searchParams.get('id')));
+      const ids=url.searchParams.getAll('id');ownerStreams.check(user.id,ids);
+      const opened=ownerStreams.open({uid:user.id,ids,res,sessionValid:()=>{const current=store.getSession(cookieToken(req));return current?.user.id===user.id&&current.csrf===sess.csrf;}});
+      if(!opened){res.setHeader('Retry-After','5');return reply(res,429,{error:'Zu viele offene Element-Streams.'});}
+      return;
+    }catch{return reply(res,404,{error:'Element nicht verfügbar.'});}
   }
 
   // Shared-data identity always comes from the authenticated session and grant.
