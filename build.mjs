@@ -25,4 +25,5 @@ fs.writeFileSync('dist/bridge-hash.txt', crypto.createHash('sha256').update('(' 
 const wasm = 'node_modules/@jitl/quickjs-wasmfile-release-sync/dist/emscripten-module.wasm';
 if (fs.existsSync(wasm)) fs.copyFileSync(wasm, 'dist/quickjs.wasm');
 else if (!fs.existsSync('dist/quickjs.wasm')) throw Error('quickjs wasm missing — run npm ci first');
+for (const f of ['manifest.webmanifest','icon-192.png','icon-512.png','icon-maskable-512.png']) fs.copyFileSync('assets/'+f,'dist/'+f);
 console.log('build ok: dist/');

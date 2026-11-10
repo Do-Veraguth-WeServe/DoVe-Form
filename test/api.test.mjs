@@ -540,6 +540,21 @@ test('models file is not served and static surface is minimal', async () => {
   const idx = await fetch(BASE + '/');
   assert.equal(idx.status, 200);
   assert.match(idx.headers.get('content-type') || '', /text\/html/);
+  const man = await fetch(BASE + '/manifest.webmanifest');
+  assert.equal(man.status, 200);
+  assert.match(man.headers.get('content-type') || '', /manifest\+json/);
+  const manifest = await man.json();
+  assert.equal(manifest.display, 'standalone');
+  assert.equal(manifest.start_url, '/');
+  assert.equal(manifest.icons.length, 3);
+  for (const icon of ['/icon-192.png', '/icon-512.png', '/icon-maskable-512.png']) {
+    const r = await fetch(BASE + icon);
+    assert.equal(r.status, 200);
+    assert.match(r.headers.get('content-type') || '', /image\/png/);
+    const body = Buffer.from(await r.arrayBuffer());
+    assert.equal(body.subarray(1, 4).toString('ascii'), 'PNG');
+  }
+  assert.equal((await fetch(BASE + '/.well-known/assetlinks.json')).status, 404);
 });
 
 test('logout invalidates the session server-side', async () => {
