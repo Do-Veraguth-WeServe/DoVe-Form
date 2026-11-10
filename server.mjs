@@ -609,7 +609,7 @@ const server = http.createServer(async (req, res) => {
     if (!rate('db:' + user.id, DB_RATE, 60000)) { res.setHeader('Retry-After', '5'); return reply(res, 429, { error: 'DB-Limit erreicht.' }); }
     const r = elementDB.op({ sessionId: d.sessionId, elementId: d.elementId, op: d.op, table: d.table, columns: d.columns, row: d.row, query: d.query, id: d.id, patch: d.patch });
     if (r.status !== 200) console.log(`[db] user=${user.username} element=${d.elementId.slice(0, 8)}… op=${d.op} table=${d.table} -> ${r.status} ${String(r.result?.error || '').slice(0, 60)}`);
-    return reply(res, r.status, r.result);
+    return reply(res, r.status, {...r.result,...(r.writeRevision?{ownerDbWrite:r.writeRevision}:{})});
   }
 
   if (req.method === 'POST' && pathname === '/api/ping') {

@@ -1,0 +1,1 @@
+PASS owner batch transport: recipient->owner state, DB/code revisions, no payload leakage, three-account denial, Origin/auth, bounds, caps, logout/disable/delete, cleanup; no frontend sync claim

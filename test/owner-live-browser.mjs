@@ -30,6 +30,7 @@ try{
  }
  }
  if(process.env.FORM_OWNER_STALE_REPRO!=='1'){
+ if(process.env.FORM_OWNER_DB_ONLY!=='1'){
  // Hold an already-committed owner response while a recipient changes state.
  // No remount is allowed before local settlement; afterwards fetch canonical state.
  await frame().locator('#inc').waitFor();
@@ -46,6 +47,7 @@ try{
  await frame().locator('#n').filter({hasText:new RegExp('^'+remoteValue+'$')}).waitFor({timeout:6000});
  const subsequent=p.waitForResponse(r=>r.url().endsWith('/api/state'));await frame().locator('#inc').click();assert.equal((await subsequent).status(),200);assert.equal(state(),remoteValue+1);
  console.log('PASS pending owner acknowledgement defers remote replacement and resumes fresh CAS writes');
+ }else console.log('FOCUSED DB RUN: pending-state gate intentionally not run; full failure retained separately');
  // Deterministic handoff: hold app-owned Worker loading, not the guest itself.
  for(const width of [1280,390]){
  await p.setViewportSize({width,height:844});await frame().locator('#inc').waitFor();
@@ -116,7 +118,42 @@ try{
  assert.equal(await ownDbFrame.evaluate(f=>f.isConnected&&!f.dataset.retained),true,'own DB acknowledgement must preserve the running owner sandbox');
  assert.equal(await frame().locator('#boot').textContent(),'saved');
  console.log('PASS own DB callback survives owner revision echo');
+ const recipientDb=async()=>{
+  const response=await fetch(BASE+'/api/elements/grants/db',{method:'POST',headers:{cookie:'form3sess='+recipient.token,origin:BASE,'X-Form-CSRF':recipient.csrf,'Content-Type':'application/json'},body:JSON.stringify({id:offer.id,op:'insert',table:'notes',row:{text:'remote race'}})});
+  assert.equal(response.status,200);assert.equal((await response.json()).ok,true);
+ };
+ // Remote DB writes on either side of a delayed local receipt must not be
+ // acknowledged as local. Pending callbacks must retain their current surface.
+ for(const phase of ['before','after']){
+  const expectedCount=edb.op({sessionId:conv.id,elementId:mid,op:'select',table:'notes'}).result.rows.length+2;
+  const mounted=await p.locator('#feed iframe').first().elementHandle();
+  let release,seen;const gate=new Promise(r=>release=r),arrived=new Promise(r=>seen=r);
+  await p.route('**/api/db',async route=>{
+   if(route.request().postDataJSON()?.op!=='insert'){await route.continue();return;}
+   if(phase==='before'){seen();await gate;await route.continue().catch(()=>{});}
+   else{const response=await route.fetch();seen();await gate;await route.fulfill({response}).catch(()=>{});}
+  });
+  try{
+   await frame().locator('#add').click();await arrived;await recipientDb();
+   await new Promise(r=>setTimeout(r,1100));assert.equal(await mounted.evaluate(f=>f.isConnected&&!f.dataset.retained),true);
+  }finally{release();await p.unrouteAll({behavior:'wait'});}
+  await frame().locator('#rows').filter({hasText:new RegExp('^'+expectedCount+'$')}).waitFor({timeout:6000});
+  assert.equal(edb.op({sessionId:conv.id,elementId:mid,op:'select',table:'notes'}).result.rows.length,expectedCount);
+  assert.equal(await mounted.evaluate(f=>f.isConnected),false);
+ }
+ console.log('PASS real recipient DB writes before/after held owner receipt are reconciled, not swallowed');
+ // The full-screen owner surface must receive DB changes too.
+ await p.getByRole('button',{name:'Element öffnen',exact:true}).first().click();
+ const overlayFrame=()=>p.frameLocator('#overlay iframe').first();await p.locator('#overlay iframe[data-ready=true]').waitFor();
+ await recipientDb();
+ const count=edb.op({sessionId:conv.id,elementId:mid,op:'select',table:'notes'}).result.rows.length;
+ await overlayFrame().locator('#rows').filter({hasText:new RegExp('^'+count+'$')}).waitFor({timeout:6000});
+ const overlayNode=await p.locator('#overlay iframe').elementHandle();await overlayFrame().locator('#add').click();
+ await overlayFrame().locator('#boot').filter({hasText:'saved'}).waitFor();await new Promise(r=>setTimeout(r,1600));
+ assert.equal(await overlayNode.evaluate(f=>f.isConnected&&!f.dataset.retained),true);
+ await p.getByRole('button',{name:'Element schliessen',exact:true}).click();
+ console.log('PASS overlay DB remote refresh and local callback continuity');
  }
  assert.deepEqual(errors,[]);
  console.log(process.env.FORM_OWNER_STALE_REPRO==='1'?'Baseline reproduced only; NOT fixed':'PASS owner state sync and fresh owner write desktop/mobile feed/overlay');
-}catch(error){console.error('Owner fixture failure',JSON.stringify({transport,stored:state(),visible:await Promise.all((page?.frames()||[]).slice(1).map(f=>f.locator('#n').textContent({timeout:1000}).catch(()=>null))),body:await page?.locator('body').innerText(),frames:await page?.locator('iframe').evaluateAll(nodes=>nodes.map(n=>({ready:n.dataset.ready,staging:n.dataset.staging,retained:n.dataset.retained,style:n.getAttribute('style')})))}));throw error;}finally{await browser?.close();if(app&&app.exitCode===null){app.kill('SIGTERM');await once(app,'exit');}edb.close();s.close();fs.rmSync(dir,{recursive:true,force:true});}
+}catch(error){console.error('Owner fixture failure',JSON.stringify({transport,stored:state(),visible:await Promise.all((page?.frames()||[]).slice(1).map(f=>f.locator('#n').textContent({timeout:1000}).catch(()=>null))),body:await page?.locator('body').innerText(),frames:await page?.locator('iframe').evaluateAll(nodes=>nodes.map(n=>({ready:n.dataset.ready,owner:n.parentElement.dataset,staging:n.dataset.staging,retained:n.dataset.retained,style:n.getAttribute('style')})))}));throw error;}finally{await browser?.close();if(app&&app.exitCode===null){app.kill('SIGTERM');await once(app,'exit');}edb.close();s.close();fs.rmSync(dir,{recursive:true,force:true});}

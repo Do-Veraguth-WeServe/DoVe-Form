@@ -853,7 +853,7 @@ async function doDb(elementId,payload){
     const r=await fetch('/api/db',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:JSON.stringify(body)});
     const t=await r.json().catch(()=>({}));
     if(!r.ok)return {ok:false,error:t.error||('HTTP '+r.status)};
-    return {ok:t.ok===true,id:t.id,rows:t.rows,truncated:t.truncated,error:t.error};
+    return {ok:t.ok===true,id:t.id,rows:t.rows,truncated:t.truncated,error:t.error,ownerDbWrite:t.ownerDbWrite};
   }catch{return {ok:false,error:'Datenbankfehler.'}}
 }
 

@@ -1,0 +1,8 @@
+FOCUSED DB RUN: pending-state gate intentionally not run; full failure retained separately
+PASS inert frozen owner handoff during delayed Worker desktop/mobile
+PASS remote code/DB updates desktop/mobile, startup mutation suppression and offline explicit reconnect
+PASS one explicit reconnect recovers all mounted owner views
+PASS own DB callback survives owner revision echo
+PASS real recipient DB writes before/after held owner receipt are reconciled, not swallowed
+PASS overlay DB remote refresh and local callback continuity
+PASS owner state sync and fresh owner write desktop/mobile feed/overlay

@@ -64,7 +64,15 @@ export class ElementDB {
     if (!ekey) return fail(400, 'Ungültige Element-Identität.');
     if (!OPS.has(op)) return fail(400, 'Unbekannte Operation.');
     if (typeof table !== 'string' || !TABLE_RE.test(table)) return fail(400, 'Ungültiger Tabellenname ([a-z0-9_], max 32).');
-    const mutate=fn=>this._tx(()=>{const r=fn();if(r.status===200)this.db.prepare('INSERT INTO __form_revisions__ VALUES(?,1) ON CONFLICT(ekey) DO UPDATE SET revision=revision+1').run(ekey);return r;});
+    const mutate=fn=>this._tx(()=>{
+      // Both endpoints are sampled under the same SQLite write lock.
+      const before=this.revision(sessionId,elementId),r=fn();
+      if(r.status===200){
+        this.db.prepare('INSERT INTO __form_revisions__ VALUES(?,1) ON CONFLICT(ekey) DO UPDATE SET revision=revision+1').run(ekey);
+        r.writeRevision={before,after:this.revision(sessionId,elementId)};
+      }
+      return r;
+    });
     const phys = `"${ekey}_${table}"`;
     try {
       if (op === 'create') return mutate(() => this._create(ekey, table, phys, columns));

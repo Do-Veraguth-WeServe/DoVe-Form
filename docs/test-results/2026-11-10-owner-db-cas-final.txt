@@ -1,0 +1,1 @@
+PASS offline reconciliation freezes sandbox; desktop/mobile owner CAS, real recipient conflict, persisted reload, stale editor rejection, confirmed full replacement. No production data.

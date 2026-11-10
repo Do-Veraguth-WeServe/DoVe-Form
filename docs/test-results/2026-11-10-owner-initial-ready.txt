@@ -1,0 +1,3 @@
+PASS initial canonical baseline before guest startup, concurrent DB revision reconciled
+PASS two-tab stream budget, third tab fails visibly and reconnects after slot release
+PASS source deletion invalidates live owner surface without stale iframe

@@ -1,0 +1,18 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.waitFor: Error: strict mode violation: locator('#feed iframe') resolved to 2 elements:
+    1) <iframe inert="" tabindex="-1" class="render" data-ready="true" aria-hidden="true" data-retained="true" sandbox="allow-scripts" referrerpolicy="no-referrer" title="Form · interaktive Antwort" allow="camera 'none'; microphone 'none'; geolocation 'none'" srcdoc="<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src &apos;none&apos;; script-src &apos;nonce-848522d0-dbc9-4aa0-9171-…></iframe> aka locator('iframe[title="Form · interaktive Antwort"]').first()
+    2) <iframe inert="" class="render" aria-busy="true" data-staging="true" sandbox="allow-scripts" referrerpolicy="no-referrer" title="Form · interaktive Antwort" allow="camera 'none'; microphone 'none'; geolocation 'none'" srcdoc="<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src &apos;none&apos;; script-src &apos;nonce-d5e51e09-76cd-4f70-bc41-09cc2577ac98&apos;; style-src &apos…></iframe> aka locator('iframe[title="Form · interaktive Antwort"]').nth(1)
+
+Call log:
+  - waiting for locator('#feed iframe').contentFrame().locator('#rows').filter({ hasText: /^2$/ }) to be visible
+
+    at /root/.openclaw/workspace/projects/form/test/owner-initial-browser.mjs:16:80 {
+  log: [
+    "  - waiting for locator('#feed iframe').contentFrame().locator('#rows').filter({ hasText: /^2$/ }) to be visible"
+  ]
+}
+
+Node.js v24.22.2

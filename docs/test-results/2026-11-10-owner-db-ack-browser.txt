@@ -1,0 +1,6 @@
+PASS pending owner acknowledgement defers remote replacement and resumes fresh CAS writes
+PASS inert frozen owner handoff during delayed Worker desktop/mobile
+PASS remote code/DB updates desktop/mobile, startup mutation suppression and offline explicit reconnect
+PASS one explicit reconnect recovers all mounted owner views
+PASS own DB callback survives owner revision echo
+PASS owner state sync and fresh owner write desktop/mobile feed/overlay

@@ -72,6 +72,7 @@ export function ownerSubscriptions({openStream,fetchSnapshot,schedule=queueMicro
         // Call before a local operation and after its acknowledgement/settlement.
         // Even if busy has already cleared, old in-flight snapshots must be discarded.
         changed(){if(entries.get(id)!==entry||entry.failed)return;entry.seq++;entry.dirty=true;void drain(entry);},
+        ready(){if(entries.get(id)===entry)void drain(entry);},
         destroy(){if(entries.get(id)!==entry)return;entry.seq++;entries.delete(id);queueRebuild();}
       };
     },

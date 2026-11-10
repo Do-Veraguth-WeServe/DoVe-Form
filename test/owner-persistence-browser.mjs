@@ -10,7 +10,12 @@ let releaseSnapshots;const snapshotGate=new Promise(resolve=>releaseSnapshots=re
 try{
  app=spawn('node',['server.mjs'],{env:{...process.env,PORT:'4775',FORM3_DATA:dir,FORM3_MODELS:path.join(dir,'models.json')},stdio:['ignore','pipe','inherit']});await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('startup')),10000);app.stdout.on('data',d=>{if(String(d).includes('ready')){clearTimeout(t);resolve();}});});
  browser=await chromium.launch({executablePath:'/root/.cache/puppeteer/chrome/linux-153.0.8010.36/chrome-linux64/chrome',headless:true,args:['--no-sandbox']});const p=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];p.on('pageerror',e=>errors.push(e.message));if(process.env.REPRO_BASELINE==='1')await p.route('**/app.js',r=>r.fulfill({contentType:'text/javascript',body:fs.readFileSync('/opt/form/dist/app.js')}));await p.goto(BASE);await p.locator('#loginform [name=username]').fill('alice');await p.locator('#loginform [name=password]').fill('password123');await p.locator('#loginform button').click();await p.locator('#login[open]').waitFor({state:'detached'});
- await p.route('**/api/elements/owner/view?*',async route=>{await snapshotGate;await route.abort().catch(()=>{});});
+ await p.route('**/api/elements/owner/view?*',async route=>{
+  // Initial mounts now require a canonical baseline. Hold only background
+  // refreshes of an already mounted surface; keep the real CAS conflict.
+  if(!await p.locator('#feed iframe').count()){await route.continue();return;}
+  await snapshotGate;await route.abort().catch(()=>{});
+ });
  const frame=()=>p.frameLocator('#feed iframe').first();
  for(const width of [1280,390]){
  await p.setViewportSize({width,height:844});await frame().locator('#inc').waitFor();const before=state();
