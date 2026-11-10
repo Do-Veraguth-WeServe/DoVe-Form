@@ -525,6 +525,7 @@ function renderElementList(){
   $('#sessions').classList.toggle('hidden',sidebarTab!=='chats');
   $('#elements-tab').setAttribute('aria-selected',String(sidebarTab==='elements'));
   $('#chats-tab').setAttribute('aria-selected',String(sidebarTab==='chats'));
+  if(sidebarTab==='elements')sharingUI.refreshFavorites();
 }
 $('#elements-tab').onclick=()=>{sidebarTab='elements';renderElementList()};
 $('#chats-tab').onclick=()=>{sidebarTab='chats';renderElementList()};

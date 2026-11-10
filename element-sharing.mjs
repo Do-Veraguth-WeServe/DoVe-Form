@@ -20,6 +20,7 @@ export class ElementSharing {
     this.db.exec(
       "CREATE TABLE IF NOT EXISTS element_grants(id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, recipient_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE, code_revision TEXT NOT NULL, status TEXT NOT NULL CHECK(status IN ('pending','active','revoked','declined')), created_at TEXT NOT NULL)"
     );
+    this.db.exec('CREATE TABLE IF NOT EXISTS element_grant_favorites(user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, grant_id TEXT NOT NULL REFERENCES element_grants(id) ON DELETE CASCADE, PRIMARY KEY(user_id,grant_id))');
     this.db.exec('CREATE INDEX IF NOT EXISTS element_grants_parties ON element_grants(owner_id,recipient_id,status)');
     // Minimal sticky safety marker: recipient deletion must not restore legacy
     // tokenless writes. Contains no recipient identity and dies with the source.
@@ -79,10 +80,19 @@ export class ElementSharing {
           const {render}=this.source(g);
           // Pending offers expose only the offered title and counterparty, never code/state.
           const peer=this.activeUser(g.owner_id===uid?g.recipient_id:g.owner_id);
-          return {...base,name:render.name||'Element',peer:peer.username};
+          return {...base,name:render.name||'Element',peer:peer.username,...(g.status==='active'?{favorite:!!this.db.prepare('SELECT 1 FROM element_grant_favorites WHERE user_id=? AND grant_id=?').get(uid,g.id)}:{})};
         } catch {return {...base,status:'unavailable'};}
       });
       return {grants,next:rows.length>limit?page.at(-1).id:null};
+    });
+  }
+  favorite(uid,id,value) {
+    return this.locked(() => {
+      this.authorize(uid,id);
+      if(typeof value!=='boolean')throw Error('Ungültiger Favorit.');
+      if(value)this.db.prepare('INSERT OR IGNORE INTO element_grant_favorites(user_id,grant_id) VALUES(?,?)').run(uid,id);
+      else this.db.prepare('DELETE FROM element_grant_favorites WHERE user_id=? AND grant_id=?').run(uid,id);
+      return {ok:true,favorite:value};
     });
   }
   accept(uid,id) {

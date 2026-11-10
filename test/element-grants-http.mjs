@@ -31,6 +31,13 @@ try{
  assert.equal((await call(1,'/view?id='+id)).status,404);
  assert.equal((await call(2,'/accept',{id})).status,404);
  assert.equal((await call(1,'/accept',{id})).status,200);
+ for(const headers of [{'x-form-csrf':''},{origin:'https://evil.example'},{'content-type':'text/plain'}])assert.ok([403,415].includes((await call(1,'/favorite',{id,favorite:true},headers)).status));
+ assert.equal((await call(2,'/favorite',{id,favorite:true})).status,404);
+ assert.equal((await call(1,'/favorite',{id,favorite:true})).status,200);
+ assert.equal((await call(1)).data.grants[0].favorite,true);
+ assert.equal((await call(0)).data.grants[0].favorite,false);
+ assert.equal((await call(1,'/favorite',{id,favorite:false})).status,200);
+ assert.equal((await call(1)).data.grants[0].favorite,false);
  const view=await call(1,'/view?id='+id);assert.equal(view.status,200);assert.equal(view.data.render.state.n,1);
  assert.equal(view.data.render.actions,undefined);assert.equal(view.data.canEdit,false);
  assert.equal((await call(2,'/view?id='+id)).status,404);
@@ -67,7 +74,7 @@ try{
  const deniedEdit=await fetch(base+'/api/state',{method:'POST',headers:{cookie:'form3sess='+sessions[1].token,'content-type':'application/json','x-form-csrf':sessions[1].csrf,origin:base},body:JSON.stringify({messageId:mid,render:{...render,html:'Changed'}})});
  assert.equal(deniedEdit.status,403);assert.equal(s.getRender(mid).html,render.html);
  assert.equal((await call(0,'/close',{id})).status,200);
- for(const route of ['/state','/db','/accept'])assert.equal((await call(1,route,{id,state:{n:9},op:'select',table:'counter'})).status,404);
+ for(const route of ['/state','/db','/accept','/favorite'])assert.equal((await call(1,route,{id,state:{n:9},op:'select',table:'counter'})).status,404);
  assert.equal((await call(1,'/view?id='+id)).status,404);
  assert.equal((await ownerSave({state:{n:6}})).status,409,'closed grants cannot revive stale legacy saves');
  const beforeCodeChange=s.getRender(mid);

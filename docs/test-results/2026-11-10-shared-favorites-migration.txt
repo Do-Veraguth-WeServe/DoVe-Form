@@ -1,0 +1,1 @@
+PASS restored production-copy additive migration: all 22 existing table row hashes unchanged; empty favorites; integrity ok; private copy removed

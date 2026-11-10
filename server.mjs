@@ -223,7 +223,7 @@ const server = http.createServer(async (req, res) => {
     res.setHeader('Cache-Control','no-store');
     if(!['GET','POST'].includes(req.method))return reply(res,405,{error:'Methode nicht erlaubt.'});
     const suffix=pathname.slice('/api/elements/grants'.length);
-    if(!(req.method==='GET'?['','/view','/stream']:['/offer','/accept','/close','/state','/db']).includes(suffix))return reply(res,404,{error:'Nicht gefunden.'});
+    if(!(req.method==='GET'?['','/view','/stream']:['/offer','/accept','/close','/state','/db','/favorite']).includes(suffix))return reply(res,404,{error:'Nicht gefunden.'});
     const dbCall=suffix==='/db';
     if(!rate((dbCall?'db:':'element-grants:')+user.id,dbCall?DB_RATE:60,60000)){
       res.setHeader('Retry-After','5');return reply(res,429,{error:'Bitte kurz warten.'});
@@ -253,6 +253,7 @@ const server = http.createServer(async (req, res) => {
       if(req.method==='GET')return reply(res,200,suffix==='/view'
         ?elementSharing.view(user.id,url.searchParams.get('id'))
         :elementSharing.list(user.id,{after:url.searchParams.get('after')||'',limit:Number(url.searchParams.get('limit')||20)}));
+      if(suffix==='/favorite')return reply(res,200,elementSharing.favorite(user.id,d.id,d.favorite));
       if(suffix==='/offer')return reply(res,200,elementSharing.offer(user.id,d));
       if(suffix==='/accept')return reply(res,200,elementSharing.accept(user.id,d.id));
       if(suffix==='/close'){elementSharing.close(user.id,d.id);return reply(res,200,{ok:true});}

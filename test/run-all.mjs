@@ -65,7 +65,7 @@ step('session entry bottom without submit movement',run('node',['test/session-en
 step('momentum bounds and teardown',run('node',['--test','test/feed-momentum.test.mjs']));
 step('mobile Element flick momentum and cancellation',run('node',['test/element-momentum.test.mjs']));
 step('navigation preserves background chat and plans',run('node',['test/navigation-jobs.test.mjs']));
-step('shared element grants, stream and database revisions',run('node',['--test','test/element-sharing.test.mjs','test/element-stream.test.mjs','test/element-db-revision.test.mjs']));
+step('shared element grants, stream and database revisions',run('node',['--test','test/shared-favorites.test.mjs','test/element-sharing.test.mjs','test/element-stream.test.mjs','test/element-db-revision.test.mjs']));
 step('shared element HTTP stream',run('node',['test/element-stream-http.mjs']));
 step('shared element browser flow',run('node',['test/shared-elements-browser.mjs']));
 step('shared HTML diagnostics and invalidation',run('node',['test/shared-html-diagnostics.mjs']));

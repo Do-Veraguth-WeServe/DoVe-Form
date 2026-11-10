@@ -1,0 +1,77 @@
+✔ opt-in acceptance and uniform foreign denial, no copied chats or capability transfer (417.528272ms)
+✔ actual shared rows update one namespace; forged namespace and schema operations cannot escape (330.240849ms)
+✔ revocation rechecks every read/write; new grant never reactivates old token (296.664118ms)
+✔ state updates remain visible, code changes fail closed until fresh acceptance (296.544572ms)
+✔ disabled accounts and deleted source are unavailable; additive table survives reopening (309.458862ms)
+✔ pending offers cannot read and quotas do not auto-share other elements (538.672892ms)
+✖ grant listing is paginated and account scoped without pending source data (378.602612ms)
+✔ state compare-and-set detects stale snapshots without editing code (362.961651ms)
+✔ state errors roll back and unavailable grants cannot disclose conflict state (286.168435ms)
+✔ recipient create compatibility never changes schema and matches owner response (318.805289ms)
+✔ separate recipients share conflict token and failed persistence is atomic (283.299029ms)
+✔ cross-process revocation cannot interleave shared row authorization and use (531.82727ms)
+✔ cross-process disable cannot interleave offer or acceptance checks (625.543726ms)
+✔ shared snapshots are coherent against cross-process revocation (542.924491ms)
+✔ owner persistence preserves legacy saves but requires CAS for active shared code (352.579249ms)
+✔ owner code replacement is atomic, versioned and invalidates accepted code (294.916367ms)
+✔ owner CAS holds writer lock through snapshot and persistence (448.729143ms)
+✔ owner snapshot rejects same-state html replacement and state write (307.534612ms)
+✔ owner snapshot rejects same-state actions replacement and state write (306.2556ms)
+✔ grant-era owner saves fail closed for legacy clients: pending (257.64148ms)
+✔ grant-era owner saves fail closed for legacy clients: active (293.75954ms)
+✔ grant-era owner saves fail closed for legacy clients: revoked (289.282322ms)
+✔ grant-era owner saves fail closed for legacy clients: declined (312.960145ms)
+✔ grant-era owner saves fail closed for legacy clients: invalidated (301.951674ms)
+✔ recipient deletion preserves grant-era owner protection: pending (266.456905ms)
+✔ recipient deletion preserves grant-era owner protection: active (275.632911ms)
+✔ recipient deletion preserves grant-era owner protection: revoked (305.516479ms)
+✔ recipient deletion preserves grant-era owner protection: declined (302.027189ms)
+✔ recipient deletion preserves grant-era owner protection: invalidated (289.863096ms)
+✔ grant marker backfills existing grants without changing source, survives reopen and cascades with source (293.602209ms)
+✔ failed offer rolls back marker and grant together; never-offered elements stay private-compatible (265.102805ms)
+✔ session, ACL and snapshot write share the transaction; closure releases slots (6.566789ms)
+✔ backpressure closes rather than queueing more private snapshots (1.038897ms)
+✔ expired session and database contention fail closed with generic invalidation (1.443084ms)
+✔ per-account stream cap does not consume a slot for rejected clients (1.149451ms)
+✔ shared favorites are persistent personal metadata, never grants or copies (422.779779ms)
+ℹ tests 36
+ℹ suites 0
+ℹ pass 35
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11130.814511
+
+✖ failing tests:
+
+test at test/element-sharing.test.mjs:85:1
+✖ grant listing is paginated and account scoped without pending source data (378.602612ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+
+    [
+      'direction',
+  +   'favorite',
+      'id',
+      'name',
+      'peer',
+      'status'
+    ]
+
+      at file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:90:113
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:25:3)
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/element-sharing.test.mjs:85:86)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'direction', 'favorite', 'id', 'name', 'peer', 'status' ],
+    expected: [ 'direction', 'id', 'name', 'peer', 'status' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
