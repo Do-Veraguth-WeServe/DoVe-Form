@@ -1,0 +1,9 @@
+✔ shared favorites are persistent personal metadata, never grants or copies (435.454804ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1073.692771

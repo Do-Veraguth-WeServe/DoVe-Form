@@ -1,0 +1,10 @@
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [form](ids: [ 0 ])
+[PM2] [form](0) ✓
+┌────┬─────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name    │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼─────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ form    │ default     │ 3.3.0   │ fork    │ 4136761  │ 0s     │ 56   │ online    │ 0%       │ 19.7mb   │ form     │ disabled │
+└────┴─────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+[PM2] Saving current process list...
+[PM2] Successfully saved in /opt/form/.pm2/dump.pm2
