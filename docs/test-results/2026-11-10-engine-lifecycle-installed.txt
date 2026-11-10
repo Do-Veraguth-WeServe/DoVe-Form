@@ -1,0 +1,2 @@
+PASS lifecycle 1280: real15s expiry, active survives, pagehide disposal, fresh code/state/callbacks, speculative failure recovery
+PASS lifecycle 390: real15s expiry, active survives, pagehide disposal, fresh code/state/callbacks, speculative failure recovery

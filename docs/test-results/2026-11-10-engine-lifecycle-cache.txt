@@ -1,0 +1,3 @@
+{"width":1280,"assetResponses":2,"validated304":16,"cacheHits":0}
+{"width":390,"assetResponses":2,"validated304":16,"cacheHits":0}
+PASS public validators/304/stale response; API private no-store; desktop/mobile feed, overlay reopen, interaction and reload

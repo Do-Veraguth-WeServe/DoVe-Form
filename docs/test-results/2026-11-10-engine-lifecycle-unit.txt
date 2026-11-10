@@ -1,0 +1,14 @@
+✔ one idle fresh engine, acquired runtime never returned or reused (3.065462ms)
+✔ expiry terminates only idle engine (0.449006ms)
+✔ hidden/pagehide clear spare and hidden warm is disabled (0.491818ms)
+✔ failed spare is discarded and construction errors do not break ready view (3.172118ms)
+✔ stale spare error cannot terminate its successor (0.365549ms)
+✔ content validators invalidate same-size replacements and allow weak/list/wildcard GET comparisons (28.566907ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 228.534603

@@ -40,6 +40,7 @@ step('guided planning metadata',run('node',['--test','test/planning-offer.test.m
 step('build (esbuild + bridge hash + wasm)', run('node', ['build.mjs']));
 step('bounded unused engine slot',run('node',['--test','test/engine-spare.test.mjs']));
 step('fresh engine reuse boundary',run('node',['test/engine-spare-browser.mjs']));
+step('real engine expiry and speculative failure recovery',run('node',['test/engine-spare-lifecycle-browser.mjs']));
 step('renderer engine preload handshake lifecycle',run('node',['test/renderer-preload-browser.mjs']));
 step('owner loading notice lifecycle',run('node',['test/owner-loading-browser.mjs']));
 step('public static content validators',run('node',['--test','test/static-response.test.mjs']));
