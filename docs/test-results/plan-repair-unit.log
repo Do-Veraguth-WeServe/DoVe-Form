@@ -1,0 +1,86 @@
+✔ valid XML, JSON and unwrapped-reply contracts still parse; ready demotes while questions remain (6.330016ms)
+✔ structural failures name the missing or malformed sections (1.638253ms)
+✖ field validation failures are specific instead of generic (6.678696ms)
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.fill: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator('#loginform [name=username]')
+
+    at /root/.openclaw/workspace/projects/form-plan-fix/test/blueprints.test.mjs:30:345 {
+  log: [ "  - waiting for locator('#loginform [name=username]')" ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.22.2
+✖ test/blueprints.test.mjs (33785.246963ms)
+[job] failed: befa845d Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: f76ca97e Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: 00dce48d Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: c773accb Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: 2cfc5d03 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: 953ba073 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+✔ plan timeout has no invented duration (totalMs=0) (188.412694ms)
+✔ plan timeout has no invented duration (totalMs=120000) (168.512264ms)
+✔ chat timeout has no invented duration (totalMs=0) (147.352719ms)
+✔ chat timeout has no invented duration (totalMs=120000) (167.277356ms)
+✔ build timeout has no invented duration (totalMs=0) (163.608638ms)
+✔ build timeout has no invented duration (totalMs=120000) (168.547301ms)
+✔ accepted marker is conversation scoped, once-only and transactional (13.929848ms)
+✔ bounded inert offer rejects commands and malformed values (5.13091ms)
+✔ metadata-only fenced and chunked offers do not leak into prose (11.10384ms)
+✔ clear legacy prose offers have fallback but ordinary discussion does not (2.32522ms)
+✔ prompt requires contextual offers and separate explicit build approval (1.028127ms)
+✔ structured planner options remain data and block build readiness (6.711367ms)
+✔ 20 questions supported with bounded options, strings remain compatible (4.222814ms)
+✔ ordinary choices persist grouped questions; legacy item choices upgraded (5.363624ms)
+✔ chat blueprint envelope suppresses standalone forms and offers (1.341576ms)
+✔ provider omitted reply wrapper normalizes without accepting executable/missing fields (0.626325ms)
+✔ missing-update claim consistency guard excludes ordinary and negated discussion (1.900686ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 19
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 33832.328583
+
+✖ failing tests:
+
+test at test/blueprint-parse-reasons.test.mjs:16:1
+✖ field validation failures are specific instead of generic (6.678696ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /ready muss true oder false/. Input:
+
+  'Error: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.'
+
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form-plan-fix/test/blueprint-parse-reasons.test.mjs:17:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+        at parsePlan (file:///root/.openclaw/workspace/projects/form-plan-fix/blueprints.mjs:9:181)
+        at file:///root/.openclaw/workspace/projects/form-plan-fix/test/blueprint-parse-reasons.test.mjs:17:21
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form-plan-fix/test/blueprint-parse-reasons.test.mjs:17:10)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+        at Test.postRun (node:internal/test_runner/test:1542:19)
+        at Test.run (node:internal/test_runner/test:1467:12),
+    expected: /ready muss true oder false/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test/blueprints.test.mjs:1:1
+✖ test/blueprints.test.mjs (33785.246963ms)
+  'test failed'

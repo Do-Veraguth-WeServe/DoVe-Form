@@ -1,0 +1,21 @@
+PASS placement: old target outside history, newest build anchor, mobile/reload, exactly one element, stable ID/state/versions and original prose
+[job] failed: 161c6ce7 Modellaufruf fehlgeschlagen: Ungültiger Blueprint. Bitte erneut besprechen.
+[job] failed: 3530a8bf Modell-Endpunkt antwortete 500
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.waitFor: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator('.site') to be detached
+    63 × locator resolved to visible <div class="site" role="status" data-jobid="3530a8bf-d79f-47a7-9a69-749241810114">…</div>
+
+    at /root/.openclaw/workspace/projects/form-plan-fix/test/blueprints.test.mjs:67:89 {
+  log: [
+    "  - waiting for locator('.site') to be detached",
+    '    63 × locator resolved to visible <div class="site" role="status" data-jobid="3530a8bf-d79f-47a7-9a69-749241810114">…</div>'
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.22.2

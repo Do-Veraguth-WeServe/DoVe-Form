@@ -1,0 +1,44 @@
+✔ valid XML, JSON and unwrapped-reply contracts still parse; ready demotes while questions remain (4.862587ms)
+✔ structural failures name the missing or malformed sections (1.16414ms)
+✖ field validation failures are specific instead of generic (8.188555ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 2
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 154.04865
+
+✖ failing tests:
+
+test at test/blueprint-parse-reasons.test.mjs:16:1
+✖ field validation failures are specific instead of generic (8.188555ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /mehr als 20/. Input:
+
+  'Error: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.'
+
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form-plan-fix/test/blueprint-parse-reasons.test.mjs:25:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+        at parsePlan (file:///root/.openclaw/workspace/projects/form-plan-fix/blueprints.mjs:9:181)
+        at file:///root/.openclaw/workspace/projects/form-plan-fix/test/blueprint-parse-reasons.test.mjs:25:21
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form-plan-fix/test/blueprint-parse-reasons.test.mjs:25:10)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+        at Test.postRun (node:internal/test_runner/test:1542:19)
+        at Test.run (node:internal/test_runner/test:1467:12),
+    expected: /mehr als 20/,
+    operator: 'throws',
+    diff: 'simple'
+  }

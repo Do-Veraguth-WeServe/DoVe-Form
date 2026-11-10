@@ -6,14 +6,22 @@ export function parsePlan(raw) {
   // Some providers omit only the reply wrapper; retain all field/size validation.
   const unwrapped=s.match(/^([^<>{}]{1,1800})(<title>[\s\S]+)$/);if(unwrapped)s='<reply>'+unwrapped[1].trim()+'</reply>'+unwrapped[2];
   const match=s.match(/^<reply>([\s\S]*?)<\/reply>\s*<title>([\s\S]*?)<\/title>\s*<summary>([\s\S]*?)<\/summary>\s*(?:<questions>([\s\S]*?)<\/questions>\s*)?<ready>(true|false)<\/ready>$/);
-  let x;try{x=match?{reply:match[1].trim(),title:match[2].trim(),summary:match[3].trim(),questions:parseQuestions(match[4]||''),ready:match[5]==='true'}:JSON.parse(s);}catch{throw Error('Ungültiger Blueprint. Bitte erneut besprechen.');}
-  if(!x||typeof x.reply!=='string'||!x.reply.trim()||x.reply.length>1800||typeof x.summary!=='string'||!x.summary.trim()||x.summary.length>6000||typeof x.title!=='string'||!x.title.trim()||x.title.length>100||typeof x.ready!=='boolean')throw Error('Ungültiger Blueprint. Bitte erneut besprechen.');
-  const questions=normalizeQuestions(x.questions??[]);
+  let x;try{x=match?{reply:match[1].trim(),title:match[2].trim(),summary:match[3].trim(),ready:match[5]==='true'}:JSON.parse(s);}catch{throw Error('Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.');}
+  if(!x||typeof x!=='object'||Array.isArray(x))throw Error('Blueprint ungültig: erwartet wird ein Objekt mit reply/title/summary/ready.');
+  if(typeof x.reply!=='string'||!x.reply.trim())throw Error('Blueprint ungültig: reply-Text fehlt oder ist leer.');
+  if(x.reply.length>1800)throw Error('Blueprint ungültig: reply über 1800 Zeichen ('+x.reply.length+').');
+  if(typeof x.title!=='string'||!x.title.trim())throw Error('Blueprint ungültig: title fehlt oder ist leer.');
+  if(x.title.length>100)throw Error('Blueprint ungültig: title über 100 Zeichen ('+x.title.length+').');
+  if(typeof x.summary!=='string'||!x.summary.trim())throw Error('Blueprint ungültig: summary fehlt oder ist leer.');
+  if(x.summary.length>6000)throw Error('Blueprint ungültig: summary über 6000 Zeichen ('+x.summary.length+').');
+  if(typeof x.ready!=='boolean')throw Error('Blueprint ungültig: ready muss true oder false sein.');
+  // Question parsing stays OUTSIDE the format catch so its specific reasons reach the repair prompt.
+  const questions=normalizeQuestions(match?parseQuestions(match[4]||''):(x.questions??[]));
   return {reply:x.reply,title:x.title,summary:x.summary,questions,ready:x.ready&&questions.length===0};
 }
 
 function parseQuestions(raw){
  const questions=[];let rest=raw.trim();
- while(rest){const m=rest.match(/^<question>([\s\S]*?)<\/question>/);if(!m)throw Error('Ungültige Fragen');const body=m[1].trim();if(body.startsWith('<text>')){const text=body.match(/^<text>([\s\S]*?)<\/text>/);if(!text)throw Error('Ungültige Frage');let tail=body.slice(text[0].length).trim(),options=[];while(tail){const option=tail.match(/^<option>([\s\S]*?)<\/option>/);if(!option)throw Error('Ungültige Optionen');options.push(option[1].trim());tail=tail.slice(option[0].length).trim();}questions.push({text:text[1].trim(),options});}else questions.push(body);rest=rest.slice(m[0].length).trim();if(questions.length>MAX_QUESTIONS)throw Error('Zu viele Fragen');}
+ while(rest){const m=rest.match(/^<question>([\s\S]*?)<\/question>/);if(!m)throw Error('Blueprint ungültig: questions enthält einen nicht geschlossenen oder falsch geschriebenen <question>-Abschnitt.');const body=m[1].trim();if(body.startsWith('<text>')){const text=body.match(/^<text>([\s\S]*?)<\/text>/);if(!text)throw Error('Blueprint ungültig: <question> ohne geschlossenen <text>-Abschnitt.');let tail=body.slice(text[0].length).trim(),options=[];while(tail){const option=tail.match(/^<option>([\s\S]*?)<\/option>/);if(!option)throw Error('Blueprint ungültig: <option> nicht geschlossen.');options.push(option[1].trim());tail=tail.slice(option[0].length).trim();}questions.push({text:text[1].trim(),options});}else questions.push(body);rest=rest.slice(m[0].length).trim();if(questions.length>MAX_QUESTIONS)throw Error('Blueprint ungültig: mehr als '+MAX_QUESTIONS+' Fragen.');}
  return questions;
 }
