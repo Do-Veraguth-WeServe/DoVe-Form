@@ -43,7 +43,8 @@ test('real SSE generation corrects unsupported CSS exactly once with policy evid
   const events=[];const out=await executeTurn(model,[{role:'user',content:'Isolated icon fixture'}],{},e=>events.push(e));
   assert.equal(requests.length,2);assert.equal(out.rounds,2);assert.equal(out.failure,null);assert.equal(out.render.state.count,count);
   assert.equal(events.filter(e=>e.type==='retry').length,1);
-  assert.match(requests[1].messages.at(-1).content,/CSS capability preflight/);
+  assert.match(requests[1].messages.at(-1).content,/CSS capability preflight[^\n]*blocked-property:content/);
+  assert.match(requests[1].messages.at(-1).content,/blocked-property:position/);
   assert.match(requests[1].messages.at(-1).content,/real HTML spans/);
  });
 });

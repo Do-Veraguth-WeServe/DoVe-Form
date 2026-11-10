@@ -1,0 +1,45 @@
+✔ standalone loop supplies tools, executes once and returns tool result to model (156.7994ms)
+✔ unknown tool is rejected without executing (36.929202ms)
+[provider] retry empty interrupted stream code=ECONNRESET
+✔ ambiguous external failure is not retried (10.759718ms)
+✔ transport retry after a tool result never re-executes that tool (3.354595ms)
+✔ setup: dedicated server, owner, model, conversation (1297.724176ms)
+✔ (1) second chat answers while the FIRST provider response is still streaming (530.840777ms)
+✔ (2) closing the connection (tab close) does NOT abort the provider; result persists with zero subscribers (6377.355687ms)
+✔ (3) reload during the upstream stream: same job, completion lands exactly once (4477.738375ms)
+✔ (4) explicit cancel DOES abort the upstream provider call (943.859389ms)
+✔ (5) reverse provider completion: two held jobs land on their own containers (11667.042295ms)
+✔ deletion race: conversation deleted while the provider streams — nothing resurrects (1697.035533ms)
+✔ server restart honestly fails running provider jobs; explicit retry MAY re-call the provider and then succeeds (6008.126458ms)
+✔ approved build cancellation aborts the connected provider and never publishes (561.513764ms)
+✔ ownership: a foreign user never sees or touches the job (210.083741ms)
+✔ teardown (19.333846ms)
+✔ MiniMax Flash default preserves output budget without disabling required thinking (115.945354ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":5,"reasoningChars":15,"usage":{"completion_tokens":20,"reasoning_tokens":18}}
+[build-budget] {"round":1,"finish":"stop","visibleChars":5,"reasoningChars":15,"usage":{"completion_tokens":20,"reasoning_tokens":18}}
+✔ counts reasoning without retaining it; low effort only for GLM build rounds (118.537662ms)
+✔ clean round: prose parsed, finish_reason stop, actual content captured (no SSE envelopes) (84.945368ms)
+✔ finish_reason=length sets truncated; unterminated artifact reported as invalid (19.923536ms)
+✔ malformed SSE frames are ignored, valid frames still parsed (8.941219ms)
+✔ explicit provider error frame throws ProviderError (distinct from malformed frames) (9.270438ms)
+✔ final unterminated SSE line is parsed (9.766134ms)
+✔ UTF-8 multibyte char split across reads is reassembled (8.093546ms)
+✔ upstream 401 becomes ProviderError with status (permanent, caller must not retry) (7.802167ms)
+✔ content cap (accumulated deltas) throws SizeError (7.148559ms)
+✔ transport cap (raw SSE bytes) throws SizeError even with tiny visible content (9.178841ms)
+✔ round deadline expiry maps to abortKind timeout (306.321511ms)
+[provider] retry empty interrupted stream code=ECONNRESET
+[provider] retry empty interrupted stream code=ECONNRESET
+✔ external abort maps to abortKind external, not timeout (153.032328ms)
+✔ already-expired deadline fails fast with timeout kind (1.142925ms)
+✔ job generation has no default or zero-configured deadline (12.255785ms)
+✔ empty ECONNRESET retries once and completes, permanent reset stays bounded (3.692176ms)
+✔ connection reset after visible prose is not replayed (22.537849ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 39998.069475

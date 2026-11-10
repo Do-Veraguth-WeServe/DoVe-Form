@@ -54,6 +54,10 @@ export async function runRound(cfg, messages, opts, onProse, onArtifactStart) {
 
 async function runRoundAttempt(cfg, messages, opts, onProse, onArtifactStart) {
   const { signal = null, deadlineMs = Infinity, tools = [] } = opts || {};
+  // MiniMax Flash defaults to max thinking; its hidden tokens share the output cap.
+  // Keep thinking enabled and the cap unchanged, but reserve room for useful output.
+  // Apply to chat/planning/build/tool rounds; never send model-specific defaults elsewhere.
+  const reasoningEffort = opts?.reasoningEffort ?? (/^minimax-m3\.1-flash$/i.test(cfg.model) ? 'low' : undefined);
   const parser = opts?.textOnly ? {feed:t=>onProse?.(t),finish:()=>({hadArtifact:false,prose:''})} : createStreamParser({ onProse, onArtifactStart });
   const round = new AbortController();
   const onExternal = () => round.abort();
@@ -72,7 +76,7 @@ async function runRoundAttempt(cfg, messages, opts, onProse, onArtifactStart) {
       redirect: 'error',
       method: 'POST',
       headers: { Authorization: 'Bearer ' + cfg.apiKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: cfg.model, stream: true, max_tokens: opts?.maxTokens || 16384, ...(['low','high','max'].includes(opts?.reasoningEffort)?{reasoning_effort:opts.reasoningEffort}:{}), messages, ...(tools.length ? {tools,tool_choice:"auto"} : {}) }),
+      body: JSON.stringify({ model: cfg.model, stream: true, max_tokens: opts?.maxTokens || 16384, ...(['low','high','max'].includes(reasoningEffort)?{reasoning_effort:reasoningEffort}:{}), messages, ...(tools.length ? {tools,tool_choice:"auto"} : {}) }),
       signal: round.signal
     });
     if (!resp.ok) {

@@ -1,0 +1,20 @@
+[build-budget] {"round":1,"finish":"stop","visibleChars":6274,"reasoningChars":9466,"usage":{}}
+{"retry":"invalid-artifact","reason":"Animation capability: ui.animate requires animations:{version:1,clips:{...}}. Declare every called clip; do not replace it with CSS or a delay."}
+[build-budget] {"round":2,"finish":"stop","visibleChars":5984,"reasoningChars":0,"usage":{}}
+{"exactStoredMessages":true,"isolated":true,"elapsedMs":47072,"events":{"prose-chunk":89,"artifact-start":2,"retry":1},"render":false,"rounds":2,"finish":"stop/stop","chars":12258,"failure":"Das Modell lieferte auch im zweiten Versuch kein gültiges Artefakt (CSS capability preflight v1: 1 unsupported declarations/rules (at-rule).). Der Text-Anteil oben bleibt erhalten."}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: actual original build produces validated artifact
+    at file:///root/.openclaw/workspace/projects/form/[eval1]:2:794
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: null,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.22.2

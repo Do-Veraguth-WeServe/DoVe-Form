@@ -1,6 +1,6 @@
 import {validateSettings,settingsPrompt} from './connection-contract.mjs';
 import {validateAnimations,animationPrompt} from './animation-policy.mjs';
-import {cssCapabilityPrompt,inspectCSS} from './css-policy.mjs';
+import {cssCapabilityPrompt,inspectCSS,CSS_BLOCKED_PROPERTIES} from './css-policy.mjs';
 export const systemPrompt = `You are Form, a private interactive thinking companion running locally on the user's own machine. Reply in the user's language.
 
 ANSWER STRUCTURE — two phases, in this exact order:
@@ -95,7 +95,10 @@ export function validateGeneratedCSS(render){
   const css=inspectCSS(render.css);
   if(css.removedCount){
     // Fixed reason codes/properties only. Never echo CSS values into a retry instruction.
-    const reasons=[...new Set(css.diagnostics.map(d=>d.reason))].join(', ');
+    const reasons=[...new Set(css.diagnostics.map(d=>{
+      const property=String(d.property||'').toLowerCase();
+      return d.reason==='blocked-property'&&CSS_BLOCKED_PROPERTIES.includes(property)?d.reason+':'+property:d.reason;
+    }))].join(', ');
     throw Error('CSS capability preflight v'+css.policyVersion+': '+css.removedCount+' unsupported declarations/rules ('+reasons+').');
   }
   return render;

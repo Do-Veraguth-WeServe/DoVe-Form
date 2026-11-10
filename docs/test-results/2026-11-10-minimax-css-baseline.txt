@@ -1,0 +1,49 @@
+✔ new output rejects every reported unsupported variation, existing artifacts remain readable and unchanged (21.55204ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":129,"reasoningChars":0,"usage":{}}
+✖ real SSE generation corrects unsupported CSS exactly once with policy evidence (4359.648462ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":168,"reasoningChars":0,"usage":{}}
+✔ second unsupported output fails honestly with no render and no third attempt (27.268071ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":168,"reasoningChars":0,"usage":{}}
+[job] id=949a56b9 failed after 2 round(s): invalid-artifact
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":129,"reasoningChars":0,"usage":{}}
+[job] id=b045d39d user=8a87a344 kind=refine dur=4960ms rounds=2 finish=stop/stop chars=323 render=yes fail=invalid-artifact
+✔ persisted failed refinement preserves original; corrected build becomes ready (5281.896394ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":146,"reasoningChars":0,"usage":{}}
+✔ supported output stays one round (4383.300832ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 4
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 14439.757047
+
+✖ failing tests:
+
+test at test/css-preflight.test.mjs:41:1
+✖ real SSE generation corrects unsupported CSS exactly once with policy evidence (4359.648462ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /CSS capability preflight[^\n]*blocked-property:content/. Input:
+
+  'Your previous answer contained an invalid JSON artifact (CSS capability preflight v1: 3 unsupported declarations/rules (blocked-property, unsupported-function).). Answer again in the same language: FIRST a short prose answer, THEN exactly ONE corrected fenced ```json artifact {"version":1,"html","css","js","state"}. The JSON must be valid (no trailing commas, no comments, no truncation), under 20KB total, with ids matching between html and js.\n' +
+    'CSS policy v1: ordinary rules only, no @rules, URLs, custom properties or var(). Removed properties: position, z-index, behavior, content, cursor, filter, backdrop-filter (ALL positioning, not only fixed). Only these CSS functions survive: rgb, rgba, hsl, hsla, calc, min, max, clamp, repeat, minmax. Gradients, rotate()/translate()/scale() and other transform functions are removed. Pseudo-elements cannot generate content: use real HTML spans or permitted SVG shapes for icons, flex/grid for layout, plain colors for backgrounds. Sanitized code is not proof of rendered appearance or successful interaction.\n' +
+    'Optional animations: {version:1,clips:{name:node}}. node is {type:"tween",target:"id",duration:1..2000,easing:"linear"|"ease-in"|"ease-out"|"ease-in-out",frames:[{opacity:0..1,x:-500..500,y:-500..500,rotate:-180..180,scaleX:0..2,scaleY:0..2}]} (2..8 frames), or {type:"sequence"|"parallel",children:[nodes]}, or {type:"crumple",targets:[3..8 distinct paper surface/SVG group IDs],duration:1..2000}. Crumple folds each surface independently; author adjacent paper panels, not a single card target. Maximum 16 clips, 16 tween leaves, depth4, 8s total, 8 concurrent targets. No CSS strings, URLs, functions or arbitrary properties. ui.animate(name, callback) returns a cancellation token; ui.cancelAnimation(token). Callback {ok,status:"finished"|"cancelled"|"error",error?}. Duplicate active clip starts fail. Reduced motion finishes asynchronously without movement. Missing targets fail. Only declared clips may run; use callback to persist completion via ui.db, recover on persistence failure. This is not arbitrary browser animation.\n' +
+    'Declared animations must execute with unique existing targets in the sanitized DOM. Startup must handle unavailable isolated data/actions without throwing. Browser smoke verification is mandatory; do not claim visual-intent certification.'
+
+      at file:///root/.openclaw/workspace/projects/form/test/css-preflight.test.mjs:46:10
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async fixture (file:///root/.openclaw/workspace/projects/form/test/css-preflight.test.mjs:39:6)
+      at async TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/css-preflight.test.mjs:42:27)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'Your previous answer contained an invalid JSON artifact (CSS capability preflight v1: 3 unsupported declarations/rules (blocked-property, unsupported-function).). Answer again in the same language: FIRST a short prose answer, THEN exactly ONE corrected fenced ```json artifact {"version":1,"html","css","js","state"}. The JSON must be valid (no trailing commas, no comments, no truncation), under 20KB total, with ids matching between html and js.\nCSS policy v1: ordinary rules only, no @rules, URLs, custom properties or var(). Removed properties: position, z-index, behavior, content, cursor, filter, backdrop-filter (ALL positioning, not only fixed). Only these CSS functions survive: rgb, rgba, hsl, hsla, calc, min, max, clamp, repeat, minmax. Gradients, rotate()/translate()/scale() and other transform functions are removed. Pseudo-elements cannot generate content: use real HTML spans or permitted SVG shapes for icons, flex/grid for layout, plain colors for backgrounds. Sanitized code is not proof of rendered appearance or successful interaction.\nOptional animations: {version:1,clips:{name:node}}. node is {type:"tween",target:"id",duration:1..2000,easing:"linear"|"ease-in"|"ease-out"|"ease-in-out",frames:[{opacity:0..1,x:-500..500,y:-500..500,rotate:-180..180,scaleX:0..2,scaleY:0..2}]} (2..8 frames), or {type:"sequence"|"parallel",children:[nodes]}, or {type:"crumple",targets:[3..8 distinct paper surface/SVG group IDs],duration:1..2000}. Crumple folds each surface independently; author adjacent paper panels, not a single card target. Maximum 16 clips, 16 tween leaves, depth4, 8s total, 8 concurrent targets. No CSS strings, URLs, functions or arbitrary properties. ui.animate(name, callback) returns a cancellation token; ui.cancelAnimation(token). Callback {ok,status:"finished"|"cancelled"|"error",error?}. Duplicate active clip starts fail. Reduced motion finishes asynchronously without movement. Missing targets fail. Only declared clips may run; use callback to persist completion via ui.db, recover on persistence failure. This is not arbitrary browser animation.\nDeclared animations must execute with unique existing targets in the sanitized DOM. Startup must handle unavailable isolated data/actions without throwing. Browser smoke verification is mandatory; do not claim visual-intent certification.',
+    expected: /CSS capability preflight[^\n]*blocked-property:content/,
+    operator: 'match',
+    diff: 'simple'
+  }

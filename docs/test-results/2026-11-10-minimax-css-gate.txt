@@ -1,0 +1,63 @@
+✔ pseudo-element failure explains removed features without inventing data causes (13.324186ms)
+✔ prompt and sanitizer consume one immutable capability policy (2.526596ms)
+✔ unsafe syntax remains blocked and reports stay bounded without source values (6.023703ms)
+✔ ordinary responsive layout and colors survive unchanged (1.761386ms)
+✔ new output rejects every reported unsupported variation, existing artifacts remain readable and unchanged (21.319746ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":129,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":129,"reasoningChars":0,"usage":{}}
+✔ real SSE generation corrects unsupported CSS exactly once with policy evidence (8068.365147ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":168,"reasoningChars":0,"usage":{}}
+✔ second unsupported output fails honestly with no render and no third attempt (17.116194ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":168,"reasoningChars":0,"usage":{}}
+[job] id=d65fa4b5 failed after 2 round(s): invalid-artifact
+[build-budget] {"round":1,"finish":"stop","visibleChars":194,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":129,"reasoningChars":0,"usage":{}}
+[job] id=406f3f0f user=14a86ccb kind=refine dur=4069ms rounds=2 finish=stop/stop chars=323 render=yes fail=invalid-artifact
+✔ persisted failed refinement preserves original; corrected build becomes ready (4396.879155ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":146,"reasoningChars":0,"usage":{}}
+✔ supported output stays one round (4104.851542ms)
+✔ MiniMax Flash default preserves output budget without disabling required thinking (120.853562ms)
+[ping] session=s1 host=good.example ip=93.184.216.34 ok=true ms=23
+[ping] session= host=good.example ip=93.184.216.34 ok=false
+[ping] session= host=private.example blocked (resolved: 10.0.0.5)
+[ping] session= host=dual.example blocked (resolved: 93.184.216.34,fe80::1)
+[ping] session= host=nope.example error=dns
+[ping] session= host=good.example ip=93.184.216.34 ok=false
+config unreadable: Unexpected token 'o', "not json" is not valid JSON
+✔ render contract rejects malformed and oversized output (4.543829ms)
+✔ system prompt carries the v3 two-phase + SVG visual rules (0.513686ms)
+✔ render contract: optional name is sanitized as text (0.515239ms)
+✔ deriveName: heading, then prose snippet, then fallback (1.247545ms)
+✔ refine instruction demands a full in-place update (0.391138ms)
+✔ validHost: strict hostnames only, no literals/URLs/private forms (1.108377ms)
+✔ ipBlocked: every private/reserved range is caught, public passes (10.107084ms)
+✔ runPing: ok / blocked / dual-stack / dns-fail / timeout with injected backend (6.404516ms)
+﹣ optional: real /bin/ping binary probe (skip when absent or offline) (0.447041ms) # SKIP
+✔ element db: lifecycle, where semantics, scoping, persistence, quotas (27.82431ms)
+✔ element db: hard quotas — 10 tables, 5000 rows, 2 MB element (2578.590437ms)
+✔ stream parser: prose-only answer relays everything (0.859513ms)
+✔ stream parser: marker split across chunks is not emitted as prose (0.564202ms)
+✔ stream parser: artifact in same chunk as marker, unterminated fence (0.429876ms)
+✔ stream parser: partial-marker suffix is held back, not lost (0.340173ms)
+✔ model registry: validation, masking, persistence, ENOENT safety (1.808303ms)
+✔ store: passwords scrypt-hashed, salted, timing-safe verify (320.210971ms)
+✔ store: first user is owner, second is user; sessions bound to users (652.204844ms)
+✔ store: conversations, messages, elements are user-scoped (197.973393ms)
+✔ store: import validation rejects malformed archives, regenerates ids (127.779095ms)
+✔ config: defaults to registration off, env forces on, ENOENT safe (1.712208ms)
+✔ system prompt documents ui.db for data-driven elements (0.361345ms)
+✔ QuickJS has no browser capabilities or host Function escape (82.631254ms)
+✔ QuickJS interrupts CPU exhaustion (53.645838ms)
+✔ generated interaction validation catches DOM event and value getter mistakes without hiding stored elements (3.978697ms)
+ℹ tests 35
+ℹ suites 0
+ℹ pass 34
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 22319.746572

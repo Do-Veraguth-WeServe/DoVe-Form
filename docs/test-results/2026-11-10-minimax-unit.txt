@@ -1,0 +1,160 @@
+✔ setup: dedicated server, owner, model, conversation (1380.427359ms)
+[job] failed: 6351e449 Modellaufruf fehlgeschlagen: fetch failed
+✖ (1) second chat answers while the FIRST provider response is still streaming (122.875138ms)
+✖ (2) closing the connection (tab close) does NOT abort the provider; result persists with zero subscribers (9.585426ms)
+[job] failed: c0360c10 Modellaufruf fehlgeschlagen: fetch failed
+✖ (3) reload during the upstream stream: same job, completion lands exactly once (75.465604ms)
+✖ (4) explicit cancel DOES abort the upstream provider call (4.586097ms)
+[job] failed: 82696249 Modellaufruf fehlgeschlagen: fetch failed
+✖ (5) reverse provider completion: two held jobs land on their own containers (61.350944ms)
+[job] failed: 9adb74af Modellaufruf fehlgeschlagen: fetch failed
+✖ deletion race: conversation deleted while the provider streams — nothing resurrects (45.906631ms)
+✖ server restart honestly fails running provider jobs; explicit retry MAY re-call the provider and then succeeds (5.485861ms)
+✖ approved build cancellation aborts the connected provider and never publishes (7.248166ms)
+[job] failed: 724cdc9e Modellaufruf fehlgeschlagen: fetch failed
+✔ ownership: a foreign user never sees or touches the job (245.768403ms)
+✔ teardown (25.591124ms)
+✔ MiniMax Flash default preserves output budget without disabling required thinking (120.580076ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":5,"reasoningChars":15,"usage":{"completion_tokens":20,"reasoning_tokens":18}}
+[build-budget] {"round":1,"finish":"stop","visibleChars":5,"reasoningChars":15,"usage":{"completion_tokens":20,"reasoning_tokens":18}}
+✔ counts reasoning without retaining it; low effort only for GLM build rounds (109.343489ms)
+✔ clean round: prose parsed, finish_reason stop, actual content captured (no SSE envelopes) (61.086816ms)
+✔ finish_reason=length sets truncated; unterminated artifact reported as invalid (14.451426ms)
+✔ malformed SSE frames are ignored, valid frames still parsed (6.451212ms)
+✔ explicit provider error frame throws ProviderError (distinct from malformed frames) (5.794066ms)
+✔ final unterminated SSE line is parsed (4.421831ms)
+✔ UTF-8 multibyte char split across reads is reassembled (3.591358ms)
+✔ upstream 401 becomes ProviderError with status (permanent, caller must not retry) (4.025699ms)
+✔ content cap (accumulated deltas) throws SizeError (4.072345ms)
+✔ transport cap (raw SSE bytes) throws SizeError even with tiny visible content (4.300222ms)
+✔ round deadline expiry maps to abortKind timeout (306.626886ms)
+[provider] retry empty interrupted stream code=ECONNRESET
+[provider] retry empty interrupted stream code=ECONNRESET
+✔ external abort maps to abortKind external, not timeout (153.719597ms)
+✔ already-expired deadline fails fast with timeout kind (0.868006ms)
+✔ job generation has no default or zero-configured deadline (11.334416ms)
+✔ empty ECONNRESET retries once and completes, permanent reset stays bounded (3.192918ms)
+✔ connection reset after visible prose is not replayed (21.918755ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 20
+ℹ fail 8
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7285.08782
+
+✖ failing tests:
+
+test at test/jobs.test.mjs:186:1
+✖ (1) second chat answers while the FIRST provider response is still streaming (122.875138ms)
+  [TypeError [Error]: fetch failed] {
+    [cause]: Error: connect ECONNREFUSED 127.0.0.1:4599
+        at TCPConnectWrap.afterConnect [as oncomplete] (node:net:2083:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 4599
+    }
+  }
+
+test at test/jobs.test.mjs:212:1
+✖ (2) closing the connection (tab close) does NOT abort the provider; result persists with zero subscribers (9.585426ms)
+  [TypeError [Error]: fetch failed] {
+    [cause]: Error: connect ECONNREFUSED 127.0.0.1:4599
+        at TCPConnectWrap.afterConnect [as oncomplete] (node:net:2083:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 4599
+    }
+  }
+
+test at test/jobs.test.mjs:239:1
+✖ (3) reload during the upstream stream: same job, completion lands exactly once (75.465604ms)
+  AssertionError [ERR_ASSERTION]: planning succeeds
+      at approvedBuild (file:///root/.openclaw/workspace/projects/form/test/jobs.test.mjs:123:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/jobs.test.mjs:240:13)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test/jobs.test.mjs:259:1
+✖ (4) explicit cancel DOES abort the upstream provider call (4.586097ms)
+  [TypeError [Error]: fetch failed] {
+    [cause]: Error: connect ECONNREFUSED 127.0.0.1:4599
+        at TCPConnectWrap.afterConnect [as oncomplete] (node:net:2083:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 4599
+    }
+  }
+
+test at test/jobs.test.mjs:282:1
+✖ (5) reverse provider completion: two held jobs land on their own containers (61.350944ms)
+  AssertionError [ERR_ASSERTION]: planning succeeds
+      at approvedBuild (file:///root/.openclaw/workspace/projects/form/test/jobs.test.mjs:123:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/jobs.test.mjs:283:13)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test/jobs.test.mjs:307:1
+✖ deletion race: conversation deleted while the provider streams — nothing resurrects (45.906631ms)
+  AssertionError [ERR_ASSERTION]: planning succeeds
+      at approvedBuild (file:///root/.openclaw/workspace/projects/form/test/jobs.test.mjs:123:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/jobs.test.mjs:308:13)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test/jobs.test.mjs:324:1
+✖ server restart honestly fails running provider jobs; explicit retry MAY re-call the provider and then succeeds (5.485861ms)
+  [TypeError [Error]: fetch failed] {
+    [cause]: Error: connect ECONNREFUSED 127.0.0.1:4599
+        at TCPConnectWrap.afterConnect [as oncomplete] (node:net:2083:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 4599
+    }
+  }
+
+test at test/jobs.test.mjs:353:1
+✖ approved build cancellation aborts the connected provider and never publishes (7.248166ms)
+  [TypeError [Error]: fetch failed] {
+    [cause]: Error: connect ECONNREFUSED 127.0.0.1:4599
+        at TCPConnectWrap.afterConnect [as oncomplete] (node:net:2083:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 4599
+    }
+  }

@@ -1,0 +1,20 @@
+{
+  "ok": true,
+  "rollback": "/opt/form/.rollback/20261110-minimax-budget",
+  "previous": [
+    "provider.mjs",
+    "contract.mjs",
+    "test/css-preflight.test.mjs",
+    "test/run-all.mjs"
+  ],
+  "files": {
+    "provider.mjs": "a8ea6993541a09e0792f109dd2687fb98652c7b0d8879dfa0cd6428c144d83d1",
+    "contract.mjs": "b7087479b376d98085adaf6b2ef2043d0b5b3bc8b25e97d5b81a5d015aab5d5e",
+    "test/minimax-budget.test.mjs": "abe28ecb36cfa3b704240fe43887d49a82233008a6f47d83488afbcccb5b960a",
+    "test/css-preflight.test.mjs": "c4e1c98e560c5b8c7613071543c8f66d402b9424f50f5ed8d0b36ace8c3e0efe",
+    "test/run-all.mjs": "793f79d20162ff5ec283519f44ff6b6cf6e83fa0fbf07d024dfa8847dc11e34c",
+    "docs/MINIMAX-OUTPUT-BUDGET.md": "ed9aa47ebf06e0142c386fe5dc54dd94f4c63d26ea26b2d7ee9fa1ab4cf25b37"
+  },
+  "appHash": "29eea8e51e0e6c69afe066cba5e7a9409375ddc68ce0151ac4fffbf4c663cb7b",
+  "proof": "three idle checkpoints; form-user restart/save; loopback and both public routes health/CSP/auth/registration and unchanged frontend hash; no user artifact changes"
+}
