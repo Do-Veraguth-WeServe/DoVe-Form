@@ -1,0 +1,13 @@
+file:///root/.openclaw/workspace/projects/form/store.mjs:199
+      .run(id, convId, seq, role,
+       ^
+
+Error: database is locked
+    at Store.appendMessage (file:///root/.openclaw/workspace/projects/form/store.mjs:199:8)
+    at file:///root/.openclaw/workspace/projects/form/test/shared-elements-browser.mjs:38:15 {
+  code: 'ERR_SQLITE_ERROR',
+  errcode: 5,
+  errstr: 'database is locked'
+}
+
+Node.js v24.22.2

@@ -34,3 +34,13 @@ test('ready drains deferred remote event without redundant canonical fetch',asyn
  m.state.busy=true;f.emit([rev('a',1)]);await flush();assert.equal(f.requests.length,0);
  m.state.busy=false;m.handle.ready();await flush();assert.equal(f.requests.length,1);f.requests[0].resolve(snapshot('a',1));await flush();m.handle.ready();await flush();assert.equal(f.requests.length,1);f.controller.destroy();
 });
+
+test('optimistic state invalidation reconciles a return to the old content hash',async()=>{
+ const f=fixture(),m=f.mount('a',rev());await flush();f.emit([rev()]);await flush();
+ // A local edit means the previous hash no longer certifies the displayed state.
+ m.state.current={...m.state.current,stateRevision:null};m.state.busy=true;m.handle.changed();
+ f.emit([rev()]);await flush();assert.equal(f.requests.length,0);
+ m.state.busy=false;m.handle.changed();await flush();assert.equal(f.requests.length,1);
+ f.requests[0].resolve(snapshot());await flush();assert.equal(m.state.applied.length,1);
+ assert.equal(m.state.current.render.state.n,0);f.controller.destroy();
+});

@@ -1,6 +1,8 @@
 import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import assert from 'node:assert/strict';import {spawn} from 'node:child_process';import {once} from 'node:events';import {chromium} from 'playwright-core';import {Store} from '../store.mjs';import {ElementDB} from '../db.mjs';
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'form-owner-initial-')),BASE='http://127.0.0.1:4778';let app,browser;
 const store=new Store(dir),user=store.createUser('alice','password123'),conv=store.createConversation(user.id),db=new ElementDB(path.join(dir,'elements.sqlite'));
+const other=store.createConversation(user.id),foreign=store.createUser('bobby','password123'),foreignConv=store.createConversation(foreign.id);
+store.appendMessage(foreignConv.id,'assistant',{render:{version:1,name:'Foreign only',html:'<p id="foreign">Foreign account only</p>',css:'',js:'',state:{}}});
 const mid=store.appendMessage(conv.id,'assistant',{render:{version:1,name:'Initial DB',html:'<p id="rows"></p>',css:'',js:'ui.db.select("notes",{},r=>ui.text("rows",r.rows.length));',state:{}}});
 const op=p=>db.op({sessionId:conv.id,elementId:mid,table:'notes',...p});op({op:'create'});op({op:'insert',row:{text:'first'}});
 try{
@@ -21,6 +23,22 @@ try{
  console.log('PASS two-tab stream budget, third tab fails visibly and reconnects after slot release');
  // Close the second live tab, then invalidate the remaining source.
  await p3.evaluate(()=>dispatchEvent(new Event('offline')));await p3.close();
+ for(const width of [1280,390]){
+  await p.setViewportSize({width,height:844});
+  const navigate=async id=>{if(width===390)await p.locator('#mobile').click();await p.locator('.session-row[data-sid="'+id+'"] .session-open').click();};
+  const old=await p.locator('#feed iframe').elementHandle();await navigate(other.id);
+  assert.equal(await p.locator('#feed iframe').count(),0);assert.equal(await old.evaluate(n=>n.isConnected),false);
+  await navigate(conv.id);await p.frameLocator('#feed iframe').locator('#rows').filter({hasText:/^2$/}).waitFor({timeout:6000});
+ }
+ console.log('PASS desktop/mobile conversation navigation tears down old owner and restores canonical DB view');
+ await p.setViewportSize({width:1280,height:900});
+ const logout=async()=>{await p.locator('#preferencesbtn').click();await p.locator('#logout').click();await p.locator('#login[open]').waitFor();assert.equal(await p.locator('#feed iframe').count(),0);};
+ const login=async name=>{await p.locator('#loginform [name=username]').fill(name);await p.locator('#loginform [name=password]').fill('password123');await p.locator('#loginform button').click();await p.locator('#login[open]').waitFor({state:'detached'});};
+ await logout();await login('bobby');await p.frameLocator('#feed iframe').locator('#foreign').waitFor();
+ assert.equal(await p.locator('#feed iframe').count(),1);assert.equal(await p.locator('.session-row[data-sid="'+conv.id+'"]').count(),0);
+ await logout();await login('alice');await p.frameLocator('#feed iframe').locator('#rows').filter({hasText:/^2$/}).waitFor({timeout:6000});
+ assert.equal(await p.locator('.session-row[data-sid="'+foreignConv.id+'"]').count(),0);
+ console.log('PASS logout/account switch/relogin closes owner renderers and isolates canonical data');
  store.db.prepare('DELETE FROM messages WHERE id=?').run(mid);
  await p.getByText('Element nicht mehr verfügbar.',{exact:true}).waitFor({timeout:6000});assert.equal(await p.locator('#feed iframe').count(),0);
  console.log('PASS source deletion invalidates live owner surface without stale iframe');

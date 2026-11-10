@@ -15,7 +15,20 @@ async function recipientState(n){
 const state=()=>s.getRender(mid).state.n;const edb=new ElementDB(path.join(dir,'elements.sqlite'));
 try{
  app=spawn('node',['server.mjs'],{cwd:process.env.FORM_TEST_ROOT||process.cwd(),env:{...process.env,PORT:'4777',FORM3_DATA:dir,FORM3_MODELS:path.join(dir,'models.json')},stdio:['ignore','pipe','inherit']});await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('startup')),10000);app.stdout.on('data',d=>{if(String(d).includes('ready')){clearTimeout(t);resolve();}});});
- browser=await chromium.launch({executablePath:'/root/.cache/puppeteer/chrome/linux-153.0.8010.36/chrome-linux64/chrome',headless:true,args:['--no-sandbox']});const p=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];page=p;p.on('pageerror',e=>errors.push(e.message));p.on('response',async r=>{if(r.url().includes('/api/elements/owner/')||r.url().endsWith('/api/state')){const item={path:new URL(r.url()).pathname,status:r.status()};transport.push(item);if(!r.url().includes('/stream'))try{const data=await r.json();item.n=data.render?.state?.n??data.state?.n;}catch{}}});if(process.env.REPRO_BASELINE==='1')await p.route('**/app.js',r=>r.fulfill({contentType:'text/javascript',body:fs.readFileSync('/opt/form/dist/app.js')}));await p.goto(BASE);await p.locator('#loginform [name=username]').fill('alice');await p.locator('#loginform [name=password]').fill('password123');await p.locator('#loginform button').click();await p.locator('#login[open]').waitFor({state:'detached'});
+ browser=await chromium.launch({executablePath:'/root/.cache/puppeteer/chrome/linux-153.0.8010.36/chrome-linux64/chrome',headless:true,args:['--no-sandbox']});const p=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];page=p;p.on('pageerror',e=>errors.push(e.message));
+ if(process.env.FORM_OWNER_TRACE==='1'){
+  p.on('console',m=>{if(m.text().startsWith('OWNERTRACE'))transport.push({trace:m.text()});});
+  let bundle=fs.readFileSync(path.join(process.env.FORM_TEST_ROOT||process.cwd(),'dist/app.js'),'utf8');
+  for(const [before,after] of [
+   ['async function drain(entry) {','async function drain(entry) { console.debug("OWNERTRACE drain", JSON.stringify({id:entry.id,seq:entry.seq,dirty:entry.dirty,loading:entry.loading,failed:entry.failed,busy:entry.callbacks.busy(),epoch}));'],
+   ['const next = await fetchSnapshot(entry.id);','const next = await fetchSnapshot(entry.id); console.debug("OWNERTRACE fetched", JSON.stringify({n:next.render?.state?.n,seq,currentSeq:entry.seq,generation,epoch}));'],
+   ['entry.loading = false;','console.debug("OWNERTRACE finally",JSON.stringify({seq:entry.seq,dirty:entry.dirty,epoch})); entry.loading = false;'],
+   ['function rebuild() {','function rebuild() {console.debug("OWNERTRACE rebuild",epoch);'],
+   ['function fail(message) {','function fail(message) {console.debug("OWNERTRACE fail",message);']
+  ]){assert.ok(bundle.includes(before),before);bundle=bundle.replace(before,after);}
+  await p.route('**/app.js',r=>r.fulfill({contentType:'text/javascript',body:bundle}));
+ }
+p.on('response',async r=>{if(r.url().includes('/api/elements/owner/')||r.url().endsWith('/api/state')){const item={path:new URL(r.url()).pathname,status:r.status()};transport.push(item);if(!r.url().includes('/stream'))try{const data=await r.json();item.n=data.render?.state?.n??data.state?.n;}catch{}}});if(process.env.REPRO_BASELINE==='1')await p.route('**/app.js',r=>r.fulfill({contentType:'text/javascript',body:fs.readFileSync('/opt/form/dist/app.js')}));await p.goto(BASE);await p.locator('#loginform [name=username]').fill('alice');await p.locator('#loginform [name=password]').fill('password123');await p.locator('#loginform button').click();await p.locator('#login[open]').waitFor({state:'detached'});
  const frame=()=>p.frameLocator('#feed iframe').first();
  for(const width of [1280,390]){
  await p.setViewportSize({width,height:844});await p.reload();await frame().locator('#inc').waitFor();
@@ -31,6 +44,7 @@ try{
  }
  if(process.env.FORM_OWNER_STALE_REPRO!=='1'){
  if(process.env.FORM_OWNER_DB_ONLY!=='1'){
+ for(const delta of process.env.FORM_OWNER_RETURN_BASELINE==='1'?[-1]:[10,-1]){
  // Hold an already-committed owner response while a recipient changes state.
  // No remount is allowed before local settlement; afterwards fetch canonical state.
  await frame().locator('#inc').waitFor();
@@ -39,14 +53,19 @@ try{
  await p.route('**/api/state',async route=>{const response=await route.fetch();assert.equal(response.status(),200);saveSeen();await saveGate;await route.fulfill({response}).catch(()=>{});});
  let remoteValue;
  try{
- await frame().locator('#inc').click();await saveCommitted;remoteValue=state()+10;await recipientState(remoteValue);
+ await frame().locator('#inc').click();await saveCommitted;remoteValue=state()+delta;await recipientState(remoteValue);
  await new Promise(resolve=>setTimeout(resolve,1200));
  assert.equal(await originalFrame.evaluate(f=>f.isConnected&&!f.dataset.retained),true);
  assert.equal(await p.locator('#feed iframe').count(),1);
  }finally{releaseSave();await p.unrouteAll({behavior:'wait'});}
  await frame().locator('#n').filter({hasText:new RegExp('^'+remoteValue+'$')}).waitFor({timeout:6000});
+ const settledFrame=await p.locator('#feed iframe').elementHandle();
  const subsequent=p.waitForResponse(r=>r.url().endsWith('/api/state'));await frame().locator('#inc').click();assert.equal((await subsequent).status(),200);assert.equal(state(),remoteValue+1);
- console.log('PASS pending owner acknowledgement defers remote replacement and resumes fresh CAS writes');
+ await new Promise(resolve=>setTimeout(resolve,1200));
+ assert.equal(await settledFrame.evaluate(f=>f.isConnected&&!f.dataset.retained),true,'own state acknowledgement must not restart the sandbox');
+ assert.equal(await frame().locator('#n').textContent(),String(remoteValue+1));
+ console.log('PASS pending owner acknowledgement defers remote replacement and resumes fresh CAS writes delta='+delta);
+ }
  }else console.log('FOCUSED DB RUN: pending-state gate intentionally not run; full failure retained separately');
  // Deterministic handoff: hold app-owned Worker loading, not the guest itself.
  for(const width of [1280,390]){

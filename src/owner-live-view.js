@@ -23,7 +23,15 @@ export function ownerLiveView({id,render,getRender,adopt,subscriptions,callbacks
   const guarded=fn=>(...args)=>{if(!alive()||(refresh&&!interacted))return Promise.resolve(deny());return operation(()=>fn?.(...args));};
   raw=renderUI(data,{...callbacks,
    onInteraction:()=>{if(alive())interacted=true;},
-   onState:state=>{if(!alive()||(refresh&&!interacted))return;return operation(()=>callbacks.onState?.(state));},
+   onState:state=>{
+    if(!alive()||(refresh&&!interacted))return;
+    // The guest has already changed its visible state. The old content hash no
+    // longer describes that surface, even if a recipient restores that exact
+    // canonical value while our acknowledgement is held. Retain the DB/code
+    // baseline so an unchanged own-write echo need not restart its Worker.
+    if(revision)revision={...revision,stateRevision:null};
+    return operation(()=>callbacks.onState?.(state));
+   },
    onAction:guarded(callbacks.onAction),onConnection:guarded(callbacks.onConnection),
    onDb:p=>{
     if(!alive())return Promise.resolve(deny());
