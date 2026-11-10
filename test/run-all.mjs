@@ -32,6 +32,8 @@ step('question contract',run('node',['--test','test/question-contract.test.mjs']
 step('direct multi-question answers',run('node',['test/question-flow.test.mjs']));
 step('guided planning metadata',run('node',['--test','test/planning-offer.test.mjs','test/planning-offer-state.test.mjs']));
 step('build (esbuild + bridge hash + wasm)', run('node', ['build.mjs']));
+step('public static content validators',run('node',['--test','test/static-response.test.mjs']));
+step('public asset cache desktop/mobile',run('node',['test/static-cache.mjs']));
 step('Android TWA and Digital Asset Links contract', run('node', ['--test', 'test/android-contract.test.mjs']));
 step('app modal safety',run('node',['test/dialogs-policy.mjs']));
 step('app modal memory desktop/mobile',run('node',['test/dialogs-browser.mjs']));

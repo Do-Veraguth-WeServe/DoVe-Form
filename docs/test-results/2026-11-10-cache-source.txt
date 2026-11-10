@@ -1,0 +1,62 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for getByRole('button', { name: 'Element öffnen', exact: true })
+    - locator resolved to <button class="icon" type="button" aria-label="Element öffnen" title="Element öffnen (Vollbild, Code, Versionen)">↗</button>
+  - attempting click action
+    2 × waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <button type="button">Versionen</button> from <dialog open="" id="overlay" aria-label="Elementansicht">…</dialog> subtree intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 × waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <button type="button">Versionen</button> from <dialog open="" id="overlay" aria-label="Elementansicht">…</dialog> subtree intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    58 × waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <button type="button">Versionen</button> from <dialog open="" id="overlay" aria-label="Elementansicht">…</dialog> subtree intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+
+    at /root/.openclaw/workspace/projects/form/test/static-cache.mjs:29:87 {
+  log: [
+    "  - waiting for getByRole('button', { name: 'Element öffnen', exact: true })",
+    '    - locator resolved to <button class="icon" type="button" aria-label="Element öffnen" title="Element öffnen (Vollbild, Code, Versionen)">↗</button>',
+    '  - attempting click action',
+    '    2 × waiting for element to be visible, enabled and stable',
+    '      - element is visible, enabled and stable',
+    '      - scrolling into view if needed',
+    '      - done scrolling',
+    '      - <button type="button">Versionen</button> from <dialog open="" id="overlay" aria-label="Elementansicht">…</dialog> subtree intercepts pointer events',
+    '    - retrying click action',
+    '    - waiting 20ms',
+    '    2 × waiting for element to be visible, enabled and stable',
+    '      - element is visible, enabled and stable',
+    '      - scrolling into view if needed',
+    '      - done scrolling',
+    '      - <button type="button">Versionen</button> from <dialog open="" id="overlay" aria-label="Elementansicht">…</dialog> subtree intercepts pointer events',
+    '    - retrying click action',
+    '      - waiting 100ms',
+    '    58 × waiting for element to be visible, enabled and stable',
+    '       - element is visible, enabled and stable',
+    '       - scrolling into view if needed',
+    '       - done scrolling',
+    '       - <button type="button">Versionen</button> from <dialog open="" id="overlay" aria-label="Elementansicht">…</dialog> subtree intercepts pointer events',
+    '     - retrying click action',
+    '       - waiting 500ms'
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.22.2

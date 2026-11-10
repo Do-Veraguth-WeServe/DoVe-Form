@@ -1,3 +1,4 @@
+import {staticResponse} from './static-response.mjs';
 import {offeredPlan,markOfferedPlan} from './planning-offer-state.mjs';
 import {Bugs} from './bugs.mjs';
 import {LiveDiagnostics} from './live-diagnostics.mjs';
@@ -184,8 +185,8 @@ const server = http.createServer(async (req, res) => {
     const file = files[pathname];
     if (!file) return reply(res, 404, { error: 'Not found' });
     const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.wasm': 'application/wasm', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.json': 'application/json' };
-    res.setHeader('Content-Type', types[path.extname(file)]);
-    return fs.createReadStream(path.join(DIST, file)).on('error', () => { if (!res.headersSent) reply(res, 404, { error: 'Not found' }); else res.end(); }).pipe(res);
+    try { return await staticResponse(req, res, path.join(DIST, file), types[path.extname(file)]); }
+    catch { return reply(res, 503, { error: 'Datei momentan nicht verfügbar.' }); }
   }
 
   // --- everything below requires a session ---

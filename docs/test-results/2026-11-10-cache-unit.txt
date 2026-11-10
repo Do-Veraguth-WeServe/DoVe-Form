@@ -1,0 +1,44 @@
+✔ opt-in acceptance and uniform foreign denial, no copied chats or capability transfer (391.136775ms)
+✔ actual shared rows update one namespace; forged namespace and schema operations cannot escape (287.738604ms)
+✔ revocation rechecks every read/write; new grant never reactivates old token (282.238276ms)
+✔ state updates remain visible, code changes fail closed until fresh acceptance (292.171385ms)
+✔ disabled accounts and deleted source are unavailable; additive table survives reopening (254.634621ms)
+✔ pending offers cannot read and quotas do not auto-share other elements (443.754878ms)
+✔ grant listing is paginated and account scoped without pending source data (277.394385ms)
+✔ state compare-and-set detects stale snapshots without editing code (255.739417ms)
+✔ state errors roll back and unavailable grants cannot disclose conflict state (282.744485ms)
+✔ recipient create compatibility never changes schema and matches owner response (282.717697ms)
+✔ separate recipients share conflict token and failed persistence is atomic (323.671911ms)
+✔ cross-process revocation cannot interleave shared row authorization and use (560.872676ms)
+✔ cross-process disable cannot interleave offer or acceptance checks (586.208712ms)
+✔ shared snapshots are coherent against cross-process revocation (505.401339ms)
+✔ owner persistence preserves legacy saves but requires CAS for active shared code (273.417767ms)
+✔ owner code replacement is atomic, versioned and invalidates accepted code (290.031166ms)
+✔ owner CAS holds writer lock through snapshot and persistence (380.082963ms)
+✔ owner snapshot rejects same-state html replacement and state write (266.41891ms)
+✔ owner snapshot rejects same-state actions replacement and state write (261.939018ms)
+✔ grant-era owner saves fail closed for legacy clients: pending (265.269437ms)
+✔ grant-era owner saves fail closed for legacy clients: active (265.925379ms)
+✔ grant-era owner saves fail closed for legacy clients: revoked (320.872541ms)
+✔ grant-era owner saves fail closed for legacy clients: declined (285.405936ms)
+✔ grant-era owner saves fail closed for legacy clients: invalidated (258.236275ms)
+✔ recipient deletion preserves grant-era owner protection: pending (243.356215ms)
+✔ recipient deletion preserves grant-era owner protection: active (263.735975ms)
+✔ recipient deletion preserves grant-era owner protection: revoked (289.186485ms)
+✔ recipient deletion preserves grant-era owner protection: declined (363.041365ms)
+✔ recipient deletion preserves grant-era owner protection: invalidated (320.161013ms)
+✔ grant marker backfills existing grants without changing source, survives reopen and cascades with source (288.073853ms)
+✔ failed offer rolls back marker and grant together; never-offered elements stay private-compatible (235.574804ms)
+✔ session, ACL and snapshot write share the transaction; closure releases slots (5.287331ms)
+✔ backpressure closes rather than queueing more private snapshots (0.616036ms)
+✔ expired session and database contention fail closed with generic invalidation (1.019383ms)
+✔ per-account stream cap does not consume a slot for rejected clients (0.745385ms)
+✔ content validators invalidate same-size replacements and allow weak/list/wildcard GET comparisons (34.744643ms)
+ℹ tests 36
+ℹ suites 0
+ℹ pass 36
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10318.073899
