@@ -109,7 +109,7 @@ export function bridge(){
 }
 
 
-export function renderUI(data,{onState,onSuggest,onError,onWarning=()=>{},onPing,onDb,onAction,onConnection,onInteraction=()=>{}}={}){
+export function renderUI(data,{onState,onSuggest,onError,onWarning=()=>{},onPing,onDb,onAction,onConnection,onInteraction=()=>{},onReady=()=>{}}={}){
   let runtimeError=false,htmlWarning=false,observationPending=null,destroyed=false;
   const reportError=onError||(()=>{}),reportWarning=onWarning;
   onError=text=>{runtimeError=true;reportError(text);};
@@ -123,7 +123,7 @@ export function renderUI(data,{onState,onSuggest,onError,onWarning=()=>{},onPing
   f.setAttribute('allow',"camera 'none'; microphone 'none'; geolocation 'none'");
   const channel=crypto.randomUUID(),nonce=crypto.randomUUID();
   let worker,port,timer,clock,inflight=false,stopped=false;
-  let connectionPending=0;
+  let connectionPending=0,dbPending=0,domPending=0,readyNotified=false;
   const asyncQ=[]; // pending synthetic-event deliveries (ping/db results)
   const declarations=data.animations?validateAnimations(data.animations):null;
   const prepare=prepareAnimation;
@@ -163,7 +163,7 @@ export function renderUI(data,{onState,onSuggest,onError,onWarning=()=>{},onPing
         const pending=observationPending;observationPending=null;clearTimeout(pending.timer);
         pending.resolve({runtimeError,htmlWarning,layout:d.layout});return;
       }
-      if(d?.type==='applied'){f.style.visibility='';f.removeAttribute('aria-busy');f.dataset.ready='true';}
+      if(d?.type==='applied'){domPending=Math.max(0,domPending-1);f.style.visibility='';f.removeAttribute('aria-busy');f.dataset.ready='true';if(!readyNotified&&!destroyed&&!stopped&&!inflight&&!asyncQ.length&&!dbPending&&!domPending){readyNotified=true;onReady();}}
       if(d?.type==='scroll-stop')cancelFeedMomentum();
       if(d?.type==='scroll-release'&&Number.isFinite(d.velocity)&&Math.abs(d.velocity)<=2.5)startFeedMomentum(f,d.velocity);
       if(d?.type==='scroll-parent'&&Number.isFinite(d.delta)&&Math.abs(d.delta)<=160){
@@ -236,19 +236,19 @@ export function renderUI(data,{onState,onSuggest,onError,onWarning=()=>{},onPing
           if(!ref||!['create','drop','insert','select','update','delete'].includes(dbop)||!/^[a-z0-9_]{1,32}$/.test(table)||!args)
             deliver('__db:'+ref,'db',{ok:false,error:'Ungültige Datenbank-Anfrage.'});
           else if(asyncQ.length>=8)deliver('__db:'+ref,'db',{ok:false,error:'Zu viele offene Anfragen.'});
-          else Promise.resolve(typeof onDb==='function'?onDb({dbop,table,args}):undefined)
+          else {dbPending++;Promise.resolve(typeof onDb==='function'?onDb({dbop,table,args}):undefined)
             .then(v=>(v&&typeof v==='object')?v:{ok:false,error:'Datenbank nicht verfügbar.'})
             .catch(()=>({ok:false,error:'Datenbankfehler.'}))
-            .then(v=>deliver('__db:'+ref,'db',{
+            .then(v=>{dbPending--;deliver('__db:'+ref,'db',{
               ok:v.ok===true,
               id:typeof v.id==='number'&&Number.isFinite(v.id)?v.id:undefined,
               rows:Array.isArray(v.rows)?v.rows.slice(0,500):undefined,
               truncated:v.truncated===true||undefined,
               error:typeof v.error==='string'?v.error.slice(0,160):undefined
-            }));
+            });});}
         }else dom.push(o);
       }
-      port.postMessage(dom);
+      domPending++;port.postMessage(dom);
       pumpAsync();
     };
     worker.onerror=()=>{stopped=true;port?.postMessage([{op:'stop-animations'}]);clearInterval(clock);clearTimeout(timer);onError('Interaktion konnte nicht gestartet werden.');};
