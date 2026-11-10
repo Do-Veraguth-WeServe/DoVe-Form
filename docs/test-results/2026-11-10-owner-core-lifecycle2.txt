@@ -1,0 +1,81 @@
+PASS wrong password rejected
+PASS registration and model-free composer gate
+PASS current settings navigation, model add, masked key and Escape
+PASS two visible prose stages before structured chat offer
+CORETRACE render Error
+    at renderPreservingScroll (http://127.0.0.1:4825/app.js:17263:69)
+    at syncFromServer (http://127.0.0.1:4825/app.js:17947:31)
+PASS ordinary imperative chat cannot build
+CORETRACE render Error
+    at renderPreservingScroll (http://127.0.0.1:4825/app.js:17263:69)
+    at changed (http://127.0.0.1:4825/app.js:18190:301)
+    at button.onclick (http://127.0.0.1:4825/app.js:1130:5)
+CORETRACE render Error
+    at renderPreservingScroll (http://127.0.0.1:4825/app.js:17263:69)
+    at changed (http://127.0.0.1:4825/app.js:18190:301)
+    at Object.onAccepted (http://127.0.0.1:4825/app.js:1137:9)
+    at http://127.0.0.1:4825/app.js:18457:29
+    at readSSE (http://127.0.0.1:4825/app.js:18394:11)
+    at async send (http://127.0.0.1:4825/app.js:18446:5)
+    at async start (http://127.0.0.1:4825/app.js:18192:13)
+    at async button.onclick (http://127.0.0.1:4825/app.js:1132:7)
+CORETRACE render Error
+    at renderPreservingScroll (http://127.0.0.1:4825/app.js:17263:69)
+    at applyJob (http://127.0.0.1:4825/app.js:17781:35)
+    at EventSource.<anonymous> (http://127.0.0.1:4825/app.js:17883:16)
+CORETRACE render Error
+    at renderPreservingScroll (http://127.0.0.1:4825/app.js:17263:69)
+    at changed (http://127.0.0.1:4825/app.js:18190:301)
+    at button.onclick (http://127.0.0.1:4825/app.js:1142:7)
+CORETRACE render Error
+    at renderPreservingScroll (http://127.0.0.1:4825/app.js:17263:69)
+    at applyJob (http://127.0.0.1:4825/app.js:17781:35)
+    at start.onclick (http://127.0.0.1:4825/app.js:19605:18)
+CORETRACE render Error
+    at renderPreservingScroll (http://127.0.0.1:4825/app.js:17263:69)
+    at start.onclick (http://127.0.0.1:4825/app.js:19609:7)
+CORETRACE render Error
+    at renderPreservingScroll (http://127.0.0.1:4825/app.js:17263:69)
+    at applyJob (http://127.0.0.1:4825/app.js:17781:35)
+    at EventSource.<anonymous> (http://127.0.0.1:4825/app.js:17883:16)
+CORETRACE snapshot {"previous":{"id":"ffad4df1-d635-4a0f-99f0-03ccd1788298","conversationId":"104421a5-371d-488f-925f-f36a752fd851","messageId":"62b9f822-b643-4909-859e-c449accb58d9","targetMessageId":null,"kind":"create","blueprintRevision":1,"state":"building","phase":"prose","rev":8,"error":null,"modelId":"158ab96f-b698-4451-8655-7e572de5185b","createdAt":"2026-11-10T12:09:10.153Z","updatedAt":"2026-11-10T12:09:10.164Z"},"next":{"id":"ffad4df1-d635-4a0f-99f0-03ccd1788298","conversationId":"104421a5-371d-488f-925f-f36a752fd851","messageId":"62b9f822-b643-4909-859e-c449accb58d9","targetMessageId":null,"kind":"create","blueprintRevision":1,"state":"building","phase":"prose","rev":8,"error":null,"createdAt":"2026-11-10T12:09:10.153Z","prose":null}}
+CORETRACE render Error
+    at renderPreservingScroll (http://127.0.0.1:4825/app.js:17263:69)
+    at EventSource.<anonymous> (http://127.0.0.1:4825/app.js:17874:22)
+CORETRACE snapshot {"previous":{"id":"ffad4df1-d635-4a0f-99f0-03ccd1788298","conversationId":"104421a5-371d-488f-925f-f36a752fd851","messageId":"62b9f822-b643-4909-859e-c449accb58d9","targetMessageId":null,"kind":"create","blueprintRevision":1,"state":"building","phase":"prose","rev":8,"error":null,"modelId":"158ab96f-b698-4451-8655-7e572de5185b","createdAt":"2026-11-10T12:09:10.153Z","updatedAt":"2026-11-10T12:09:10.164Z"},"next":{"id":"ffad4df1-d635-4a0f-99f0-03ccd1788298","conversationId":"104421a5-371d-488f-925f-f36a752fd851","messageId":"62b9f822-b643-4909-859e-c449accb58d9","targetMessageId":null,"kind":"create","blueprintRevision":1,"state":"building","phase":"prose","rev":8,"error":null,"createdAt":"2026-11-10T12:09:10.153Z","prose":null}}
+CORETRACE render Error
+    at renderPreservingScroll (http://127.0.0.1:4825/app.js:17263:69)
+    at EventSource.<anonymous> (http://127.0.0.1:4825/app.js:17874:22)
+PASS concurrent chat completes before held build; desktop/mobile reload retain one identical job
+PASS tab-close build completion without viewer; desktop/mobile reopen one persisted Element, no regeneration
+PASS explicit approval and real held build before artifact
+PASS real server persistence and reload without duplicate build
+PASS 390px interaction and persisted reload
+PASS prose-only 1280: no build, no live iframe remount, unchanged persisted Element and reload
+PASS prose-only 390: no build, no live iframe remount, unchanged persisted Element and reload
+PASS explicit Stop 1280: upstream aborted, durable cancellation, static reduced motion, Element preserved
+PASS explicit Stop 390: upstream aborted, durable cancellation, static reduced motion, Element preserved
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.screenshot: Element is not attached to the DOM
+Call log:
+  - taking element screenshot
+  - waiting for fonts to load...
+  - fonts loaded
+  - attempting scroll into view action
+    - waiting for element to be stable
+
+    at /root/.openclaw/workspace/projects/form/test/browser-core.test.mjs:220:28 {
+  log: [
+    '  - taking element screenshot',
+    '  - waiting for fonts to load...',
+    '  - fonts loaded',
+    '  - attempting scroll into view action',
+    '    - waiting for element to be stable'
+  ],
+  name: 'Error'
+}
+
+Node.js v24.22.2

@@ -1,0 +1,23 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: unchanged boundary animation-verification.js
++ actual - expected
+
++ '8b11354c5b4029f9430255f45b2b57ed689d5282b2281b1e17842d2c62475e82'
+- '138516229633a7722edc0f4ed06c5b4378c92060f5c5f451a58ff4204613f85f'
+
+    at file:///root/.openclaw/workspace/projects/form/deploy/owner-live-release.mjs:6:83
+    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+    at async node:internal/modules/esm/loader:647:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: '8b11354c5b4029f9430255f45b2b57ed689d5282b2281b1e17842d2c62475e82',
+  expected: '138516229633a7722edc0f4ed06c5b4378c92060f5c5f451a58ff4204613f85f',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.22.2
