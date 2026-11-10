@@ -1,0 +1,64 @@
+✔ auth: bootstrap unauthenticated -> 401, status reports registration open + no users (140.195993ms)
+✔ auth: register first user = owner; cookie HttpOnly+SameSite=Strict (+Secure behind https proxy) (126.165784ms)
+✔ auth: register duplicate and bad inputs rejected (22.179281ms)
+✔ auth: login with wrong password rejected uniformly; success issues new session (312.343501ms)
+✔ auth: failed logins rate-limited (10 per 5 min per user+client) (971.59933ms)
+✔ CSRF is session-bound: owner token rejected on another session, missing token rejected (13.476768ms)
+✔ models: owner adds model, key masked everywhere, file chmod 600 (27.918678ms)
+✔ models: shared provider hides key, users own their private providers (123.994876ms)
+✔ conversations: server-side create + list, user B sees nothing of user A (18.117979ms)
+✔ chat: foreign conversation rejected for user B (7.115872ms)
+✔ chat streams prose without implicit build; approved build persists result (5776.279134ms)
+✔ server-side conversations survive a FRESH session (device switch) (92.479648ms)
+✔ windowed history reaches upstream from the server store (518.203903ms)
+✔ element state sync: /api/state updates the stored render, ownership-checked (37.360288ms)
+✔ invalid artifact triggers exactly ONE corrective build round then success (4252.326797ms)
+✔ finish_reason=length: one compact correction, real content replay, ready render (4389.775403ms)
+[job] failed: 2f368f46 Modellfehler beim Streaming: upstream exploded
+✔ explicit provider error frame: distinct error, NO retry, single upstream call (49.379301ms)
+[job] failed: 78a88b41 Modell-Endpunkt antwortete 401 – Invalid API key
+✔ permanent upstream auth error (401): surfaced, NOT retried (36.073808ms)
+✔ final unterminated SSE line is still parsed (36.388936ms)
+✔ UTF-8 multibyte split across TCP reads is reassembled (32.983685ms)
+✔ prose-only answer needs no artifact and is valid (249.231274ms)
+✔ client disconnect detaches the viewer only: the provider job finishes server-side (6102.872585ms)
+✔ EXPLICIT cancel aborts the upstream provider call (1068.724913ms)
+✔ request validation: unknown fields, bad history, bad states rejected (18.104697ms)
+✔ refinement: approval required; target replaced in place and version archived (4403.423798ms)
+✔ refinement: invalid refineTarget rejected with size caps (363.417556ms)
+✔ db endpoint: auth guards mirror chat/ping (110.804689ms)
+✔ db endpoint: CRUD lifecycle on a REAL element, quotas + scoping enforced (162.399967ms)
+✔ ping endpoint: CSRF, strict host validation, fixture ok/blocked/dns, per-user rate limit (173.078342ms)
+✔ import: archives land server-side, ids regenerated; export surface stays key-free (18.833186ms)
+✖ models file is not served and static surface is minimal (14.986945ms)
+✔ logout invalidates the session server-side (95.726466ms)
+✔ jobs: snapshot/stream require auth; scoping, cancel ownership, retry guardrails (69.890739ms)
+✔ delete model, then chat is blocked with friendly error (8.855828ms)
+ℹ tests 34
+ℹ suites 0
+ℹ pass 33
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 30012.766466
+
+✖ failing tests:
+
+test at test/api.test.mjs:537:1
+✖ models file is not served and static surface is minimal (14.986945ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  404 !== 200
+
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form-cspfix/test/api.test.mjs:541:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 404,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

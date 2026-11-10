@@ -6,12 +6,13 @@ import assert from 'node:assert/strict';
 import {chromium} from 'playwright-core';
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'form-shapes-')),BASE='http://127.0.0.1:4839';
 fs.writeFileSync(path.join(dir,'models.json'),JSON.stringify({models:[]}),{mode:0o600});
-let server,browser;
+let server,browser;const cspViolations=[];
 try{
  server=spawn('node',['server.mjs'],{cwd:process.env.FORM_TEST_ROOT||process.cwd(),env:{...process.env,PORT:'4839',FORM3_ORIGIN:BASE,FORM3_DATA:dir,FORM3_MODELS:path.join(dir,'models.json')},stdio:['ignore','pipe','inherit']});
  await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('startup')),15000);server.stdout.on('data',d=>{if(String(d).includes('ready')){clearTimeout(t);resolve()}});server.on('exit',reject)});
  browser=await chromium.launch({executablePath:'/root/.cache/puppeteer/chrome/linux-153.0.8010.36/chrome-linux64/chrome',args:['--no-sandbox'],headless:true});
- const p=await browser.newPage();
+ const watchCsp=p=>p.on('console',m=>{if(m.type()==='error'&&m.text().includes('Content Security Policy'))cspViolations.push(m.text().slice(0,120))});
+ const p=await browser.newPage();watchCsp(p);
  await p.goto(BASE);
  const reg=await p.evaluate(async()=>(await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'shapes',password:'password123'})})).status);
  assert.equal(reg,200);
@@ -39,5 +40,26 @@ try{
  assert.match(await p.locator('#feed').evaluate(e=>e.style.backgroundImage),/fill-opacity='0\.090'/);
  const overflow=await p.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
  assert.equal(overflow,0,'no horizontal overflow');
- console.log('PASS shapes tile scrolls locally, settings slider 0–100 % works, 0 % hides, persists');
+ await p.close();
+ // Honest render proof: feed-only screenshots with the dialog CLOSED, intensity preset
+ // before the app boots. The CSP must allow the data-URI tile, and 0 % vs 100 % must differ.
+ const shot=async v=>{
+  const ctx=await browser.newContext({viewport:{width:1280,height:800}});
+  await ctx.addInitScript(v=>{try{localStorage.setItem('form3.shapes',v)}catch{}},v);
+  const q=await ctx.newPage();watchCsp(q);
+  await q.goto(BASE);
+  await q.locator('#loginform [name=username]').fill('shapes');
+  await q.locator('#loginform [name=password]').fill('password123');
+  await q.locator('#loginform button').click();
+  await q.locator('#login[open]').waitFor({state:'detached'});
+  await q.waitForTimeout(400);
+  const buf=await q.locator('#feed').screenshot();
+  await ctx.close();return buf;
+ };
+ const off=await shot('0'),on=await shot('100');
+ assert.notEqual(off.length,on.length,'0 % and 100 % feed renders must differ');
+ let diff=0;for(let i=0;i<Math.min(off.length,on.length);i++)if(off[i]!==on[i])diff++;
+ assert.ok(diff>50,'feed pixels must change with intensity (diff bytes: '+diff+')');
+ assert.deepEqual(cspViolations,[],'no CSP violations may remain for tile, manifest or icon');
+ console.log('PASS shapes render under CSP (feed pixel diff '+diff+' bytes), slider 0–100 %, 0 % hides, persists, no CSP violations');
 }finally{await browser?.close();server?.kill();if(server)await new Promise(r=>server.exitCode!==null?r():server.once('exit',r));fs.rmSync(dir,{recursive:true,force:true});}

@@ -1,0 +1,1 @@
+PASS shapes render under CSP (feed pixel diff 25769 bytes), slider 0–100 %, 0 % hides, persists, no CSP violations

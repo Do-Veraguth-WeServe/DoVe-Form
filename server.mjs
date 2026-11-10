@@ -136,7 +136,7 @@ const server = http.createServer(async (req, res) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
-  res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'" + (bridgeHash ? " 'sha256-" + bridgeHash + "'" : "") + "; style-src 'unsafe-inline'; worker-src 'self'; connect-src 'self'; frame-src 'self' about:; img-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
+  res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'" + (bridgeHash ? " 'sha256-" + bridgeHash + "'" : "") + "; style-src 'unsafe-inline'; worker-src 'self'; connect-src 'self'; frame-src 'self' about:; img-src 'self' data:; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
 
   const url = new URL(req.url, 'http://local');
   const pathname = url.pathname;
