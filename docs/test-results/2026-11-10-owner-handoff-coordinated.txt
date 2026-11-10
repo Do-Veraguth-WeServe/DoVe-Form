@@ -1,0 +1,3 @@
+PASS inert frozen owner handoff during delayed Worker desktop/mobile
+PASS remote code/DB updates desktop/mobile, startup mutation suppression and offline explicit reconnect
+PASS owner state sync and fresh owner write desktop/mobile feed/overlay

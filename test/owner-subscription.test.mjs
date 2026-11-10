@@ -20,3 +20,12 @@ for(const elements of [[],[rev('foreign')],[rev(),rev()],[{...rev(),dbRevision:'
 for(const kind of ['foreign','malformed','network'])test('snapshot rejection fails closed '+kind,async()=>{const f=fixture(),m=f.mount();await flush();f.emit([rev()]);await flush();if(kind==='network')f.requests[0].reject(Error('private details'));else f.requests[0].resolve(kind==='foreign'?snapshot('foreign'):{});await flush();assert.equal(m.state.invalid.length,1);assert.doesNotMatch(m.state.invalid[0],/private/);assert.equal(m.state.applied.length,0);f.controller.destroy();});
 test('explicit reconnect permits fresh snapshot, old stream callbacks stay inert',async()=>{const f=fixture(),m=f.mount();await flush();const old=f.streams[0];f.controller.offline();f.controller.reconnect();await flush();assert.equal(f.streams.length,2);old.emit('invalidated',{});f.emit([rev('a',2)]);await flush();f.requests[0].resolve(snapshot('a',2));await flush();assert.equal(m.state.applied.length,1);assert.equal(m.state.invalid.length,1);f.controller.destroy();});
 test('batch membership change during fetch cannot lose outstanding revision',async()=>{const f=fixture(),m=f.mount();await flush();f.emit([rev()]);await flush();f.mount('b');await flush();f.emit([rev(),rev('b')]);await flush();f.requests.find(r=>r.id==='a').resolve(snapshot());await flush();const requests=f.requests.filter(r=>r.id==='a');assert.equal(requests.length,2);requests[1].resolve(snapshot());f.requests.find(r=>r.id==='b').resolve(snapshot('b'));await flush();assert.equal(m.state.applied.length,1);f.controller.destroy();});
+
+test('explicit reconnect notifies every mounted view, never on unsolicited revisions',async()=>{
+ const f=fixture(),recovered=[];
+ for(const id of ['a','b'])f.controller.subscribe(id,{current:()=>null,busy:()=>false,apply:()=>{},invalidate:()=>{},reconnect:()=>recovered.push(id)});
+ await flush();f.controller.offline();assert.deepEqual(recovered,[]);
+ f.controller.reconnect();assert.deepEqual(recovered,['a','b']);await flush();
+ f.emit([rev('a'),rev('b')]);await flush();assert.deepEqual(recovered,['a','b']);
+ f.controller.destroy();f.controller.reconnect();assert.deepEqual(recovered,['a','b']);
+});

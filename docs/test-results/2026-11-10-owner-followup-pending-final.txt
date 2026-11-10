@@ -1,0 +1,17 @@
+Owner fixture failure {"transport":[{"path":"/api/elements/owner/stream","status":200},{"path":"/api/elements/owner/stream","status":200},{"path":"/api/elements/owner/view","status":200},{"path":"/api/elements/owner/view","status":200},{"path":"/api/elements/owner/view","status":200},{"path":"/api/elements/owner/view","status":200},{"path":"/api/elements/owner/stream","status":200},{"path":"/api/elements/owner/stream","status":200},{"path":"/api/elements/owner/view","status":200},{"path":"/api/elements/owner/view","status":200},{"path":"/api/elements/owner/view","status":200},{"path":"/api/elements/owner/view","status":200},{"path":"/api/elements/owner/stream","status":200},{"path":"/api/elements/owner/view","status":200},{"path":"/api/elements/owner/view","status":200},{"path":"/api/elements/owner/view","status":200},{"path":"/api/elements/owner/view","status":200},{"path":"/api/elements/owner/stream","status":200},{"path":"/api/elements/owner/stream","status":200},{"path":"/api/elements/owner/view","status":200},{"path":"/api/elements/owner/view","status":200},{"path":"/api/elements/owner/view","status":200},{"path":"/api/elements/owner/view","status":200},{"path":"/api/elements/owner/stream","status":200},{"path":"/api/elements/owner/view","status":200}],"body":"Form\n● KEIN MODELL\n☰\nModell verbinden\nModell hinzufügen\nForm\nOwner CAS\n☆\n↗\nAls Form\nWerte übernehmen\n↑","frames":[{"ready":"true","style":"height: 120px;"}]}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.waitFor: Timeout 6000ms exceeded.
+Call log:
+  - waiting for locator('#feed iframe').first().contentFrame().locator('#n').filter({ hasText: /^55$/ }) to be visible
+
+    at /root/.openclaw/workspace/projects/form/test/owner-live-browser.mjs:46:80 {
+  log: [
+    "  - waiting for locator('#feed iframe').first().contentFrame().locator('#n').filter({ hasText: /^55$/ }) to be visible"
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.22.2

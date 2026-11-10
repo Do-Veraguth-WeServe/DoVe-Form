@@ -7,7 +7,7 @@ export function ownerLiveView({id,render,getRender,adopt,subscriptions,callbacks
  let raw=null,retained=null,subscription=null,revision=null,dead=false,failed=false,pending=0,staging=true,generation=0,timer;
  const deny=()=>({ok:false,error:'Schreiben erst nach deiner Interaktion.'});
  function invalidate(message){
-  if(dead)return;failed=true;generation++;clearTimeout(timer);raw?.destroy();raw=null;retained?.remove();retained=null;element.replaceChildren();
+  if(dead)return;failed=true;staging=false;revision=null;generation++;clearTimeout(timer);raw?.destroy();raw=null;retained?.remove();retained=null;element.replaceChildren();
   const note=document.createElement('p');note.className='notice error';note.textContent=message;
   const retry=document.createElement('button');retry.textContent='Erneut verbinden';retry.onclick=()=>{if(dead)return;failed=false;staging=false;revision=null;subscriptions.reconnect();};element.append(note,retry);
  }
@@ -41,6 +41,7 @@ export function ownerLiveView({id,render,getRender,adopt,subscriptions,callbacks
   subscription=subscriptions.subscribe(id,{
    current:()=>revision,busy:()=>pending>0||staging,
    invalidate,
+   reconnect:()=>{if(!dead){failed=false;staging=false;revision=null;}},
    apply:next=>{
     if(dead||failed)return;
     const current=getRender();

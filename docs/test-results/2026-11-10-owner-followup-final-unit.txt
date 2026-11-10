@@ -1,0 +1,36 @@
+✔ published frontend accepts backend receipt, CAS rejects stale state and foreign users (286.40416ms)
+✔ owner snapshot and revision events are authorized inside the delivery lock (6.320924ms)
+✔ no partial batch leaks when one element is unavailable (0.785593ms)
+✔ bounded ids, duplicate rejection and private snapshot ownership (0.972853ms)
+✔ slow readers close without buffering, caps release on close (1.011163ms)
+✔ session expiry and lock errors redact details and free capacity (0.63083ms)
+✔ strict revision contract and separate state/code/database changes (4.784327ms)
+✔ one batched stream, explicit capacity, teardown and stale callbacks (4.463172ms)
+✔ own acknowledged event is not remounted; remote changes fetch fresh snapshot (2.675442ms)
+✔ pending local writes defer remote fetch; settlement fetches latest, never event payload (1.970106ms)
+✔ local operation invalidates a snapshot even when already settled before response (1.509246ms)
+✔ new event during fetch discards response and coalesces to one fresh fetch (3.846936ms)
+✔ stale response cannot apply after offline (1.2798ms)
+✔ stale response cannot apply after invalidated (0.925965ms)
+✔ stale response cannot apply after error (1.335026ms)
+✔ stale response cannot apply after lease (1.349586ms)
+✔ stale response cannot apply after destroy (0.688013ms)
+✔ stale response cannot apply after unmount (0.568697ms)
+✔ malformed or foreign revision batch fails closed [] (0.492463ms)
+✔ malformed or foreign revision batch fails closed [{"id":"foreign","stateRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0","ownerCodeRevision":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","dbRevision":0}] (0.460776ms)
+✔ malformed or foreign revision batch fails closed [{"id":"a","stateRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0","ownerCodeRevision":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","dbRevision":0},{"id":"a","stateRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0","ownerCodeRevision":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","dbRevision":0}] (0.333057ms)
+✔ malformed or foreign revision batch fails closed [{"id":"a","stateRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0","ownerCodeRevision":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","dbRevision":"0"}] (0.35871ms)
+✔ snapshot rejection fails closed foreign (0.884141ms)
+✔ snapshot rejection fails closed malformed (0.50546ms)
+✔ snapshot rejection fails closed network (0.516506ms)
+✔ explicit reconnect permits fresh snapshot, old stream callbacks stay inert (0.909194ms)
+✔ batch membership change during fetch cannot lose outstanding revision (1.112483ms)
+✔ explicit reconnect notifies every mounted view, never on unsolicited revisions (3.113282ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 632.980853

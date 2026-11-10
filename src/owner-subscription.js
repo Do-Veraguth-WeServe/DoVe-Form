@@ -76,7 +76,7 @@ export function ownerSubscriptions({openStream,fetchSnapshot,schedule=queueMicro
       };
     },
     offline(){if(!closed)fail('Offline. Bitte erneut verbinden.');},
-    reconnect(){if(closed)return;for(const entry of entries.values()){entry.failed=false;entry.last=null;entry.dirty=true;entry.seq++;}queueRebuild();},
+    reconnect(){if(closed)return;for(const entry of entries.values()){entry.failed=false;entry.last=null;entry.dirty=true;entry.seq++;entry.callbacks.reconnect?.();}queueRebuild();},
     destroy(){if(closed)return;closed=true;closeStream();for(const entry of entries.values())entry.seq++;entries.clear();}
   };
 }

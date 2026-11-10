@@ -1,0 +1,15 @@
+Owner fixture failure {"transport":[{"path":"/api/elements/owner/stream","status":200},{"path":"/api/elements/owner/stream","status":200},{"path":"/api/elements/owner/view","status":200},{"path":"/api/elements/owner/view","status":200},{"path":"/api/elements/owner/view","status":200},{"path":"/api/elements/owner/view","status":200},{"path":"/api/elements/owner/stream","status":200},{"path":"/api/elements/owner/stream","status":200},{"path":"/api/elements/owner/view","status":200}],"body":"⌑form\n＋ Neuer Chat\nBibliothek\nElemente\nChats\nNeuer Gedankengang\n×\nalice · Owner\nEinstellungen\nForm\n● KEIN MODELL\nModell verbinden\nModell hinzufügen\nForm\nOwner CAS\n☆\n↗\nAls Form\nWerte übernehmen\n↑\nOwner CAS\n☆\n✕\nMit KI bearbeiten\nCode bearbeiten\nVersionen\nElement-Vorlage kopieren\nGemeinsam teilen\nDarstellung prüfen\nTool-Aktionen","frames":[{"style":"visibility: hidden;"},{"ready":"true","style":"height: 120px;"}]}
+file:///root/.openclaw/workspace/projects/form/element-sharing.mjs:37
+    this.db.exec('BEGIN IMMEDIATE');
+            ^
+
+Error: database is locked
+    at ElementSharing.locked (file:///root/.openclaw/workspace/projects/form/element-sharing.mjs:37:13)
+    at ElementSharing.view (file:///root/.openclaw/workspace/projects/form/element-sharing.mjs:123:17)
+    at file:///root/.openclaw/workspace/projects/form/test/owner-live-browser.mjs:16:75 {
+  code: 'ERR_SQLITE_ERROR',
+  errcode: 5,
+  errstr: 'database is locked'
+}
+
+Node.js v24.22.2
