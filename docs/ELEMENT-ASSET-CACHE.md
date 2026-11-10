@@ -30,3 +30,21 @@ Release HOLD: the new delayed-engine desktop/mobile fixture and 33 owner transpo
 No deployment/restart in this slice; installed runtime remains the prior owner rollout. This source checkpoint must not be advertised as shipped or as a speed improvement. Existing unrelated screenshots/fixtures are preserved. Follow up the in-flight snapshot race before releasing; do not weaken the timeouts, version checks, guest isolation or existing acceptance.
 
 All24 browser-core checks pass. Trace3 with request/failure instrumentation also passes the complete owner suite; the two retained failures remain unresolved and the release hold remains in force. The synthetic mobile loading screenshot was inspected.
+
+
+## Missing-snapshot test interference isolated — 2026-11-10
+
+The retained six-second stale-view failures now have an independent transport reproduction without Form: a native page POSTs state, then fetches a view after its response. The fixture holds/fulfills the first response and calls Playwright unrouteAll at settlement. In Chromium153/Playwright1.63 the following fetch sometimes never reaches the local HTTP server. The first probe failed at trial23 with a two-second diagnostic wait; the aligned six-second probe independently failed at trial3. No Form code, QuickJS, SQLite, SSE or accounts participate. The exact upstream browser/protocol implementation defect is not claimed identified.
+
+Keep a pass-through route registered for the entire fixture and remove only the temporary state/Worker/DB routes instead of toggling interception off during fulfillment. Forty independent minimal trials then pass with the same six-second deadline. The full owner fixture uses this stable routing lifecycle; all original held-response assertions, real HTTP writes, frozen surfaces, callback continuity and deadlines remain intact. Optional CDP connection/timing traces are test-only. Earlier three instrumented full runs passed even before the fixture correction; those retries alone were not the diagnosis. The isolated before/after comparison is the additional evidence.
+
+This changes test transport, not Form networking, retries, limits or authorization. It does not retrospectively prove the cause of every historical intermittent wait. Full-owner/initial/core and installed loading acceptance are recorded below before releasing the previously withheld loading notice. No universal instant-loading or arbitrary-product acceptance claim.
+
+
+## Verified loading-feedback release — 2026-11-10 14:12 CET
+
+The withheld initial-loading notice is now deployed. Source acceptance: 29 focused owner subscription/DB receipt/state-contract tests; delayed-engine desktop/mobile loading, runaway and teardown; two uninstrumented complete owner-browser runs with stable interception; initial baseline/tab limits/navigation/logout/deletion; all24 browser-core checks. Installed-module delayed-engine and complete owner browser also pass. Synthetic loading screenshot inspected. The full npm suite was not run.
+
+Two zero-active-job checkpoints preceded atomic replacement of only src/owner-live-view.js and dist/app.js; no restart was needed. Normalized old/new bundle inspection shows only the intended loading notice changes (dependency labels differ because the preceding rollout built in a separate worktree). Worker, verifier, bridge hash and HTML remain byte-for-byte unchanged. Live loopback/Tailnet exact app bytes/CSP/health/closed registration/anonymous401 pass. App SHA25680aa2e375f062edc6694e54f4c0ac554d72341b9c7fde807dbd6af9e1a70e7dd. Rollback: /opt/form/.rollback/20261110-owner-loading; restore only the two saved code files at idle, never user data. Evidence: dated owner-network/owner-routing/owner-loading-installed and owner-loading-release logs.
+
+No account, provider, schema, generated artifact or production user-state changes. The deployment hold for this notice is lifted; #6a876098 remains working for actual startup latency and version-aware renderer/artifact caching. The notice fixes unexplained blank waiting, not loading speed. #e89344ad still needs its original missing evidence. Earlier hold/source-only paragraphs are chronology, not the current release state.

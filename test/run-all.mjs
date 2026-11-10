@@ -30,6 +30,7 @@ step('bounded planner recovery',run('node',['--test','test/plan-recovery.test.mj
 step('honest job timeout labels',run('node',['--test','test/job-timeout-label.test.mjs']));
 step('semantic job snapshot equality',run('node',['--test','test/job-snapshot.test.mjs']));
 step('owner revision transport lifecycle',run('node',['--test','test/owner-stream.test.mjs','test/owner-subscription.test.mjs','test/owner-db-ack.test.mjs']));
+step('stable browser interception during owner handoff',run('node',['test/owner-routing-browser.mjs']));
 step('owner live synchronization',run('node',['test/owner-live-browser.mjs']));
 step('owner initial baseline and multi-tab limits',run('node',['test/owner-initial-browser.mjs']));
 step('owner revision transport HTTP isolation',run('node',['test/owner-stream-http.mjs']));

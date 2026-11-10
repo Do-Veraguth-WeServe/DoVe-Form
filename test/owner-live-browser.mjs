@@ -16,7 +16,16 @@ const state=()=>s.getRender(mid).state.n;const edb=new ElementDB(path.join(dir,'
 try{
  app=spawn('node',['server.mjs'],{cwd:process.env.FORM_TEST_ROOT||process.cwd(),env:{...process.env,PORT:'4777',FORM3_DATA:dir,FORM3_MODELS:path.join(dir,'models.json')},stdio:['ignore','pipe','inherit']});await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('startup')),10000);app.stdout.on('data',d=>{if(String(d).includes('ready')){clearTimeout(t);resolve();}});});
  browser=await chromium.launch({executablePath:'/root/.cache/puppeteer/chrome/linux-153.0.8010.36/chrome-linux64/chrome',headless:true,args:['--no-sandbox']});const p=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];page=p;p.on('pageerror',e=>errors.push(e.message));
+ // Keep interception enabled for the fixture lifetime. Disabling it during
+ // route.fulfill can strand the following fetch in Chromium (standalone repro).
+ await p.route('**/*',route=>route.continue());
  if(process.env.FORM_OWNER_TRACE==='1'){
+  const cdp=await p.context().newCDPSession(p);await cdp.send('Network.enable');
+  const tracked=new Set();
+  cdp.on('Network.requestWillBeSent',e=>{if(e.request.url.includes('/api/elements/owner/')){tracked.add(e.requestId);transport.push({cdp:'request',id:e.requestId,path:new URL(e.request.url).pathname,t:e.timestamp});}});
+  cdp.on('Network.responseReceived',e=>{if(tracked.has(e.requestId))transport.push({cdp:'response',id:e.requestId,t:e.timestamp,status:e.response.status,connection:e.response.connectionId,reused:e.response.connectionReused,timing:e.response.timing});});
+  cdp.on('Network.loadingFinished',e=>{if(tracked.has(e.requestId))transport.push({cdp:'finished',id:e.requestId,t:e.timestamp});});
+  cdp.on('Network.loadingFailed',e=>{if(tracked.has(e.requestId))transport.push({cdp:'failed',id:e.requestId,t:e.timestamp,error:e.errorText});});
   p.on('request',r=>{if(r.url().includes('/api/elements/owner/view'))transport.push({request:'owner-view',at:Date.now()});});
   p.on('requestfailed',r=>{if(r.url().includes('/api/elements/owner/view'))transport.push({failed:'owner-view',error:r.failure()?.errorText,at:Date.now()});});
   p.on('console',m=>{if(m.text().startsWith('OWNERTRACE'))transport.push({trace:m.text()});});
@@ -59,7 +68,7 @@ p.on('response',async r=>{if(r.url().includes('/api/elements/owner/')||r.url().e
  await new Promise(resolve=>setTimeout(resolve,1200));
  assert.equal(await originalFrame.evaluate(f=>f.isConnected&&!f.dataset.retained),true);
  assert.equal(await p.locator('#feed iframe').count(),1);
- }finally{releaseSave();await p.unrouteAll({behavior:'wait'});}
+ }finally{releaseSave();await p.unroute('**/api/state');}
  await frame().locator('#n').filter({hasText:new RegExp('^'+remoteValue+'$')}).waitFor({timeout:6000});
  const settledFrame=await p.locator('#feed iframe').elementHandle();
  const subsequent=p.waitForResponse(r=>r.url().endsWith('/api/state'));await frame().locator('#inc').click();assert.equal((await subsequent).status(),200);assert.equal(state(),remoteValue+1);
@@ -81,7 +90,7 @@ p.on('response',async r=>{if(r.url().includes('/api/elements/owner/')||r.url().e
  assert.equal(await p.locator('#feed iframe[data-retained]').evaluate(f=>f.inert&&f.tabIndex===-1),true);
  assert.equal(await p.locator('#feed iframe[data-staging]').evaluate(f=>f.inert&&getComputedStyle(f).opacity==='0'),true);
  await p.locator('#feed').screenshot({path:'docs/screenshots/owner-handoff-'+width+'.png'});
- }finally{releaseWorker();await p.unrouteAll({behavior:'wait'});}
+ }finally{releaseWorker();await p.unroute('**/worker.js');}
  await p.locator('#feed iframe[data-retained]').waitFor({state:'detached'});
  await frame().locator('#n').filter({hasText:new RegExp('^'+state()+'$')}).waitFor();
  }
@@ -114,7 +123,7 @@ p.on('response',async r=>{if(r.url().includes('/api/elements/owner/')||r.url().e
  assert.equal(await p.locator('#feed iframe[data-staging]').evaluate(f=>f.inert&&getComputedStyle(f).opacity==='0'),true);
  await p.locator('#feed').screenshot({path:'docs/screenshots/owner-handoff-db-mobile.png'});
  await p.evaluate(()=>dispatchEvent(new Event('offline')));
- }finally{releaseDb();await p.unrouteAll({behavior:'wait'});}
+ }finally{releaseDb();await p.unroute('**/api/db');}
  await p.getByText('Offline. Bitte erneut verbinden.',{exact:true}).waitFor();assert.equal(await p.locator('#feed iframe').count(),0);
  await p.getByRole('button',{name:'Erneut verbinden',exact:true}).click();
  await frame().locator('#boot').filter({hasText:'blocked'}).waitFor();
@@ -157,7 +166,7 @@ p.on('response',async r=>{if(r.url().includes('/api/elements/owner/')||r.url().e
   try{
    await frame().locator('#add').click();await arrived;await recipientDb();
    await new Promise(r=>setTimeout(r,1100));assert.equal(await mounted.evaluate(f=>f.isConnected&&!f.dataset.retained),true);
-  }finally{release();await p.unrouteAll({behavior:'wait'});}
+  }finally{release();await p.unroute('**/api/db');}
   await frame().locator('#rows').filter({hasText:new RegExp('^'+expectedCount+'$')}).waitFor({timeout:6000});
   assert.equal(edb.op({sessionId:conv.id,elementId:mid,op:'select',table:'notes'}).result.rows.length,expectedCount);
   assert.equal(await mounted.evaluate(f=>f.isConnected),false);

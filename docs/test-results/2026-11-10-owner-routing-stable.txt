@@ -1,0 +1,1 @@
+PASS forty isolated held-response/follow-up fetch trials; stable interception=true

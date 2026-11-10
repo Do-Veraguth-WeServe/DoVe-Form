@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "rollback": "/opt/form/.rollback/20261110-owner-loading",
+  "appSha256": "80aa2e375f062edc6694e54f4c0ac554d72341b9c7fde807dbd6af9e1a70e7dd",
+  "unchanged": {
+    "dist/bridge-hash.txt": "e7622cb78d5d999e47556f1868556db205c2e4277266c32f8f51279a1e9bcbc3",
+    "dist/worker.js": "670ba0f9abb800a165180d85463ca7d8152847467d1cb0b75b930fa77101f2b0",
+    "dist/animation-verification.js": "138516229633a7722edc0f4ed06c5b4378c92060f5c5f451a58ff4204613f85f",
+    "dist/index.html": "0e571384db11e14a72e337d55ad757984624bf351489bb4f19fd98cc4dd6a061"
+  },
+  "restart": false,
+  "proof": "two idle checkpoints; loopback/Tailnet exact app/CSP/health/auth; atomic frontend-only install"
+}
