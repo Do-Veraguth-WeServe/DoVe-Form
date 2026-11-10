@@ -17,6 +17,8 @@ try{
  app=spawn('node',['server.mjs'],{cwd:process.env.FORM_TEST_ROOT||process.cwd(),env:{...process.env,PORT:'4777',FORM3_DATA:dir,FORM3_MODELS:path.join(dir,'models.json')},stdio:['ignore','pipe','inherit']});await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('startup')),10000);app.stdout.on('data',d=>{if(String(d).includes('ready')){clearTimeout(t);resolve();}});});
  browser=await chromium.launch({executablePath:'/root/.cache/puppeteer/chrome/linux-153.0.8010.36/chrome-linux64/chrome',headless:true,args:['--no-sandbox']});const p=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];page=p;p.on('pageerror',e=>errors.push(e.message));
  if(process.env.FORM_OWNER_TRACE==='1'){
+  p.on('request',r=>{if(r.url().includes('/api/elements/owner/view'))transport.push({request:'owner-view',at:Date.now()});});
+  p.on('requestfailed',r=>{if(r.url().includes('/api/elements/owner/view'))transport.push({failed:'owner-view',error:r.failure()?.errorText,at:Date.now()});});
   p.on('console',m=>{if(m.text().startsWith('OWNERTRACE'))transport.push({trace:m.text()});});
   let bundle=fs.readFileSync(path.join(process.env.FORM_TEST_ROOT||process.cwd(),'dist/app.js'),'utf8');
   for(const [before,after] of [

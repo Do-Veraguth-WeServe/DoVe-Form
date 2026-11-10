@@ -1,0 +1,41 @@
+✔ exact own write advances only DB revision (8.639334ms)
+✔ remote write before or after local commit is not swallowed (0.606119ms)
+✔ missing baseline, failed, malformed, duplicate and reordered acknowledgements stay conservative (0.543411ms)
+✔ receipts capture transaction boundaries, exclude reads and failed writes (29.178688ms)
+✔ owner snapshot and revision events are authorized inside the delivery lock (8.811098ms)
+✔ no partial batch leaks when one element is unavailable (1.155207ms)
+✔ bounded ids, duplicate rejection and private snapshot ownership (1.209093ms)
+✔ slow readers close without buffering, caps release on close (1.309837ms)
+✔ session expiry and lock errors redact details and free capacity (0.909197ms)
+✔ strict revision contract and separate state/code/database changes (4.139277ms)
+✔ one batched stream, explicit capacity, teardown and stale callbacks (4.501409ms)
+✔ own acknowledged event is not remounted; remote changes fetch fresh snapshot (2.709724ms)
+✔ pending local writes defer remote fetch; settlement fetches latest, never event payload (4.331182ms)
+✔ local operation invalidates a snapshot even when already settled before response (4.147371ms)
+✔ new event during fetch discards response and coalesces to one fresh fetch (1.583999ms)
+✔ stale response cannot apply after offline (1.221683ms)
+✔ stale response cannot apply after invalidated (1.13552ms)
+✔ stale response cannot apply after error (1.087951ms)
+✔ stale response cannot apply after lease (2.061873ms)
+✔ stale response cannot apply after destroy (0.700468ms)
+✔ stale response cannot apply after unmount (0.396837ms)
+✔ malformed or foreign revision batch fails closed [] (0.406986ms)
+✔ malformed or foreign revision batch fails closed [{"id":"foreign","stateRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0","ownerCodeRevision":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","dbRevision":0}] (0.186906ms)
+✔ malformed or foreign revision batch fails closed [{"id":"a","stateRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0","ownerCodeRevision":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","dbRevision":0},{"id":"a","stateRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0","ownerCodeRevision":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","dbRevision":0}] (0.187545ms)
+✔ malformed or foreign revision batch fails closed [{"id":"a","stateRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0","ownerCodeRevision":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","dbRevision":"0"}] (0.187608ms)
+✔ snapshot rejection fails closed foreign (0.737203ms)
+✔ snapshot rejection fails closed malformed (0.657339ms)
+✔ snapshot rejection fails closed network (0.300691ms)
+✔ explicit reconnect permits fresh snapshot, old stream callbacks stay inert (0.666769ms)
+✔ batch membership change during fetch cannot lose outstanding revision (1.065247ms)
+✔ explicit reconnect notifies every mounted view, never on unsolicited revisions (1.893187ms)
+✔ ready drains deferred remote event without redundant canonical fetch (0.607222ms)
+✔ optimistic state invalidation reconciles a return to the old content hash (0.618035ms)
+ℹ tests 33
+ℹ suites 0
+ℹ pass 33
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 509.368865
