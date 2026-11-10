@@ -9,6 +9,8 @@ import {sharedElements} from './shared-elements.js';
 import {buildStatus,buildFailure} from '../build-recovery.mjs';
 import {connectionSettings} from './connection-settings.js';
 import {elementPersistence} from './element-persistence.js';
+import {ownerSubscriptions} from './owner-subscription.js';
+import {ownerLiveView} from './owner-live-view.js';
 import {elementTimeline} from './element-timeline.js';
 import {planFold} from './plan-fold.js';
 import {renderMarkdown} from './markdown.js';
@@ -23,6 +25,8 @@ let legacyDb=null;          // pre-login local archive — offered for import on
 const connectionsUI=connectionSettings({csrf:()=>csrf,reload:()=>{}});
 const elementSaves=new WeakMap(); // serialized CAS queue per server snapshot
 const activeElementSaves=new Set();
+const ownerStreams=ownerSubscriptions({openStream:url=>new EventSource(url),fetchSnapshot:async id=>{const r=await fetch('/api/elements/owner/view?id='+encodeURIComponent(id),{signal:AbortSignal.timeout(10000)});if(!r.ok)throw Error('snapshot');return r.json();}});
+addEventListener('offline',()=>ownerStreams.offline());
 function stopElementSaves(){for(const writer of activeElementSaves)writer.stop();activeElementSaves.clear();}
 let jobs=new Map();         // jobId -> job (server-owned element builds; transient client mirror)
 let jobStream=null;        // EventSource for /api/jobs/stream
@@ -157,7 +161,8 @@ $('#regform').onsubmit=async e=>{
 $('#switchreg').onclick=e=>{e.preventDefault();$('#loginform').classList.toggle('hidden');$('#regform').classList.toggle('hidden');};
 $('#logout').onclick=async()=>{
   try{await fetch('/api/auth/logout',{method:'POST',headers:{'Content-Type':'application/json','X-Form-CSRF':csrf},body:'{}'})}catch{}
-  stopElementSaves();
+  stopElementSaves();ownerStreams.destroy();
+  views.forEach(view=>view.destroy());overlayView?.destroy();
   me=null;csrf='';models=[];
   disconnectJobs();
   try{localStorage.removeItem(KEY)}catch{}
@@ -224,20 +229,23 @@ function persistence(m){
   const writer=elementSaves.get(m);activeElementSaves.add(writer);return writer;
 }
 function ownerView(m,callbacks){
-  if(!m.persistenceFailed)return renderUI(m.render,{...callbacks,onConnection:o=>connectionsUI.call(m,o)});
+  if(!m.persistenceFailed)return ownerLiveView({id:m.id,render:m.render,getRender:()=>m.render,subscriptions:ownerStreams,
+    adopt:next=>{const writer=elementSaves.get(m);writer?.stop();activeElementSaves.delete(writer);elementSaves.delete(m);m.render=next;const cached=[...feedCache.values()].find(c=>c.element===m);if(cached)cached.signature=feedSignature(cached.message,m);save();},
+    callbacks:{...callbacks,onConnection:o=>connectionsUI.call(m,o)}});
   const element=document.createElement('p');element.className='notice error';element.textContent='Speichern nicht bestätigt. Bitte die Seite neu laden.';
   return {element,destroy(){}};
 }
 function stateCallback(m){
-  const writer=persistence(m);
+  persistence(m);
   return state=>{
+    const writer=persistence(m);
     // This sandbox already applied its own state. Advance only a still-matching
     // cache entry; never bless unrelated code, job, UI or canonical changes.
     const cached=[...feedCache.values()].find(c=>c.element===m);
     const matches=cached&&cached.signature===feedSignature(cached.message,m);
     m.render.state=state;
     if(matches)cached.signature=feedSignature(cached.message,m);
-    save();void writer.save({state});
+    save();return writer.save({state});
   };
 }
 async function syncRender(m,next){
@@ -593,6 +601,8 @@ function render(){stopEntry();
       if(signature&&cached?.signature===signature&&cached.message===m&&cached.element===entry.element&&cached.article.isConnected&&cached.views.every(v=>previousViews.includes(v))){
         nodes.push(cached.article);views.push(...cached.views);nextCache.set(key,cached);continue;
       }
+      // Release the old subscription before mounting its replacement.
+      cached?.views.forEach(view=>view.destroy());
       const viewStart=views.length;
       const article=document.createElement('article');article.className='message '+(m.role==='user'?'user':'assistant');article.dataset.mid=m.id;
       if(m.role==='user'){const b=document.createElement('div');b.className='bubble';b.textContent=m.text;article.append(b)}

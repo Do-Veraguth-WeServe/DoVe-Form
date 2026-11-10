@@ -1,0 +1,48 @@
+✔ strict revision contract and separate state/code/database changes (3.04466ms)
+✔ one batched stream, explicit capacity, teardown and stale callbacks (3.962029ms)
+✔ own acknowledged event is not remounted; remote changes fetch fresh snapshot (2.582094ms)
+✔ pending local writes defer remote fetch; settlement fetches latest, never event payload (1.69263ms)
+✔ local operation invalidates a snapshot even when already settled before response (3.409211ms)
+✔ new event during fetch discards response and coalesces to one fresh fetch (1.341707ms)
+✔ stale response cannot apply after offline (1.17625ms)
+✔ stale response cannot apply after invalidated (0.842649ms)
+✔ stale response cannot apply after error (1.045804ms)
+✔ stale response cannot apply after lease (1.271208ms)
+✔ stale response cannot apply after destroy (0.667947ms)
+✔ stale response cannot apply after unmount (0.504947ms)
+✔ malformed or foreign revision batch fails closed [] (0.558355ms)
+✔ malformed or foreign revision batch fails closed [{"id":"foreign","stateRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0","ownerCodeRevision":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","dbRevision":0}] (0.387597ms)
+✔ malformed or foreign revision batch fails closed [{"id":"a","stateRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0","ownerCodeRevision":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","dbRevision":0},{"id":"a","stateRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0","ownerCodeRevision":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","dbRevision":0}] (0.316ms)
+✔ malformed or foreign revision batch fails closed [{"id":"a","stateRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0","ownerCodeRevision":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","dbRevision":"0"}] (0.30313ms)
+✔ snapshot rejection fails closed foreign (0.939602ms)
+✔ snapshot rejection fails closed malformed (0.476669ms)
+✔ snapshot rejection fails closed network (0.353112ms)
+✔ explicit reconnect permits fresh snapshot, old stream callbacks stay inert (0.618547ms)
+✖ batch membership change during fetch cannot lose outstanding revision (2.685461ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 20
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 190.795762
+
+✖ failing tests:
+
+test at test/owner-subscription.test.mjs:22:1
+✖ batch membership change during fetch cannot lose outstanding revision (2.685461ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  1 !== 2
+
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/owner-subscription.test.mjs:22:348)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

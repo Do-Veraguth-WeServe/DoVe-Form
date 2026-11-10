@@ -4,9 +4,13 @@ const s=new Store(dir),a=s.createUser('alice','password123'),b=s.createUser('bob
 const render={version:1,name:'Owner CAS',html:'<p id="n"></p><button id="inc">Increment</button>',css:'',js:'ui.text("n",state.n);ui.on("inc","click",()=>{state.n++;ui.text("n",state.n);ui.persist(state);});',state:{n:0}};
 const mid=s.appendMessage(conv.id,'assistant',{render}),g=new ElementSharing(s,null),offer=g.offer(a.id,{messageId:mid,revision:elementCodeRevision(render),recipient:'bobby'});g.accept(b.id,offer.id);
 const state=()=>s.getRender(mid).state.n;
+// Keep remote snapshot delivery pending: exercise the real CAS race even when
+// background synchronization would normally win. No production gate is removed.
+let releaseSnapshots;const snapshotGate=new Promise(resolve=>releaseSnapshots=resolve);
 try{
  app=spawn('node',['server.mjs'],{env:{...process.env,PORT:'4775',FORM3_DATA:dir,FORM3_MODELS:path.join(dir,'models.json')},stdio:['ignore','pipe','inherit']});await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('startup')),10000);app.stdout.on('data',d=>{if(String(d).includes('ready')){clearTimeout(t);resolve();}});});
  browser=await chromium.launch({executablePath:'/root/.cache/puppeteer/chrome/linux-153.0.8010.36/chrome-linux64/chrome',headless:true,args:['--no-sandbox']});const p=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];p.on('pageerror',e=>errors.push(e.message));if(process.env.REPRO_BASELINE==='1')await p.route('**/app.js',r=>r.fulfill({contentType:'text/javascript',body:fs.readFileSync('/opt/form/dist/app.js')}));await p.goto(BASE);await p.locator('#loginform [name=username]').fill('alice');await p.locator('#loginform [name=password]').fill('password123');await p.locator('#loginform button').click();await p.locator('#login[open]').waitFor({state:'detached'});
+ await p.route('**/api/elements/owner/view?*',async route=>{await snapshotGate;await route.abort().catch(()=>{});});
  const frame=()=>p.frameLocator('#feed iframe').first();
  for(const width of [1280,390]){
  await p.setViewportSize({width,height:844});await frame().locator('#inc').waitFor();const before=state();
@@ -41,4 +45,4 @@ try{
  await p.route('**/api/state',r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));await p.route('**/api/conversations',r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));
  await frame().locator('#inc').click();await p.locator('#feed').getByText('Speichern nicht bestätigt. Bitte die Seite neu laden.',{exact:true}).waitFor();assert.equal(await p.locator('#feed iframe').count(),0);assert.equal(state(),90);
  console.log('PASS offline reconciliation freezes sandbox; desktop/mobile owner CAS, real recipient conflict, persisted reload, stale editor rejection, confirmed full replacement. No production data.');
-}finally{await browser?.close();if(app&&app.exitCode===null){app.kill('SIGTERM');await once(app,'exit');}s.close();fs.rmSync(dir,{recursive:true,force:true});}
+}finally{releaseSnapshots();await browser?.close();if(app&&app.exitCode===null){app.kill('SIGTERM');await once(app,'exit');}s.close();fs.rmSync(dir,{recursive:true,force:true});}

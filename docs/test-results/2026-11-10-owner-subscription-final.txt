@@ -1,0 +1,46 @@
+✔ serializes writes using acknowledged state, snapshots queued input (30.070166ms)
+✔ blocks queued writes without replay after 409 (4.352383ms)
+✔ blocks queued writes without replay after 401 (3.995664ms)
+✔ blocks queued writes without replay after 403 (3.240857ms)
+✔ blocks queued writes without replay after 503 (1.749446ms)
+✔ blocks queued writes without replay after network (2.922163ms)
+✔ blocks queued writes without replay after malformed (2.049817ms)
+✔ bounded queue fails closed without a request flood (6.464352ms)
+✔ stopped snapshot cannot dispatch queued work (1.069711ms)
+✔ code snapshot survives state writes and advances only after confirmed replacement (18.924403ms)
+✔ missing or invalid code acknowledgement blocks queue undefined (2.905037ms)
+✔ missing or invalid code acknowledgement blocks queue wrong (5.193006ms)
+✔ owner snapshot and revision events are authorized inside the delivery lock (5.953887ms)
+✔ no partial batch leaks when one element is unavailable (0.718494ms)
+✔ bounded ids, duplicate rejection and private snapshot ownership (1.025356ms)
+✔ slow readers close without buffering, caps release on close (0.873191ms)
+✔ session expiry and lock errors redact details and free capacity (0.614834ms)
+✔ strict revision contract and separate state/code/database changes (3.613813ms)
+✔ one batched stream, explicit capacity, teardown and stale callbacks (3.787746ms)
+✔ own acknowledged event is not remounted; remote changes fetch fresh snapshot (1.961883ms)
+✔ pending local writes defer remote fetch; settlement fetches latest, never event payload (2.659793ms)
+✔ local operation invalidates a snapshot even when already settled before response (3.168732ms)
+✔ new event during fetch discards response and coalesces to one fresh fetch (0.970099ms)
+✔ stale response cannot apply after offline (0.818526ms)
+✔ stale response cannot apply after invalidated (0.557331ms)
+✔ stale response cannot apply after error (1.246451ms)
+✔ stale response cannot apply after lease (1.251474ms)
+✔ stale response cannot apply after destroy (0.448214ms)
+✔ stale response cannot apply after unmount (0.3062ms)
+✔ malformed or foreign revision batch fails closed [] (0.297417ms)
+✔ malformed or foreign revision batch fails closed [{"id":"foreign","stateRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0","ownerCodeRevision":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","dbRevision":0}] (0.260567ms)
+✔ malformed or foreign revision batch fails closed [{"id":"a","stateRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0","ownerCodeRevision":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","dbRevision":0},{"id":"a","stateRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0","ownerCodeRevision":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","dbRevision":0}] (0.195294ms)
+✔ malformed or foreign revision batch fails closed [{"id":"a","stateRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0","ownerCodeRevision":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","dbRevision":"0"}] (0.284909ms)
+✔ snapshot rejection fails closed foreign (0.573742ms)
+✔ snapshot rejection fails closed malformed (0.666822ms)
+✔ snapshot rejection fails closed network (0.286593ms)
+✔ explicit reconnect permits fresh snapshot, old stream callbacks stay inert (1.321524ms)
+✔ batch membership change during fetch cannot lose outstanding revision (1.096558ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 38
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 388.992163

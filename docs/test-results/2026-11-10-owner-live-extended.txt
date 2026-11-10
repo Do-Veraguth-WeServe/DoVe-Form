@@ -1,0 +1,13 @@
+file:///root/.openclaw/workspace/projects/form/store.mjs:273
+    this.db.prepare('UPDATE messages SET render = ? WHERE id = ?').run(JSON.stringify(render), msgId);
+                                                                   ^
+
+Error: database is locked
+    at Store.updateMessageRender (file:///root/.openclaw/workspace/projects/form/store.mjs:273:68)
+    at file:///root/.openclaw/workspace/projects/form/test/owner-live-browser.mjs:27:4 {
+  code: 'ERR_SQLITE_ERROR',
+  errcode: 5,
+  errstr: 'database is locked'
+}
+
+Node.js v24.22.2
