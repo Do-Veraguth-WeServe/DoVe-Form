@@ -1,0 +1,136 @@
+[job] failed: 8c553ed0 Zeitlimit erreicht (Infinity s). Bitte die Anfrage aufteilen oder kleiner stellen.
+[job] failed: 532d2403 Zeitlimit erreicht (120 s). Bitte die Anfrage aufteilen oder kleiner stellen.
+[job] failed: f29458f7 Zeitlimit erreicht (Infinity s). Bitte die Anfrage aufteilen oder kleiner stellen.
+[job] failed: 219155bc Zeitlimit erreicht (120 s). Bitte die Anfrage aufteilen oder kleiner stellen.
+[job] failed: bd2b5a4b Zeitlimit erreicht (Infinity s). Bitte die Anfrage aufteilen oder kleiner stellen.
+[job] failed: abff2f80 Zeitlimit erreicht (120 s). Bitte die Anfrage aufteilen oder kleiner stellen.
+✖ plan timeout has no invented duration (totalMs=0) (169.233468ms)
+✖ plan timeout has no invented duration (totalMs=120000) (117.593577ms)
+✖ chat timeout has no invented duration (totalMs=0) (162.071815ms)
+✖ chat timeout has no invented duration (totalMs=120000) (132.755884ms)
+✖ build timeout has no invented duration (totalMs=0) (155.961508ms)
+✖ build timeout has no invented duration (totalMs=120000) (112.337755ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 0
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1235.128298
+
+✖ failing tests:
+
+test at test/job-timeout-label.test.mjs:13:2
+✖ plan timeout has no invented duration (totalMs=0) (169.233468ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'Zeitlimit erreicht (Infinity s). Bitte die Anfrage aufteilen oder kleiner stellen.'
+  - 'Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.'
+  
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/job-timeout-label.test.mjs:26:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'Zeitlimit erreicht (Infinity s). Bitte die Anfrage aufteilen oder kleiner stellen.',
+    expected: 'Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/job-timeout-label.test.mjs:13:2
+✖ plan timeout has no invented duration (totalMs=120000) (117.593577ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'Zeitlimit erreicht (120 s). Bitte die Anfrage aufteilen oder kleiner stellen.'
+  - 'Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.'
+  
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/job-timeout-label.test.mjs:26:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'Zeitlimit erreicht (120 s). Bitte die Anfrage aufteilen oder kleiner stellen.',
+    expected: 'Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/job-timeout-label.test.mjs:13:2
+✖ chat timeout has no invented duration (totalMs=0) (162.071815ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'Zeitlimit erreicht (Infinity s). Bitte die Anfrage aufteilen oder kleiner stellen.'
+  - 'Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.'
+  
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/job-timeout-label.test.mjs:26:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'Zeitlimit erreicht (Infinity s). Bitte die Anfrage aufteilen oder kleiner stellen.',
+    expected: 'Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/job-timeout-label.test.mjs:13:2
+✖ chat timeout has no invented duration (totalMs=120000) (132.755884ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'Zeitlimit erreicht (120 s). Bitte die Anfrage aufteilen oder kleiner stellen.'
+  - 'Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.'
+  
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/job-timeout-label.test.mjs:26:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'Zeitlimit erreicht (120 s). Bitte die Anfrage aufteilen oder kleiner stellen.',
+    expected: 'Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/job-timeout-label.test.mjs:13:2
+✖ build timeout has no invented duration (totalMs=0) (155.961508ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'Zeitlimit erreicht (Infinity s). Bitte die Anfrage aufteilen oder kleiner stellen.'
+  - 'Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.'
+  
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/job-timeout-label.test.mjs:26:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'Zeitlimit erreicht (Infinity s). Bitte die Anfrage aufteilen oder kleiner stellen.',
+    expected: 'Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/job-timeout-label.test.mjs:13:2
+✖ build timeout has no invented duration (totalMs=120000) (112.337755ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'Zeitlimit erreicht (120 s). Bitte die Anfrage aufteilen oder kleiner stellen.'
+  - 'Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.'
+  
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/job-timeout-label.test.mjs:26:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'Zeitlimit erreicht (120 s). Bitte die Anfrage aufteilen oder kleiner stellen.',
+    expected: 'Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

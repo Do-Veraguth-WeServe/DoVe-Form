@@ -1,0 +1,5 @@
+PASS placement: old target outside history, newest build anchor, mobile/reload, exactly one element, stable ID/state/versions and original prose
+[job] failed: 38896aaf Modellaufruf fehlgeschlagen: Ungültiger Blueprint. Bitte erneut besprechen.
+[job] failed: 56bbc796 Modell-Endpunkt antwortete 500
+PASS failed/retried/cancelled refinement preserves last successful placement, pin, state and element DB; foreign DB denied
+PASS blueprint-only chat; cumulative summaries; no text-triggered build; stale/foreign/forged starts rejected; explicit start; double-click dedup; held build + simultaneous same-chat discussion at capacity 1; immutable approved snapshot; reload/crane; interactive state persistence; confirmed in-place refinement; malformed planner blocked; deletion isolation. Planning calls=11 build calls=4

@@ -1,0 +1,45 @@
+[job] failed: 1f44ed35 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: b6225b82 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: b1a66d10 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: 8b2abb7d Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: ea8f0224 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: 7c97e1dc Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+✔ plan timeout has no invented duration (totalMs=0) (135.756009ms)
+✔ plan timeout has no invented duration (totalMs=120000) (155.19162ms)
+✔ chat timeout has no invented duration (totalMs=0) (139.671689ms)
+✔ chat timeout has no invented duration (totalMs=120000) (141.520953ms)
+✔ build timeout has no invented duration (totalMs=0) (143.163129ms)
+✔ build timeout has no invented duration (totalMs=120000) (107.711207ms)
+✔ malformed planner output receives exactly one validated correction (266.370067ms)
+✔ truncated planner output receives exactly one validated correction (193.893873ms)
+✔ questions planner output receives exactly one validated correction (156.893358ms)
+✔ oversized planner output receives exactly one validated correction (147.305264ms)
+[job] failed: 694340e5 Modellaufruf fehlgeschlagen: Ungültiger Blueprint. Bitte erneut besprechen.
+✔ double invalid response fails closed and preserves previous blueprint (165.386947ms)
+✔ valid first response needs no correction (133.745798ms)
+✔ cancellation during correction cannot publish (162.611421ms)
+✔ clean round: prose parsed, finish_reason stop, actual content captured (no SSE envelopes) (69.198606ms)
+✔ finish_reason=length sets truncated; unterminated artifact reported as invalid (19.077863ms)
+✔ malformed SSE frames are ignored, valid frames still parsed (8.297525ms)
+✔ explicit provider error frame throws ProviderError (distinct from malformed frames) (8.701707ms)
+✔ final unterminated SSE line is parsed (5.388603ms)
+✔ UTF-8 multibyte char split across reads is reassembled (4.251665ms)
+✔ upstream 401 becomes ProviderError with status (permanent, caller must not retry) (4.255171ms)
+✔ content cap (accumulated deltas) throws SizeError (4.288092ms)
+✔ transport cap (raw SSE bytes) throws SizeError even with tiny visible content (5.658547ms)
+✔ round deadline expiry maps to abortKind timeout (306.739534ms)
+[provider] retry empty interrupted stream code=ECONNRESET
+[provider] retry empty interrupted stream code=ECONNRESET
+✔ external abort maps to abortKind external, not timeout (153.840119ms)
+✔ already-expired deadline fails fast with timeout kind (1.50683ms)
+✔ job generation has no default or zero-configured deadline (13.765673ms)
+✔ empty ECONNRESET retries once and completes, permanent reset stays bounded (3.050973ms)
+✔ connection reset after visible prose is not replayed (21.127426ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4010.779797

@@ -1,0 +1,28 @@
+[job] failed: 9d45bd7b Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: d426e283 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: f45beeab Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: c6b24a7b Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: d3051f1a Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: d89cc0eb Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+✔ plan timeout has no invented duration (totalMs=0) (141.732986ms)
+✔ plan timeout has no invented duration (totalMs=120000) (133.411074ms)
+✔ chat timeout has no invented duration (totalMs=0) (106.17948ms)
+✔ chat timeout has no invented duration (totalMs=120000) (104.222642ms)
+✔ build timeout has no invented duration (totalMs=0) (101.200092ms)
+✔ build timeout has no invented duration (totalMs=120000) (114.757619ms)
+✔ malformed planner output receives exactly one validated correction (234.369251ms)
+✔ truncated planner output receives exactly one validated correction (166.734113ms)
+✔ questions planner output receives exactly one validated correction (163.986344ms)
+✔ oversized planner output receives exactly one validated correction (136.734161ms)
+[job] failed: ccd50a34 Modellaufruf fehlgeschlagen: Ungültiger Blueprint. Bitte erneut besprechen.
+✔ double invalid response fails closed and preserves previous blueprint (150.43695ms)
+✔ valid first response needs no correction (115.504993ms)
+✔ cancellation during correction cannot publish (160.778889ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1537.783831

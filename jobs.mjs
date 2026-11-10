@@ -359,7 +359,9 @@ export class JobRunner {
       }
       let msg;
       if (e.abortKind === 'timeout') {
-        msg = 'Zeitlimit erreicht (' + Math.round(this.totalMs / 1000) + ' s). Bitte die Anfrage aufteilen oder kleiner stellen.';
+        // A chat/plan round deadline is independent of the optional build budget.
+        // Do not invent a duration from totalMs (which is Infinity by default).
+        msg = 'Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.';
       } else if (e instanceof ProviderError || e instanceof SizeError) {
         msg = e.message; // bounded, no content/secrets
       } else {
