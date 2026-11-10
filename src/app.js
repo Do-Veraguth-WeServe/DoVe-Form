@@ -10,6 +10,7 @@ import {buildStatus,buildFailure} from '../build-recovery.mjs';
 import {connectionSettings} from './connection-settings.js';
 import {elementPersistence} from './element-persistence.js';
 import {ownerSubscriptions} from './owner-subscription.js';
+import {sameJobSnapshot} from './job-snapshot.js';
 import {ownerLiveView} from './owner-live-view.js';
 import {elementTimeline} from './element-timeline.js';
 import {planFold} from './plan-fold.js';
@@ -438,7 +439,7 @@ function connectJobs(){
         const previous=jobs.get(j.id);
         // Reconnect snapshots repeat canonical jobs already loaded at entry.
         // Replaying them must not tear down an unchanged Element/Worker.
-        if(previous&&(Number(previous.rev)>Number(j.rev)||JSON.stringify(previous)===JSON.stringify(j)))continue;
+        if(previous&&(Number(previous.rev)>Number(j.rev)||sameJobSnapshot(previous,j)))continue;
         applyJob(j,{rerender:false});
         if(j.conversationId===db.current)touched=true;
       }

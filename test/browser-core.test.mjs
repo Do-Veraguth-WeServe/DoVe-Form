@@ -58,6 +58,15 @@ try{
  await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('server startup timeout')),15000);app.stdout.on('data',d=>{if(String(d).includes('ready')){clearTimeout(t);resolve()}});app.once('exit',c=>{clearTimeout(t);reject(Error('early server exit '+c))})});
  browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'/root/.cache/puppeteer/chrome/linux-153.0.8010.36/chrome-linux64/chrome',headless:true,args:['--no-sandbox']});
  const context=await browser.newContext({viewport:{width:1280,height:900},reducedMotion:'reduce'}),errors=[];let p=await context.newPage();
+ if(process.env.FORM_CORE_TRACE==='1'){
+  p.on('console',m=>{if(m.text().startsWith('CORETRACE'))console.log(m.text());});
+  let bundle=fs.readFileSync(path.join(root,'dist/app.js'),'utf8');
+  for(const [before,after] of [
+   ['function renderPreservingScroll() {','function renderPreservingScroll() {console.debug("CORETRACE render",new Error().stack);'],
+   ['const previous = jobs.get(j2.id);','const previous = jobs.get(j2.id);console.debug("CORETRACE snapshot",JSON.stringify({previous,next:j2}));']
+  ]){assert.ok(bundle.includes(before),before);bundle=bundle.replace(before,after);}
+  await p.route('**/app.js',r=>r.fulfill({contentType:'text/javascript',body:bundle}));
+ }
  p.on('pageerror',e=>errors.push(e.message));await p.goto(base);
  await p.locator('#loginform [name=username]').fill('coreowner');await p.locator('#loginform [name=password]').fill('wrong-password');await p.locator('#loginform button').last().click();
  await p.locator('#loginerr').filter({hasText:'Ungültiger Benutzername oder Passwort'}).waitFor();check('wrong password rejected');
