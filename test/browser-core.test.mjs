@@ -192,6 +192,7 @@ try{
   // Stop performs canonical server recovery: old callbacks must not retain stale message objects.
   await p.waitForFunction(()=>!document.querySelector('.live'));
   assert.equal(await frame.evaluate(el=>el.isConnected),false,'canonical recovery deliberately replaces old snapshot');
+  await p.locator('iframe.render').first().waitFor({state:'attached'});
   assert.equal(await p.locator('iframe.render').count(),1);
   await p.frameLocator('iframe.render').locator('#out').filter({hasText:'Wert: 9'}).waitFor();
   assert.equal(builds,1);assert.equal(plans,1);

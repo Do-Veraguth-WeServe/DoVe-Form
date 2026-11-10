@@ -1163,3 +1163,27 @@ function blueprintEl(s){
 }
 
 installFeedScroll(document.querySelector("#feed"));
+
+// Chat-history shapes: a repeating SVG tile scrolls with the conversation
+// (background-attachment:local). Intensity is a local user setting; 0 % hides it.
+const SHAPES_KEY='form3.shapes';
+const shapesRaw=localStorage.getItem(SHAPES_KEY);
+let shapeIntensity=shapesRaw==null?40:Math.min(100,Math.max(0,Number(shapesRaw)));
+if(!Number.isFinite(shapeIntensity))shapeIntensity=40;
+function shapeTile(o){
+ if(o<=0)return 'none';
+ const k=Math.max(0,Math.min(100,o))/100;
+ const f=(c,base)=>`fill='${c}' fill-opacity='${(base*k).toFixed(3)}'`;
+ return `url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='720' height='1600'><polygon points='70,320 210,240 360,320' ${f('%238bc9ef',.10)}/><rect x='520' y='560' width='150' height='150' rx='30' ${f('%23d4ef8b',.09)} transform='rotate(12 595 635)'/><circle cx='240' cy='900' r='64' ${f('%23d4ef8b',.08)}/><circle cx='600' cy='1150' r='56' fill='none' stroke='%23efb98b' stroke-opacity='${(.10*k).toFixed(3)}' stroke-width='24'/><polygon points='480,1450 560,1380 640,1450' ${f('%23b78bef',.08)}/><rect x='90' y='1330' width='120' height='120' rx='24' ${f('%23d4ef8b',.08)} transform='rotate(-10 150 1390)'/></svg>")`;
+}
+function applyShapeIntensity(){
+ const feed=document.querySelector('#feed');
+ if(feed)feed.style.backgroundImage=shapeTile(shapeIntensity);
+ const out=document.querySelector('#shapesout');
+ if(out)out.textContent=shapeIntensity+' %';
+ const range=document.querySelector('#shapesrange');
+ if(range&&range.value!==String(shapeIntensity))range.value=String(shapeIntensity);
+}
+applyShapeIntensity();
+const shapesRange=document.querySelector('#shapesrange');
+if(shapesRange)shapesRange.addEventListener('input',e=>{shapeIntensity=Math.min(100,Math.max(0,Number(e.target.value)));localStorage.setItem(SHAPES_KEY,String(shapeIntensity));applyShapeIntensity();});

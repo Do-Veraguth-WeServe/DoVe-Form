@@ -1,0 +1,32 @@
+CASE chat
+released prose chat
+RELOAD writing [
+  {
+    kind: 'chat',
+    state: 'building',
+    prose: 'Eine **Antwort** wächst. '
+  }
+]
+finish chat
+CASE plan
+released prose plan
+RELOAD writing [
+  {
+    kind: 'plan',
+    state: 'building',
+    prose: 'Eine **Antwort** wächst. '
+  }
+]
+finish plan
+CASE chat-live
+released prose chat-live
+RELOAD writing [
+  {
+    kind: 'chat',
+    state: 'building',
+    prose: 'Eine **Antwort** wächst. '
+  }
+]
+finish chat-live
+[job] failed: ed36940e Modell-Endpunkt antwortete 400
+PASS chat+plan: animated thinking immediately; reload then prose transition; persisted writing/reload; desktop/mobile; reduced motion; completion/cancel/error cleanup; foreign prose isolation; no duplicate provider call or implicit construction
