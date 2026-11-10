@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "rollback": "/opt/form/.rollback/20261110-shared-handoff",
+  "restart": false,
+  "files": {
+    "src/renderer.js": "aa5590e8cab40f09581b70c7e597d7d3f40c9f3679d4ace54ebff94cd028299b",
+    "src/shared-elements.js": "fbe1ea82ee5365a6f585527a7071021229f8a0b402a54af7df4cf5b89b6ced02",
+    "dist/app.js": "0e1db578f5487f4d61e8229a23e40c68685421d99573b39241e1477a7dbf93d1",
+    "docs/SHARED-REFRESH-HANDOFF.md": "d9a8ebb0eb2e7c0cc2df9317536d606ed012fb977dab9702d7d038d6fd7c4164",
+    "test/shared-elements-browser.mjs": "31d084622ff610e6bd0cf6e067fb218ab1d4d822abf186b78cc9f3aefbd752cd"
+  },
+  "proof": "zero jobs; matching served bundle and unchanged CSP; health200 and anonymous401 on both routes"
+}

@@ -11,3 +11,9 @@ Acceptance: three synthetic accounts, desktop1280/mobile390, delayed Worker with
 Remaining: recipient favorites, synchronization into the owner's ordinary/private view, and broader initial-navigation loading (#6a876098). Reports remain working; this slice addresses the blank remote-refresh transition, not all requested sharing features.
 
 Deployment: frontend-only src/renderer.js, src/shared-elements.js and dist/app.js, with documentation and test source synchronized. No server restart, schema change or production user artifact/data writes. Require zero active jobs and unchanged bridge hash; preserve protected code-only rollback. Final rollout evidence appended only after checks.
+
+## Verified rollout 2026-11-10
+
+Implementation 2d3fe55 committed and pushed to origin/form-platform. Final source AND deployed-module delayed-Worker/DB three-account Chromium acceptance PASS, including offline and revocation while both frozen/staging frames exist. 36 sharing units, HTTP ACL/SSE gates, unchanged browser-core rerun (24 checks), desktop/mobile feed stability and animation acceptance PASS. Initial failures remain in dated logs; screenshots inspected. Both loopback/Tailnet serve exact app SHA256 0e1db578f5487f4d61e8229a23e40c68685421d99573b39241e1477a7dbf93d1, unchanged bridge CSP, health200 and anonymous401.
+
+Zero active jobs before frontend-only rollout, no process restart. Rollback /opt/form/.rollback/20261110-shared-handoff; restore its src/renderer.js, src/shared-elements.js and dist/app.js atomically, never user data. Manifest /opt/form/shared-handoff-release.json contains runtime and release-time documentation hashes; this final addendum supersedes the documentation hash only. #ca705d41 and #6a876098 remain working for the explicitly listed remaining scope. No original-user-product changes or universal flicker-free claim.
