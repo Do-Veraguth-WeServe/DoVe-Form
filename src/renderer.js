@@ -3,6 +3,9 @@ import {cancelFeedMomentum,startFeedMomentum} from './feed-momentum.js';
 import {validateAnimations,prepareAnimation} from '../animation-policy.mjs';
 import {inspectHTML,safeCSS,inspectFragment} from './sanitize.js';
 
+import {createEngineSpare} from './engine-spare.js';
+const engineSpare=createEngineSpare({create:()=>new Worker('/worker.js',{type:'module'}),visible:()=>!document.hidden,listen:(type,fn)=>addEventListener(type,fn)});
+
 const HOST_OK=/^[a-z0-9.-]{1,253}$/i;
 
 export function bridge(installScrollInput){
@@ -108,7 +111,7 @@ export function renderUI(data,{onState,onSuggest,onError,onWarning=()=>{},onPing
   if(inspected.removedCount)onWarning('Darstellung eingeschränkt: HTML-Bestandteile wurden aus Sicherheitsgründen entfernt oder angepasst.'+(inspected.diagnostics.some(d=>d.reason==='id-removed')?' Eine Element-ID wurde entfernt; zugehörige Interaktionen können fehlen.':''));
   // Load app-owned engine bytes concurrently with iframe setup. No artifact
   // source/state is sent before the opaque frame's validated private handshake.
-  worker=new Worker('/worker.js',{type:'module'});
+  worker=engineSpare.take();
   worker.onerror=()=>{if(destroyed||stopped)return;stopped=true;clearTimeout(timer);worker.terminate();onError('Interaktion konnte nicht gestartet werden.');};
   timer=setTimeout(()=>{if(destroyed||stopped)return;stopped=true;worker.terminate();onError('Interaktions-Engine konnte nicht rechtzeitig geladen werden. Bitte erneut öffnen.');},30000);
   const listener=e=>{
@@ -144,7 +147,7 @@ export function renderUI(data,{onState,onSuggest,onError,onWarning=()=>{},onPing
         const pending=observationPending;observationPending=null;clearTimeout(pending.timer);
         pending.resolve({runtimeError,htmlWarning,layout:d.layout});return;
       }
-      if(d?.type==='applied'){domPending=Math.max(0,domPending-1);f.style.visibility='';f.removeAttribute('aria-busy');f.dataset.ready='true';if(!readyNotified&&!destroyed&&!stopped&&!inflight&&!asyncQ.length&&!dbPending&&!domPending){readyNotified=true;onReady();}}
+      if(d?.type==='applied'){domPending=Math.max(0,domPending-1);f.style.visibility='';f.removeAttribute('aria-busy');f.dataset.ready='true';if(!readyNotified&&!destroyed&&!stopped&&!inflight&&!asyncQ.length&&!dbPending&&!domPending){readyNotified=true;engineSpare.warm();onReady();}}
       if(d?.type==='scroll-wheel')applyFeedWheel(f,d);
       if(d?.type==='scroll-stop')cancelFeedMomentum();
       if(d?.type==='scroll-release'&&Number.isFinite(d.velocity)&&Math.abs(d.velocity)<=2.5)startFeedMomentum(f,d.velocity);

@@ -1,0 +1,2 @@
+PASS fresh spare 1280: detached WASM, no early guest, forged ready, one init, interaction, teardown, early failure
+PASS fresh spare 390: detached WASM, no early guest, forged ready, one init, interaction, teardown, early failure

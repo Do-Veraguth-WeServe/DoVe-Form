@@ -1,0 +1,5 @@
+PASS initial canonical baseline before guest startup, concurrent DB revision reconciled
+PASS two-tab stream budget, third tab fails visibly and reconnects after slot release
+PASS desktop/mobile conversation navigation tears down old owner and restores canonical DB view
+PASS logout/account switch/relogin closes owner renderers and isolates canonical data
+PASS source deletion invalidates live owner surface without stale iframe

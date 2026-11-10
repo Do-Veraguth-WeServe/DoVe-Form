@@ -18,6 +18,11 @@ try{
  browser=await chromium.launch({executablePath:'/root/.cache/puppeteer/chrome/linux-153.0.8010.36/chrome-linux64/chrome',headless:true,args:['--no-sandbox']});const p=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];page=p;p.on('pageerror',e=>errors.push(e.message));
  // Keep interception enabled for the fixture lifetime. Disabling it during
  // route.fulfill can strand the following fetch in Chromium (standalone repro).
+ await p.addInitScript(()=>{
+  const Native=Worker;let pending=[];window.holdEngineInit=false;
+  window.releaseEngineInits=()=>{window.holdEngineInit=false;const queued=pending;pending=[];queued.forEach(send=>send());};
+  window.Worker=class extends Native{postMessage(data,...rest){if(data.type==='init'&&window.holdEngineInit){pending.push(()=>super.postMessage(data,...rest));return;}return super.postMessage(data,...rest);}};
+ });
  await p.route('**/*',route=>route.continue());
  if(process.env.FORM_OWNER_TRACE==='1'){
   const cdp=await p.context().newCDPSession(p);await cdp.send('Network.enable');
@@ -78,11 +83,10 @@ p.on('response',async r=>{if(r.url().includes('/api/elements/owner/')||r.url().e
  console.log('PASS pending owner acknowledgement defers remote replacement and resumes fresh CAS writes delta='+delta);
  }
  }else console.log('FOCUSED DB RUN: pending-state gate intentionally not run; full failure retained separately');
- // Deterministic handoff: hold app-owned Worker loading, not the guest itself.
+ // Hold app-owned init delivery, including preloaded engines, not guest execution.
  for(const width of [1280,390]){
  await p.setViewportSize({width,height:844});await frame().locator('#inc').waitFor();
- let releaseWorker;const gate=new Promise(resolve=>releaseWorker=resolve);
- await p.route('**/worker.js',async route=>{await gate;await route.continue().catch(()=>{});});
+ await p.evaluate(()=>window.holdEngineInit=true);
  try{
  const before=state();await recipientState(before+10);
  await p.locator('#feed iframe[data-retained]').waitFor({timeout:6000});
@@ -90,7 +94,7 @@ p.on('response',async r=>{if(r.url().includes('/api/elements/owner/')||r.url().e
  assert.equal(await p.locator('#feed iframe[data-retained]').evaluate(f=>f.inert&&f.tabIndex===-1),true);
  assert.equal(await p.locator('#feed iframe[data-staging]').evaluate(f=>f.inert&&getComputedStyle(f).opacity==='0'),true);
  await p.locator('#feed').screenshot({path:'docs/screenshots/owner-handoff-'+width+'.png'});
- }finally{releaseWorker();await p.unroute('**/worker.js');}
+ }finally{await p.evaluate(()=>window.releaseEngineInits());}
  await p.locator('#feed iframe[data-retained]').waitFor({state:'detached'});
  await frame().locator('#n').filter({hasText:new RegExp('^'+state()+'$')}).waitFor();
  }

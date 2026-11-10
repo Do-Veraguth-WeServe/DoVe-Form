@@ -1,0 +1,7 @@
+/opt/form/src/renderer.js c7f2ad56917d32b90efc85dcc7775898bf92a44aadfb02790e661c2df6845ce5
+/opt/form/src/engine-spare.js 87d33b159bf600feb70afc4c7d5eed200217982038fae50d0e2f4d4fafd74caf
+/opt/form/dist/app.js dd042fdeb8c8e4f7fa34bf27438a6582e48191fc48c7bccac066d257a3c31735
+/opt/form/dist/animation-verification.js f8072b9271308533ad844555bc0fb776cf64a232c619afadaa866c3d24cde5a8
+/opt/form-verifier/dist/app.js dd042fdeb8c8e4f7fa34bf27438a6582e48191fc48c7bccac066d257a3c31735
+/opt/form-verifier/dist/animation-verification.js f8072b9271308533ad844555bc0fb776cf64a232c619afadaa866c3d24cde5a8
+two idle checks; no restart; rollback /opt/form/.rollback/20261110-engine-spare

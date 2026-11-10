@@ -38,6 +38,8 @@ step('question contract',run('node',['--test','test/question-contract.test.mjs']
 step('direct multi-question answers',run('node',['test/question-flow.test.mjs']));
 step('guided planning metadata',run('node',['--test','test/planning-offer.test.mjs','test/planning-offer-state.test.mjs']));
 step('build (esbuild + bridge hash + wasm)', run('node', ['build.mjs']));
+step('bounded unused engine slot',run('node',['--test','test/engine-spare.test.mjs']));
+step('fresh engine reuse boundary',run('node',['test/engine-spare-browser.mjs']));
 step('renderer engine preload handshake lifecycle',run('node',['test/renderer-preload-browser.mjs']));
 step('owner loading notice lifecycle',run('node',['test/owner-loading-browser.mjs']));
 step('public static content validators',run('node',['--test','test/static-response.test.mjs']));

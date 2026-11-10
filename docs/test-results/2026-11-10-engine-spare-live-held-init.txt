@@ -1,0 +1,31 @@
+node:events:505
+    throw er; // Unhandled 'error' event
+    ^
+
+Error: listen EADDRINUSE: address already in use 127.0.0.1:4777
+    at Server.setupListenHandle [as _listen2] (node:net:2390:16)
+    at listenInCluster (node:net:2499:12)
+    at node:net:2728:7
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:2478:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  code: 'EADDRINUSE',
+  errno: -98,
+  syscall: 'listen',
+  address: '127.0.0.1',
+  port: 4777
+}
+
+Node.js v24.22.2
+Owner fixture failure {"transport":[],"stored":0,"visible":[]}
+file:///root/.openclaw/workspace/projects/form/test/owner-live-browser.mjs:17
+ app=spawn('node',['server.mjs'],{cwd:process.env.FORM_TEST_ROOT||process.cwd(),env:{...process.env,PORT:'4777',FORM3_DATA:dir,FORM3_MODELS:path.join(dir,'models.json')},stdio:['ignore','pipe','inherit']});await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('startup')),10000);app.stdout.on('data',d=>{if(String(d).includes('ready')){clearTimeout(t);resolve();}});});
+                                                                                                                                                                                                                                                                                 ^
+
+Error: startup
+    at Timeout._onTimeout (file:///root/.openclaw/workspace/projects/form/test/owner-live-browser.mjs:17:274)
+    at listOnTimeout (node:internal/timers:685:17)
+    at process.processTimers (node:internal/timers:618:7)
+
+Node.js v24.22.2

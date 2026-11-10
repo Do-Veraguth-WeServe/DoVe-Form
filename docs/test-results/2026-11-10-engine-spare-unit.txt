@@ -1,0 +1,13 @@
+✔ one idle fresh engine, acquired runtime never returned or reused (2.887851ms)
+✔ expiry terminates only idle engine (0.603859ms)
+✔ hidden/pagehide clear spare and hidden warm is disabled (0.54188ms)
+✔ failed spare is discarded and construction errors do not break ready view (3.123895ms)
+✔ stale spare error cannot terminate its successor (0.360028ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 160.008096

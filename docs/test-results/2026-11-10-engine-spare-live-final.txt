@@ -1,0 +1,17 @@
+PASS pending owner acknowledgement defers remote replacement and resumes fresh CAS writes delta=10
+PASS pending owner acknowledgement defers remote replacement and resumes fresh CAS writes delta=-1
+Owner fixture failure {"transport":[{"path":"/api/elements/owner/stream","status":200},{"path":"/api/elements/owner/view","status":200,"n":0},{"path":"/api/elements/owner/view","status":200,"n":10},{"path":"/api/state","status":200,"n":11},{"path":"/api/elements/owner/view","status":200},{"path":"/api/elements/owner/stream","status":200},{"path":"/api/elements/owner/view","status":200,"n":11},{"path":"/api/elements/owner/stream","status":200},{"path":"/api/elements/owner/view","status":200,"n":11},{"path":"/api/elements/owner/view","status":200,"n":21},{"path":"/api/state","status":200,"n":22},{"path":"/api/elements/owner/view","status":200,"n":22},{"path":"/api/elements/owner/stream","status":200},{"path":"/api/elements/owner/stream","status":200},{"path":"/api/elements/owner/view","status":200,"n":22},{"path":"/api/elements/owner/view","status":200,"n":32},{"path":"/api/state","status":200,"n":33},{"path":"/api/elements/owner/view","status":200},{"path":"/api/elements/owner/stream","status":200},{"path":"/api/elements/owner/view","status":200,"n":33},{"path":"/api/elements/owner/stream","status":200},{"path":"/api/elements/owner/view","status":200,"n":33},{"path":"/api/elements/owner/view","status":200,"n":43},{"path":"/api/state","status":200,"n":44},{"path":"/api/elements/owner/view","status":200,"n":44},{"path":"/api/elements/owner/stream","status":200},{"path":"/api/elements/owner/view","status":200,"n":44},{"path":"/api/state","status":200,"n":45},{"path":"/api/elements/owner/view","status":200,"n":55},{"path":"/api/state","status":200,"n":56},{"path":"/api/elements/owner/view","status":200,"n":56},{"path":"/api/state","status":200,"n":57},{"path":"/api/elements/owner/view","status":200,"n":56},{"path":"/api/state","status":200,"n":57},{"path":"/api/elements/owner/view","status":200,"n":57},{"path":"/api/elements/owner/view","status":200,"n":67}],"stored":67,"visible":["67"],"body":"⌑form\n＋ Neuer Chat\nBibliothek\nElemente\nChats\nNeuer Gedankengang\n×\nalice · Owner\nEinstellungen\nForm\n● KEIN MODELL\nModell verbinden\nModell hinzufügen\nForm\nOwner CAS\n☆\n↗\nAls Form\nWerte übernehmen\n↑","frames":[{"ready":"true","owner":{"ownerStaging":"false","ownerPending":"0"},"style":"width: 100%; height: 120px;"}]}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.evaluate: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator('#feed iframe[data-staging]')
+
+    at /root/.openclaw/workspace/projects/form/test/owner-live-browser.mjs:91:61 {
+  log: [ "  - waiting for locator('#feed iframe[data-staging]')" ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.22.2
