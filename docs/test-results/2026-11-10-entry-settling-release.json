@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "rollback": "/opt/form/.rollback/20261110-entry-settling",
+  "appSha256": "86e3b9721b3adfa509e499b2dd74476d000a59950cce90fa1ef2151ac0dd3599",
+  "files": [
+    "src/session-entry.js",
+    "src/app.js",
+    "dist/app.js",
+    "docs/SESSION-ENTRY.md",
+    "test/session-entry.test.mjs"
+  ],
+  "proof": "idle twice; frontend only; loopback and both public routes exact app hash, health, CSP, anonymous denial, registration closed; no restart or user-data changes"
+}

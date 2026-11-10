@@ -1,0 +1,10 @@
+{
+  "synthetic": true,
+  "sites": 1,
+  "states": [
+    "failed",
+    "building"
+  ],
+  "messageError": "Modell-Endpunkt antwortete 500",
+  "conclusion": "After automatic-scroll click server job was still building; not a cancelled-state rendering bug."
+}

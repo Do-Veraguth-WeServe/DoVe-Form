@@ -1,0 +1,2 @@
+PASS 1280 chat/plan preserve original; approval, held refinement, same ID, state/color/reload/archive/restore
+PASS 390 chat/plan preserve original; approval, held refinement, same ID, state/color/reload/archive/restore

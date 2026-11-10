@@ -1,0 +1,11 @@
+initial 1280 0
+PASS scroll anchor 1280 middle Enter held/completed {"mid":"5a32ae36-cf2d-4d06-832a-3bb46cdbe797","offset":-137.5,"scrollTop":2858}
+PASS scroll anchor 1280 middle button held/completed {"mid":"5a32ae36-cf2d-4d06-832a-3bb46cdbe797","offset":-224.5,"scrollTop":2945}
+PASS scroll anchor 1280 bottom Enter held/completed {"mid":"c9470ad9-a39a-49b8-9cd6-bf5fa8ad7ae6","offset":-1350,"scrollTop":6738}
+PASS scroll anchor 1280 bottom button held/completed {"mid":"c9470ad9-a39a-49b8-9cd6-bf5fa8ad7ae6","offset":-1544,"scrollTop":6932}
+initial 390 0
+PASS scroll anchor 390 middle Enter held/completed {"mid":"376fd43d-a70f-4e35-9894-c09d44951a7c","offset":-976,"scrollTop":5670}
+PASS scroll anchor 390 middle button held/completed {"mid":"376fd43d-a70f-4e35-9894-c09d44951a7c","offset":-1063,"scrollTop":5757}
+PASS scroll anchor 390 bottom Enter held/completed {"mid":"52a1de51-2bbc-4f17-b056-3f2c03e095ec","offset":-1312,"scrollTop":12987}
+PASS scroll anchor 390 bottom button held/completed {"mid":"52a1de51-2bbc-4f17-b056-3f2c03e095ec","offset":-1506,"scrollTop":13181}
+PASS session entry desktop/mobile/login/sidebar/reload, iframe settling/cancel/deadline, Enter/button middle/bottom submit and completion preservation
