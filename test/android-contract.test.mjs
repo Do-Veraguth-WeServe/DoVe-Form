@@ -1,0 +1,23 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const json = p => JSON.parse(fs.readFileSync(new URL('../'+p, import.meta.url)));
+test('Android TWA uses canonical HTTPS origin and matching DAL package', () => {
+  const a=json('android/twa-manifest.json'), w=json('assets/manifest.webmanifest'), links=json('assets/assetlinks.json');
+  assert.equal(a.host,'form.dove-it.net');
+  assert.equal(new URL(a.webManifestUrl).origin,'https://'+a.host);
+  assert.equal(a.fullScopeUrl,'https://'+a.host+'/');
+  assert.equal(a.startUrl,w.start_url);
+  assert.equal(a.minSdkVersion,24);
+  assert.equal(a.fallbackType,'customtabs');
+  assert.equal(a.enableNotifications,false);
+  assert.ok(a.appVersionCode>0);
+  assert.equal(links.length,1);
+  assert.equal(links[0].target.namespace,'android_app');
+  assert.equal(links[0].target.package_name,a.packageId);
+  assert.deepEqual(links[0].relation,['delegate_permission/common.handle_all_urls']);
+  assert.ok(links[0].target.sha256_cert_fingerprints.length);
+  for(const f of links[0].target.sha256_cert_fingerprints) assert.match(f,/^(?:[0-9A-F]{2}:){31}[0-9A-F]{2}$/);
+  assert.equal(links[0].target.sha256_cert_base64,undefined);
+  assert.deepEqual(a.additionalTrustedOrigins,[]);
+});

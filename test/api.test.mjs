@@ -554,7 +554,13 @@ test('models file is not served and static surface is minimal', async () => {
     const body = Buffer.from(await r.arrayBuffer());
     assert.equal(body.subarray(1, 4).toString('ascii'), 'PNG');
   }
-  assert.equal((await fetch(BASE + '/.well-known/assetlinks.json')).status, 404);
+  const dal = await fetch(BASE + '/.well-known/assetlinks.json');
+  assert.equal(dal.status, 200);
+  const links = await dal.json();
+  assert.equal(links[0].target.package_name, 'ch.doveit.form');
+  assert.deepEqual(links[0].relation, ['delegate_permission/common.handle_all_urls']);
+  assert.match(links[0].target.sha256_cert_fingerprints[0], /^(?:[0-9A-F]{2}:){31}[0-9A-F]{2}$/);
+  assert.equal(links[0].target.sha256_cert_base64, undefined);
 });
 
 test('logout invalidates the session server-side', async () => {

@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "ch.doveit.form",
+      "sha256_cert_fingerprints": [
+        "2B:65:F2:22:B0:5D:C6:AE:B1:61:F6:D8:E0:5B:58:B3:EE:6A:80:10:77:19:6E:36:B8:87:9F:DD:47:40:72:05"
+      ]
+    }
+  }
+]

@@ -1,0 +1,22 @@
+{
+  "version": "1.0.0",
+  "versionCode": 2,
+  "package": "ch.doveit.form",
+  "minSdk": 24,
+  "targetSdk": 36,
+  "apkSha256": "b4adf70a74f41df2148ebe714cf37aad3d1b05061a634d38328585159ec495a3",
+  "checks": {
+    "gradleReleaseBuild": true,
+    "apkSignatureV2": true,
+    "apkSignatureV3": true,
+    "zipAlignment": true,
+    "certificateMatchesDAL": true,
+    "googleDigitalAssetLinks": true,
+    "apiTestsPassed": 34,
+    "androidContractTest": true
+  },
+  "deviceAcceptance": {
+    "status": "blocked",
+    "reason": "No Android device connected; no /dev/kvm available. Android launch, login, keyboard, back navigation and appearance not device-tested."
+  }
+}
