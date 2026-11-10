@@ -1,0 +1,4 @@
+SCROLL_RELEASE 361 68 feed
+SCROLL_RELEASE 269 52 frame
+{"width":390,"open":{"feed":{"x":0,"y":65,"w":390,"h":688.5,"right":390},"blueprint":{"x":20,"y":63.75,"w":350,"h":876.78125,"right":370},"head":{"x":21,"y":64.75,"w":348,"h":168.5,"right":369},"inner":{"x":21,"y":233.25,"w":348,"h":706.28125,"right":369},"question":{"x":41,"y":405.53125,"w":308,"h":255,"right":349},"overflow":0},"closed":{"feed":{"x":0,"y":65,"w":390,"h":688.5,"right":390},"blueprint":{"x":20,"y":545.75,"w":350,"h":170.5,"right":370},"head":{"x":21,"y":546.75,"w":348,"h":168.5,"right":369},"inner":{"x":21,"y":715.25,"w":348,"h":706.28125,"right":369},"question":{"x":41,"y":887.53125,"w":308,"h":255,"right":349},"overflow":0},"scroll":{"touchOutside":{"drag":144,"total":228},"touchInside":{"drag":144,"total":206},"wheelOutside":180,"wheelInside":180,"iframe":{"h":2021,"scrollH":2021,"scroll":0}}}
+PASS embedded layout and matched input displacement

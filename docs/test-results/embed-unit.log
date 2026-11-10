@@ -1,0 +1,18 @@
+✔ velocity is bounded, decays, and expires within 1200ms (11.169576ms)
+✔ negative direction, boundary and invalid velocity (2.816027ms)
+✔ new trusted input, hidden document and detached owner stop continuation (10.92295ms)
+✔ one owner at a time, teardown cannot stop another owner (2.53816ms)
+✔ current-frame callbacks must never reverse or cancel a new fling (5.568553ms)
+✔ a rounded subpixel first tick retains momentum and fractional displacement (2.596418ms)
+✔ same event timestamps give identical drag and release regardless of handler latency (7.201063ms)
+✔ untrusted events, disabled targets, pinch and horizontal gestures cannot hijack scroll (1.155364ms)
+✔ held and cancelled gestures stop; deltas and velocity remain bounded (3.996096ms)
+✔ wheel preserves pixel/line/page units; zoom and horizontal gestures remain native (0.850105ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 263.912457

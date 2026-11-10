@@ -15,12 +15,16 @@ await build({ entryPoints: ['src/app.js', 'src/worker.js', 'src/animation-verifi
 // (the srcdoc iframe inherits the parent CSP, so the trusted bootstrap
 // needs an explicit sha256 allowance).
 const bundled = fs.readFileSync('dist/app.js', 'utf8');
-const a = bundled.indexOf('function bridge()');
+const a = bundled.indexOf('function bridge(');
 const b = bundled.indexOf('function renderUI(');
 if (a === -1 || b === -1 || b <= a) throw Error('bridge extraction failed');
 const source = bundled.slice(a, b).trim();
+const inputStart = bundled.indexOf('function installScrollInput(');
+if(inputStart<0)throw Error('scroll input extraction failed');
+const inputSource = bundled.slice(inputStart,bundled.indexOf('\n}',inputStart)+2);
+const input = vm.runInNewContext('('+inputSource+')');
 const fn = vm.runInNewContext('(' + source + ')');
-fs.writeFileSync('dist/bridge-hash.txt', crypto.createHash('sha256').update('(' + fn.toString() + ')();').digest('base64'));
+fs.writeFileSync('dist/bridge-hash.txt', crypto.createHash('sha256').update('(' + fn.toString() + ')(' + input.toString() + ');').digest('base64'));
 
 const wasm = 'node_modules/@jitl/quickjs-wasmfile-release-sync/dist/emscripten-module.wasm';
 if (fs.existsSync(wasm)) fs.copyFileSync(wasm, 'dist/quickjs.wasm');

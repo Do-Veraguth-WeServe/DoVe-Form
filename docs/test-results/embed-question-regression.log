@@ -1,0 +1,2 @@
+[job] failed: 178172a2 Modellaufruf fehlgeschlagen: Bitte zuerst die Planung bestätigen.
+PASS desktop/mobile: multi-question choices/custom answers, no composer transfer, preserved draft, failure/retry, double click, reload, automatic blueprint revisions, existing-element target, stale/foreign rejection, no automatic build.

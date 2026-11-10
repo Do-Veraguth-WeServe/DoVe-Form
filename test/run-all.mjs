@@ -68,7 +68,8 @@ step('DB-dependent Element initialization and reload',run('node',['test/db-eleme
 step('unchanged feed Elements survive real updates',run('node',['test/feed-stability.test.mjs']));
 step('job snapshots preserve unchanged Element frames',run('node',['test/snapshot-stability.test.mjs']));
 step('session entry bottom without submit movement',run('node',['test/session-entry.test.mjs']));
-step('momentum bounds and teardown',run('node',['--test','test/feed-momentum.test.mjs']));
+step('momentum bounds and teardown',run('node',['--test','test/feed-momentum.test.mjs','test/scroll-input.test.mjs']));
+step('matched chat/Element scroll speed and Blueprint fold layout',run('node',['test/embedded-scroll-layout.mjs']));
 step('mobile Element flick momentum and cancellation',run('node',['test/element-momentum.test.mjs']));
 step('navigation preserves background chat and plans',run('node',['test/navigation-jobs.test.mjs']));
 step('shared element grants, stream and database revisions',run('node',['--test','test/shared-favorites.test.mjs','test/element-sharing.test.mjs','test/element-stream.test.mjs','test/element-db-revision.test.mjs']));

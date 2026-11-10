@@ -1,0 +1,87 @@
+FEED Modell verbinden
+Modell hinzufügen
+
+Ältere Nachrichten ausgeblendet.
+
+Form
+
+Plain chat 1 content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content
+
+Form
+
+Plain chat 2 content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content
+
+Form
+
+Plain chat 3 content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content
+
+Form
+
+Plain chat 4 content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content
+
+Form
+
+Plain chat 5 content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content
+
+Form
+
+Plain chat 6 content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content
+
+Form
+
+Plain chat 7 content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content
+
+Form
+
+Plain chat 8 content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content
+
+Form
+
+Plain chat 9 content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content
+
+Form
+
+Plain chat 10 content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content
+
+Form
+
+Plain chat 11 content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content content
+
+Form
+
+Plan a response
+
+Blueprint · Ein sauber eingebetteter Antwortcontainer mit langen Titeln
+Version 1
+1 offene Fragen
+⌄
+Gespräch in Plan übernehmen
+ZUSAMMENFASSUNG
+
+Zusammenfassung mit längeren Worten und Text.
+
+Welche Daten sollen in der Antwort angezeigt werden?
+Sehr lange Auswahl mit mehreren Worten und einemLangenNichtGetrenntenWortZurBreitenprüfung
+Kurz
+Eigene Antwort
+
+Antworten absenden
+
+Offene Fragen hier beantworten. Es wird noch nichts gebaut.
+
+Modell für den Bau
+Plan starten
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.waitFor: Timeout 12000ms exceeded.
+Call log:
+  - waiting for locator('#feed iframe[data-ready=true]')
+
+    at /root/.openclaw/workspace/projects/form-scroll-fix/test/embedded-scroll-layout.mjs:7:458 {
+  log: [ "  - waiting for locator('#feed iframe[data-ready=true]')" ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.22.2

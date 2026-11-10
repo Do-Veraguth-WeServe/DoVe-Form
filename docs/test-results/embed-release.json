@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "rollback": "/opt/form/.rollback/20261110-embedded-scroll",
+  "appSha256": "dd287598f6dd13140f97dd0a4c1a576fee099df7df93ecc91f62eb69442e2652",
+  "bridge": "Bt2HCN9UpmWWoX859xCQu+uXnGDcP8QGbyZxt392cXQ=",
+  "files": [
+    "build.mjs",
+    "index.html",
+    "src/app.js",
+    "src/renderer.js",
+    "src/scroll-input.js",
+    "src/feed-momentum.js",
+    "dist/index.html",
+    "dist/app.js",
+    "dist/bridge-hash.txt",
+    "docs/EMBEDDED-SCROLL-LAYOUT.md"
+  ],
+  "proof": "three idle checkpoints, both public URLs + loopback exact HTML/app/CSP/health/auth; interpreter/verifier unchanged; no data/schema changes"
+}

@@ -1,0 +1,16 @@
+{"width":390,"open":{"feed":{"x":0,"y":65,"w":390,"h":688.5,"right":390},"blueprint":{"x":20,"y":63.75,"w":350,"h":857.78125,"right":370},"head":{"x":21,"y":64.75,"w":348,"h":149.5,"right":369},"inner":{"x":21,"y":214.25,"w":348,"h":706.28125,"right":369},"question":{"x":41,"y":386.53125,"w":308,"h":255,"right":349},"overflow":0},"closed":{"feed":{"x":0,"y":65,"w":390,"h":688.5,"right":390},"blueprint":{"x":20,"y":564.75,"w":350,"h":151.5,"right":370},"head":{"x":21,"y":565.75,"w":348,"h":149.5,"right":369},"inner":{"x":21,"y":715.25,"w":348,"h":706.28125,"right":369},"question":{"x":41,"y":887.53125,"w":308,"h":255,"right":349},"overflow":0},"scroll":{"touchOutside":{"drag":144,"total":155},"touchInside":{"drag":144,"total":357},"wheelOutside":180,"wheelInside":180,"iframe":{"h":2021,"scrollH":2021,"scroll":0}}}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: equal momentum over Element and chat
+    at file:///root/.openclaw/workspace/projects/form-scroll-fix/test/embedded-scroll-layout.mjs:12:562 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.22.2

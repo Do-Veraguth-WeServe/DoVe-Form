@@ -1,0 +1,58 @@
+✔ velocity is bounded, decays, and expires within 1200ms (7.682334ms)
+✔ negative direction, boundary and invalid velocity (2.782711ms)
+✔ new trusted input, hidden document and detached owner stop continuation (11.298475ms)
+✔ one owner at a time, teardown cannot stop another owner (2.203781ms)
+✖ current-frame callbacks must never reverse or cancel a new fling (3.561231ms)
+✖ a rounded subpixel first tick retains momentum and fractional displacement (2.057034ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 4
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 220.326622
+
+✖ failing tests:
+
+test at test/feed-momentum.test.mjs:15:1
+✖ current-frame callbacks must never reverse or cancel a new fling (3.561231ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  0 !== 1
+
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form-scroll-fix/test/feed-momentum.test.mjs:15:191)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/feed-momentum.test.mjs:16:1
+✖ a rounded subpixel first tick retains momentum and fractional displacement (2.057034ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  0 !== 1
+
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form-scroll-fix/test/feed-momentum.test.mjs:16:261)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

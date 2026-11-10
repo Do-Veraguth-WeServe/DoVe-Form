@@ -1,13 +1,14 @@
+import {installScrollInput} from './scroll-input.js';
 import {cancelFeedMomentum,startFeedMomentum} from './feed-momentum.js';
 import {validateAnimations,prepareAnimation} from '../animation-policy.mjs';
 import {inspectHTML,safeCSS,inspectFragment} from './sanitize.js';
 
 const HOST_OK=/^[a-z0-9.-]{1,253}$/i;
 
-export function bridge(){
+export function bridge(installScrollInput){
   const channel=document.currentScript.dataset.channel;
   const send=(type,data={})=>parent.postMessage({channel,type,...data},'*');
-  let port,scrollParent=false,touch=null;
+  let port,scrollParent=false;
   const animations=new Map(),locked=new Set();
   const finish=(r,status,error)=>{if(r.done)return;r.done=true;clearTimeout(r.timer);for(const a of r.native)a.cancel();for(const t of r.targets)locked.delete(t);animations.delete(r.ref);port?.postMessage({type:'animation-result',ref:r.ref,ok:status==='finished',status,...(error?{error}:{})});};
   const stopAll=()=>{for(const r of animations.values())finish(r,'cancelled');};
@@ -34,31 +35,7 @@ export function bridge(){
       run(o.clip).then(()=>finish(r,'finished'),()=>finish(r,'error','Animation interrupted'));
     }catch(e){port?.postMessage({type:'animation-result',ref:o.ref,ok:false,status:'error',error:e.message});}
   };
-  // Only app-owned bootstrap sees real touch events; guest JS has no scrolling API.
-  addEventListener('touchstart',e=>{
-    if(!e.isTrusted)return;
-    port?.postMessage({type:'scroll-stop'});
-    if(!scrollParent||e.touches.length!==1){touch=null;return;}
-    const t=e.touches[0];touch={x:t.screenX,y:t.screenY,lastY:t.screenY,time:performance.now(),velocity:0,vertical:false};
-  },{passive:true});
-  addEventListener('touchmove',e=>{
-    if(!touch||!e.isTrusted||e.touches.length!==1)return;
-    const t=e.touches[0],dy=touch.lastY-t.screenY;
-    if(!touch.vertical){
-      if(Math.abs(t.screenY-touch.y)<8)return;
-      if(Math.abs(t.screenX-touch.x)>Math.abs(t.screenY-touch.y)){touch=null;return;}
-      touch.vertical=true;
-    }
-    e.preventDefault();const now=performance.now(),dt=now-touch.time;
-    touch.velocity=Math.max(-2.5,Math.min(2.5,dy/Math.max(8,dt)));touch.time=now;touch.lastY=t.screenY;
-    port?.postMessage({type:'scroll-parent',delta:Math.max(-160,Math.min(160,dy))});
-  },{passive:false});
-  for(const type of ['touchend','touchcancel'])addEventListener(type,e=>{
-    if(!e.isTrusted)return;
-    if(type==='touchend'&&touch?.vertical&&e.touches.length===0&&performance.now()-touch.time<100)port?.postMessage({type:'scroll-release',velocity:touch.velocity});
-    else port?.postMessage({type:'scroll-stop'});
-    touch=null;
-  },{passive:true});
+  installScrollInput({target:window,enabled:()=>scrollParent,send:(type,data={})=>port?.postMessage({type,...data})});
   addEventListener('message',e=>{
     if(e.source!==parent||e.data?.channel!==channel||!e.ports[0]||port)return;
     port=e.ports[0];scrollParent=e.data.scrollParent===true;
@@ -164,6 +141,7 @@ export function renderUI(data,{onState,onSuggest,onError,onWarning=()=>{},onPing
         pending.resolve({runtimeError,htmlWarning,layout:d.layout});return;
       }
       if(d?.type==='applied'){domPending=Math.max(0,domPending-1);f.style.visibility='';f.removeAttribute('aria-busy');f.dataset.ready='true';if(!readyNotified&&!destroyed&&!stopped&&!inflight&&!asyncQ.length&&!dbPending&&!domPending){readyNotified=true;onReady();}}
+      if(d?.type==='scroll-wheel')applyFeedWheel(f,d);
       if(d?.type==='scroll-stop')cancelFeedMomentum();
       if(d?.type==='scroll-release'&&Number.isFinite(d.velocity)&&Math.abs(d.velocity)<=2.5)startFeedMomentum(f,d.velocity);
       if(d?.type==='scroll-parent'&&Number.isFinite(d.delta)&&Math.abs(d.delta)<=160){
@@ -255,7 +233,7 @@ export function renderUI(data,{onState,onSuggest,onError,onWarning=()=>{},onPing
     dispatch({type:'init',js:data.js,state:data.state});
   };
   addEventListener('message',listener);
-  f.srcdoc='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src &apos;none&apos;; script-src &apos;nonce-'+nonce+'&apos;; style-src &apos;unsafe-inline&apos;; connect-src &apos;none&apos;; img-src &apos;none&apos;; form-action &apos;none&apos;; base-uri &apos;none&apos;; frame-src &apos;none&apos;; object-src &apos;none&apos;"><style>*{box-sizing:border-box}html,body{margin:0;background:#141718;color:#e9e9de;font:15px/1.5 system-ui;overflow-x:hidden}body{padding:4px 0 20px}button,input,select{font:inherit;accent-color:#d4ef8b}button{cursor:pointer}svg{max-width:100%}'+css+'</style></head><body>'+html+'<script nonce="'+nonce+'" data-channel="'+channel+'">('+bridge.toString()+')();</scr'+'ipt></body></html>';
+  f.srcdoc='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src &apos;none&apos;; script-src &apos;nonce-'+nonce+'&apos;; style-src &apos;unsafe-inline&apos;; connect-src &apos;none&apos;; img-src &apos;none&apos;; form-action &apos;none&apos;; base-uri &apos;none&apos;; frame-src &apos;none&apos;; object-src &apos;none&apos;"><style>*{box-sizing:border-box}html,body{margin:0;background:#141718;color:#e9e9de;font:15px/1.5 system-ui;overflow-x:hidden}body{padding:4px 0 20px}button,input,select{font:inherit;accent-color:#d4ef8b}button{cursor:pointer}svg{max-width:100%}'+css+'</style></head><body>'+html+'<script nonce="'+nonce+'" data-channel="'+channel+'">('+bridge.toString()+')('+installScrollInput.toString()+');</scr'+'ipt></body></html>';
   return {
     element:f,
     inspect(){
@@ -280,3 +258,6 @@ export function renderUI(data,{onState,onSuggest,onError,onWarning=()=>{},onPing
     }
   };
 }
+
+function applyFeedWheel(owner,d){const feed=owner.closest('#feed');if(!feed||!owner.isConnected||!Number.isFinite(d.delta)||![0,1,2].includes(d.mode))return;cancelFeedMomentum();const unit=d.mode===1?22.5:d.mode===2?feed.clientHeight:1;feed.scrollTop+=Math.max(-10000,Math.min(10000,d.delta*unit));}
+export function installFeedScroll(feed){installScrollInput({target:feed,send:(type,d={})=>{if(type==='scroll-stop')cancelFeedMomentum();if(type==='scroll-parent')feed.scrollTop+=d.delta;if(type==='scroll-release')startFeedMomentum(feed,d.velocity);if(type==='scroll-wheel')applyFeedWheel(feed,d);}});}

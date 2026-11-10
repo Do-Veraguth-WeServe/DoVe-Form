@@ -17,7 +17,7 @@ import {planFold} from './plan-fold.js';
 import {renderMarkdown} from './markdown.js';
 import {replyEvidenceNotice} from './reply-evidence.js';
 import {formCard,initFormsUI} from './forms-ui.js';
-import {renderUI} from './renderer.js';
+import {renderUI,installFeedScroll} from './renderer.js';
 import {safeHTML,safeCSS} from './sanitize.js';
 import {validateRender,deriveName,sanitizeName} from '../contract.mjs';
 const $=s=>document.querySelector(s),uid=()=>crypto.randomUUID(),KEY='form.v3';
@@ -1161,3 +1161,5 @@ function blueprintEl(s){
   const update=document.createElement('button');update.type='button';update.className='blueprint-update';update.textContent='Gespräch in Plan übernehmen';update.disabled=[...jobs.values()].some(j=>j.conversationId===s.id&&j.kind==='plan'&&ACTIVE_JOB.includes(j.state));update.onclick=async()=>{if(db.current!==s.id||update.disabled)return;update.disabled=true;try{await send($('#prompt').value.trim()||'Aktualisiere den Blueprint anhand unserer bisherigen Besprechung.','plan',{blueprintId:bp.id,blueprintRevision:bp.revision})}finally{if(update.isConnected)update.disabled=false;}};
   const body=document.createElement('div');body.className='blueprint-body';const inner=document.createElement('div');inner.className='blueprint-inner';inner.append(update,summaryLabel,summary);if(questions.length)inner.append(form);inner.append(note,modelLabel,start);body.append(inner);fold=planFold({box,head,body,key:me.id+'-'+bp.id,revision:bp.revision,questions:questions.length});return box;
 }
+
+installFeedScroll(document.querySelector("#feed"));

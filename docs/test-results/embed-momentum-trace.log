@@ -1,0 +1,9 @@
+SCROLL_TRACE stop pointerdown
+SCROLL_TRACE stop pointerdown
+SCROLL_TRACE stop pointerdown
+SCROLL_TRACE stop touchstart
+SCROLL_TRACE feed touchend 2558.5999999046326 2538.5999999046326 0.9
+SCROLL_TRACE iframe touchend 3956.2999999523163 3936.4000000953674 0.9
+SCROLL_TRACE stop wheel
+{"width":390,"open":{"feed":{"x":0,"y":65,"w":390,"h":688.5,"right":390},"blueprint":{"x":20,"y":63.75,"w":350,"h":857.78125,"right":370},"head":{"x":21,"y":64.75,"w":348,"h":149.5,"right":369},"inner":{"x":21,"y":214.25,"w":348,"h":706.28125,"right":369},"question":{"x":41,"y":386.53125,"w":308,"h":255,"right":349},"overflow":0},"closed":{"feed":{"x":0,"y":65,"w":390,"h":688.5,"right":390},"blueprint":{"x":20,"y":564.75,"w":350,"h":151.5,"right":370},"head":{"x":21,"y":565.75,"w":348,"h":149.5,"right":369},"inner":{"x":21,"y":715.25,"w":348,"h":706.28125,"right":369},"question":{"x":41,"y":887.53125,"w":308,"h":255,"right":349},"overflow":0},"scroll":{"touchOutside":{"drag":144,"total":357},"touchInside":{"drag":144,"total":357},"wheelOutside":180,"wheelInside":180,"iframe":{"h":2021,"scrollH":2021,"scroll":0}}}
+PASS embedded layout and matched input displacement
