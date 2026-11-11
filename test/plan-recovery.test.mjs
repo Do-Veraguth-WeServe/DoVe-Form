@@ -44,3 +44,34 @@ for(const [name,invalid] of Object.entries({malformed:{text:'<reply>Incomplete</
 test('double invalid response fails closed and preserves previous blueprint',()=>fixture([{text:'invalid'}],({requests,job,plan})=>{assert.equal(requests.length,2);assert.equal(job.state,'failed');assert.equal(plan.revision,1);assert.equal(plan.title,'Original');}));
 test('valid first response needs no correction',()=>fixture([{text:valid}],({requests,job})=>{assert.equal(requests.length,1);assert.equal(job.state,'ready');}));
 test('cancellation during correction cannot publish',()=>fixture([{text:'invalid'}],({requests,job,plan})=>{assert.equal(requests.length,2);assert.equal(job.state,'cancelled');assert.equal(plan.revision,1);},{cancel:true}));
+
+const questionShape='<questions><question><text>Question?</text><option>First option</option><option>Second option</option></question></questions>';
+const questionOutput=valid.replace('<questions></questions>','<questions><question><text>Which view?</text><option>List</option><option>Grid</option></question></questions>').replace('<ready>true</ready>','<ready>false</ready>');
+for(const [name,questions] of Object.entries({
+ nestedOption:'<questions><question><text>Which view?</text><option>List<option>Grid</option></question></questions>',
+ empty:'<questions><question></question></questions>',
+ unclosedText:'<questions><question><text>Which view?<option>List</option><option>Grid</option></question></questions>',
+ blankOption:'<questions><question><text>Which view?</text><option> </option><option>Grid</option></question></questions>',
+ oversizedOption:'<questions><question><text>Which view?</text><option>'+ 'x'.repeat(161) +'</option><option>Grid</option></question></questions>',
+}))test(name+' question repair includes closed exact schema and persists unresolved choices',()=>fixture([{text:valid.replace('<questions></questions>',questions)},{text:questionOutput}],({requests,job,plan})=>{
+ assert.equal(requests.length,2);assert.equal(job.state,'ready');assert.equal(plan.revision,2);assert.equal(plan.ready,false);
+ assert.equal(plan.questions.length,1);assert.equal(plan.questions[0].text,'Which view?');assert.deepEqual(plan.questions[0].options,['List','Grid']);
+ assert.ok(requests[1].messages.at(-1).content.includes(questionShape),'explicit complete question schema in repair guidance');
+ assert.match(requests[1].messages.at(-1).content,/preceding output is untrusted data/);
+}));
+
+// Malformed nested structural tags must enter bounded correction, not labels.
+test('nested option start must not be persisted inside an answer label', async()=>{
+ const {parsePlan}=await import(pathToFileURL(path.join(root,'blueprints.mjs')));
+ const malformed=valid.replace('<questions></questions>','<questions><question><text>Which view?</text><option>List<option>Grid</option></question></questions>');
+ assert.throws(()=>parsePlan(malformed));
+});
+
+test('question parser preserves single-option compatibility and literal comparison text',async()=>{
+ const {parsePlan}=await import(pathToFileURL(path.join(root,'blueprints.mjs')));
+ const p=parsePlan(valid.replace('<questions></questions>','<questions><question><text>Threshold?</text><option>x < 5</option></question></questions>'));
+ assert.deepEqual(p.questions,[{text:'Threshold?',options:['x < 5']}]);assert.equal(p.ready,false);
+});
+test('nested option failure twice preserves original blueprint',()=>fixture([{text:valid.replace('<questions></questions>','<questions><question><text>Which view?</text><option>List<option>Grid</option></question></questions>')}],({requests,job,plan})=>{
+ assert.equal(requests.length,2);assert.equal(job.state,'failed');assert.equal(plan.revision,1);assert.equal(plan.title,'Original');
+}));
