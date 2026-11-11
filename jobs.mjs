@@ -29,7 +29,7 @@ export const ROUND_DEADLINE_MS = 180000;
 // discard stale events and reconcile gaplessly via snapshot + event stream.
 
 import crypto from 'node:crypto';
-import {correctionContext,animationCorrection} from './build-recovery.mjs';
+import {correctionContext,animationCorrection,contractCorrection} from './build-recovery.mjs';
 import {initAnimationEvidence,saveAnimationEvidence} from './animation-evidence.mjs';
 import {animationPrompt} from './animation-policy.mjs';
 import {cssCapabilityPrompt} from './css-policy.mjs';
@@ -94,6 +94,7 @@ export async function executeTurn(model, messages, opts, emit) {
     // Provider diagnostics are capped; attach the trusted policy separately, not source CSS.
     corrective += '\n' + cssCapabilityPrompt + '\n' + animationPrompt + '\nDeclared animations must execute with unique existing targets in the sanitized DOM. Startup must handle unavailable isolated data/actions without throwing. Browser smoke verification is mandatory; do not claim visual-intent certification.';
     corrective += animationCorrection(round1.error);
+    corrective += contractCorrection(round1.error);
     round2 = await runRound(model,
       [...messages, { role: 'assistant', content: prev }, { role: 'user', content: corrective }],
       roundOpts, wrapProse, onArtifactStart);
