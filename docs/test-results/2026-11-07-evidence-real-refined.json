@@ -1,0 +1,5 @@
+{
+  "testOnly": true,
+  "answer": "Gute Frage – schauen wir, was tatsächlich gespeichert ist: In der Tabelle „checks“ gibt es genau einen Eintrag – „Hund rausbringen“, erledigt am 07.11.2026. Mehr ist (Stand des Snapshots) nicht drin.\n\nEin Flammen-Streak baut sich typischerweise erst über mehrere Tage hintereinander auf. Ob das hier der Auslöser ist, kann ich aber nicht bestätigen – die genaue Regel für die Anzeige (z. B. „ab wie vielen Tagen eine Flamme erscheint“) ist im Snapshot nicht enthalten, also unverifiziert.\n\nAm wahrscheinlichsten: Es ist erst ein Tag erledigt, daher noch kein Streak. Wenn du morgen wieder abhakst, sollte sich das ändern – vorausgesetzt, die Flammen-Logik ist so eingebaut, wie geplant.",
+  "finish": "stop"
+}

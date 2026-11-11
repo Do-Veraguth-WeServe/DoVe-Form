@@ -1,0 +1,10 @@
+{
+  "fullSuite": true,
+  "passedSuites": 14,
+  "actualPublicHttpsSmoke": {
+    "provider": "glm-5.3-flash",
+    "finish": "stop",
+    "elapsedMs": 2020
+  },
+  "productionRollout": "deployed; both public and Tailnet health endpoints OK; dominik owner; 2 existing providers private; keys preserved"
+}

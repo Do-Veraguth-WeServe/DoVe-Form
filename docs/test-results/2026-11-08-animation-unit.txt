@@ -1,0 +1,40 @@
+[ping] session=s1 host=good.example ip=93.184.216.34 ok=true ms=23
+[ping] session= host=good.example ip=93.184.216.34 ok=false
+[ping] session= host=private.example blocked (resolved: 10.0.0.5)
+[ping] session= host=dual.example blocked (resolved: 93.184.216.34,fe80::1)
+[ping] session= host=nope.example error=dns
+[ping] session= host=good.example ip=93.184.216.34 ok=false
+config unreadable: Unexpected token 'o', "not json" is not valid JSON
+✔ render contract rejects malformed and oversized output (5.33524ms)
+✔ system prompt carries the v3 two-phase + SVG visual rules (0.641948ms)
+✔ render contract: optional name is sanitized as text (0.651496ms)
+✔ deriveName: heading, then prose snippet, then fallback (1.619511ms)
+✔ refine instruction demands a full in-place update (0.397677ms)
+✔ validHost: strict hostnames only, no literals/URLs/private forms (1.310036ms)
+✔ ipBlocked: every private/reserved range is caught, public passes (12.945909ms)
+✔ runPing: ok / blocked / dual-stack / dns-fail / timeout with injected backend (12.610374ms)
+﹣ optional: real /bin/ping binary probe (skip when absent or offline) (0.455208ms) # SKIP
+✔ element db: lifecycle, where semantics, scoping, persistence, quotas (25.771522ms)
+✔ element db: hard quotas — 10 tables, 5000 rows, 2 MB element (1796.645373ms)
+✔ stream parser: prose-only answer relays everything (0.865721ms)
+✔ stream parser: marker split across chunks is not emitted as prose (0.575911ms)
+✔ stream parser: artifact in same chunk as marker, unterminated fence (0.451437ms)
+✔ stream parser: partial-marker suffix is held back, not lost (0.399271ms)
+✔ model registry: validation, masking, persistence, ENOENT safety (2.647906ms)
+✔ store: passwords scrypt-hashed, salted, timing-safe verify (333.578145ms)
+✔ store: first user is owner, second is user; sessions bound to users (507.127716ms)
+✔ store: conversations, messages, elements are user-scoped (252.190211ms)
+✔ store: import validation rejects malformed archives, regenerates ids (140.901016ms)
+✔ config: defaults to registration off, env forces on, ENOENT safe (1.504456ms)
+✔ system prompt documents ui.db for data-driven elements (0.309075ms)
+✔ QuickJS has no browser capabilities or host Function escape (76.554196ms)
+✔ QuickJS interrupts CPU exhaustion (52.975919ms)
+✔ generated interaction validation catches DOM event and value getter mistakes without hiding stored elements (2.534694ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 3657.445641

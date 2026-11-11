@@ -1,0 +1,26 @@
+{
+  "baseline": {
+    "elapsedMs": 76796,
+    "error": "ECONNRESET",
+    "visibleChars": 0
+  },
+  "replay": {
+    "elapsedMs": 323532,
+    "events": {
+      "element-job": 1,
+      "prose-chunk": 231,
+      "artifact-start": 2,
+      "retry": 1,
+      "render": 1,
+      "done": 1
+    },
+    "error": null,
+    "exactRequest": true,
+    "correctiveRetry": "truncated"
+  },
+  "tests": {
+    "transportAndTools": "passed",
+    "constructionDesktopMobileReloadCancel": "passed"
+  },
+  "deployed": true
+}

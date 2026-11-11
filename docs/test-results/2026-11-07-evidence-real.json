@@ -1,0 +1,5 @@
+{
+  "testOnly": true,
+  "answer": "Laut den gespeicherten Daten gibt es genau **einen** Eintrag: „Hund rausbringen\" für heute (07.11.2026), abgehakt. \n\nEine Flamme steht meist für einen Streak über mehrere Tage – mit nur einem einzigen Eintrag ist das vermutlich zu wenig, damit sie erscheint. Ich kann von hier aus nur die gespeicherten Daten sehen, nicht die Oberfläche selbst.\n\nWichtig: Falls du an vergangenen Tagen schon abgehakt hast, sind diese Einträge jedenfalls nicht in den Daten vorhanden. \n\nSoll die Flamme bei dir erst ab einer bestimmten Streak-Länge (z. B. 2 oder 3 Tage in Folge) auftauchen, oder direkt ab Tag 1?",
+  "finish": "stop"
+}

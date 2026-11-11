@@ -1,0 +1,95 @@
+[build-budget] {"round":1,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[job] id=3d0d483c failed after 2 round(s): invalid-artifact
+✔ create without an artifact fails after exactly one correction (337.89012ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[job] id=86a6dcd7 failed after 2 round(s): invalid-artifact
+✔ refine without an artifact fails after exactly one correction (261.285321ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+✔ legacy prose-only executeTurn caller remains one round (58.915861ms)
+✔ blueprint target validation: valid (236.975367ms)
+✔ blueprint target validation: missing (264.151139ms)
+✔ blueprint target validation: no-render (282.818253ms)
+✔ blueprint target validation: foreign-user (338.404906ms)
+✔ blueprint target validation: foreign-conversation (297.693162ms)
+[job] id=9f24fae3 empty chat round (finish=stop) — one retry
+[job] id=114fb7da empty chat round (finish=stop) — one retry
+[job] id=3db5962a empty chat round (finish=stop) — one retry
+[job] id=266697db empty chat round (finish=stop) — one retry
+[job] failed: 266697db Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] id=e3a69c27 empty chat round (finish=stop) — one retry
+[job] failed: e3a69c27 Modellaufruf fehlgeschlagen: Keine Chatantwort erhalten.
+[job] failed: 5870e6cc Modellaufruf fehlgeschlagen: Keine Chatantwort erhalten.
+[job] failed: 964af28c Modell-Endpunkt antwortete 429 – synthetic limit
+[job] failed: de26b694 Modell-Endpunkt antwortete 503 – synthetic limit
+[job] failed: aa174c49 Modellaufruf fehlgeschlagen: synthetic disconnected transport
+[job] id=2a1358cb empty chat round (finish=stop) — one retry
+✔ empty then prose (283.345429ms)
+✔ reasoning-only then prose (229.801668ms)
+✔ whitespace then prose (245.007416ms)
+✔ deadline exhausted before retry (175.997513ms)
+✔ twice empty (240.019033ms)
+✔ valid reply (227.766722ms)
+✔ truncated empty (225.807882ms)
+✔ HTTP429 (308.135252ms)
+✔ HTTP503 (253.570284ms)
+✔ transport failure (189.108487ms)
+✔ cancel during second round (171.447496ms)
+[job] failed: 226c6904 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: 1f5e57a4 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: 028db4e0 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: fd8b0fba Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: 214f98bb Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: 2fa431cf Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+✔ plan timeout has no invented duration (totalMs=0) (207.910862ms)
+✔ plan timeout has no invented duration (totalMs=120000) (170.79761ms)
+✔ chat timeout has no invented duration (totalMs=0) (224.45971ms)
+✔ chat timeout has no invented duration (totalMs=120000) (135.289616ms)
+✔ build timeout has no invented duration (totalMs=0) (166.197287ms)
+✔ build timeout has no invented duration (totalMs=120000) (247.703622ms)
+[job] id=179b4a66 invalid blueprint: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+✔ malformed planner output receives exactly one validated correction (346.071567ms)
+[job] id=9bb25dac invalid blueprint: output truncated (over token budget)
+✔ truncated planner output receives exactly one validated correction (240.978426ms)
+[job] id=18924777 invalid blueprint: Ungültige Frage.
+✔ questions planner output receives exactly one validated correction (196.33791ms)
+[job] id=407b8609 invalid blueprint: Blueprint ungültig: title über 100 Zeichen (101).
+✔ oversized planner output receives exactly one validated correction (272.757287ms)
+[job] id=47a5b9f2 invalid blueprint: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+[job] id=47a5b9f2 blueprint repair failed: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+[job] failed: 47a5b9f2 Modellaufruf fehlgeschlagen: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+✔ double invalid response fails closed and preserves previous blueprint (235.373127ms)
+✔ valid first response needs no correction (215.281571ms)
+[job] id=773cf8df invalid blueprint: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+✔ cancellation during correction cannot publish (332.12647ms)
+[job] id=c0c7dc84 invalid blueprint: Blueprint ungültig: <option> nicht geschlossen oder verschachtelt.
+✔ nestedOption question repair includes closed exact schema and persists unresolved choices (242.866033ms)
+[job] id=e8a5069f invalid blueprint: Ungültige Frage.
+✔ empty question repair includes closed exact schema and persists unresolved choices (224.482981ms)
+[job] id=342b2d8c invalid blueprint: Blueprint ungültig: <question> ohne geschlossenen <text>-Abschnitt.
+✔ unclosedText question repair includes closed exact schema and persists unresolved choices (213.23324ms)
+[job] id=72e2cf71 invalid blueprint: Ungültige Frageoptionen.
+✔ blankOption question repair includes closed exact schema and persists unresolved choices (155.758675ms)
+[job] id=0f20822a invalid blueprint: Ungültige Frageoptionen.
+✔ oversizedOption question repair includes closed exact schema and persists unresolved choices (178.414765ms)
+✔ nested option start must not be persisted inside an answer label (2.168685ms)
+✔ question parser preserves single-option compatibility and literal comparison text (0.796123ms)
+[job] id=61e173f8 invalid blueprint: Blueprint ungültig: <option> nicht geschlossen oder verschachtelt.
+[job] id=61e173f8 blueprint repair failed: Blueprint ungültig: <option> nicht geschlossen oder verschachtelt.
+[job] failed: 61e173f8 Modellaufruf fehlgeschlagen: Blueprint ungültig: <option> nicht geschlossen oder verschachtelt.
+✔ nested option failure twice preserves original blueprint (177.804905ms)
+✔ structured planner options remain data and block build readiness (4.468523ms)
+✔ 20 questions supported with bounded options, strings remain compatible (1.003484ms)
+✔ ordinary choices persist grouped questions; legacy item choices upgraded (4.198246ms)
+✔ chat blueprint envelope suppresses standalone forms and offers (0.918466ms)
+✔ provider omitted reply wrapper normalizes without accepting executable/missing fields (2.126056ms)
+✔ missing-update claim consistency guard excludes ordinary and negated discussion (3.375256ms)
+ℹ tests 46
+ℹ suites 0
+ℹ pass 46
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3587.136894

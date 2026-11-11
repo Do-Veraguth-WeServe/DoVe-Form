@@ -1,0 +1,173 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator('.blueprint-update')
+    - locator resolved to <button type="button" class="blueprint-update">Gespräch in Plan übernehmen</button>
+  - attempting click action
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - <section class="blueprint" data-blueprint-id="e0f4c075-3be3-4a08-b16d-942eac380ed7">…</section> intercepts pointer events
+  - retrying click action
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - <span>Version 3</span> from <button type="button" aria-expanded="false" class="blueprint-toggle" aria-controls="plan-body-1b532ae5-5dd1-4db5-9ed2-53b2646b15cc-e0f4c075-3be3-4a08-b16d-942eac380ed7">…</button> subtree intercepts pointer events
+  - retrying click action
+    - waiting 20ms
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - <section class="blueprint" data-blueprint-id="e0f4c075-3be3-4a08-b16d-942eac380ed7">…</section> intercepts pointer events
+  2 × retrying click action
+      - waiting 100ms
+      - waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div id="feed" class="feed" tabindex="0" aria-label="Gespräch">…</div> intercepts pointer events
+  13 × retrying click action
+       - waiting 500ms
+       - waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <span>Version 3</span> from <button type="button" aria-expanded="false" class="blueprint-toggle" aria-controls="plan-body-1b532ae5-5dd1-4db5-9ed2-53b2646b15cc-e0f4c075-3be3-4a08-b16d-942eac380ed7">…</button> subtree intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+       - waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <section class="blueprint" data-blueprint-id="e0f4c075-3be3-4a08-b16d-942eac380ed7">…</section> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+       - waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div id="feed" class="feed" tabindex="0" aria-label="Gespräch">…</div> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+       - waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div id="feed" class="feed" tabindex="0" aria-label="Gespräch">…</div> intercepts pointer events
+  - retrying click action
+    - waiting 500ms
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - <span>Version 3</span> from <button type="button" aria-expanded="false" class="blueprint-toggle" aria-controls="plan-body-1b532ae5-5dd1-4db5-9ed2-53b2646b15cc-e0f4c075-3be3-4a08-b16d-942eac380ed7">…</button> subtree intercepts pointer events
+  - retrying click action
+    - waiting 500ms
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - <section class="blueprint" data-blueprint-id="e0f4c075-3be3-4a08-b16d-942eac380ed7">…</section> intercepts pointer events
+  - retrying click action
+    - waiting 500ms
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - <div id="feed" class="feed" tabindex="0" aria-label="Gespräch">…</div> intercepts pointer events
+  - retrying click action
+    - waiting 500ms
+
+    at updatePlanTo (/root/.openclaw/workspace/projects/form/test/blueprints.test.mjs:25:343)
+    at async file:///root/.openclaw/workspace/projects/form/test/blueprints.test.mjs:39:244 {
+  log: [
+    "  - waiting for locator('.blueprint-update')",
+    '    - locator resolved to <button type="button" class="blueprint-update">Gespräch in Plan übernehmen</button>',
+    '  - attempting click action',
+    '    - waiting for element to be visible, enabled and stable',
+    '    - element is visible, enabled and stable',
+    '    - scrolling into view if needed',
+    '    - done scrolling',
+    '    - <section class="blueprint" data-blueprint-id="e0f4c075-3be3-4a08-b16d-942eac380ed7">…</section> intercepts pointer events',
+    '  - retrying click action',
+    '    - waiting for element to be visible, enabled and stable',
+    '    - element is visible, enabled and stable',
+    '    - scrolling into view if needed',
+    '    - done scrolling',
+    '    - <span>Version 3</span> from <button type="button" aria-expanded="false" class="blueprint-toggle" aria-controls="plan-body-1b532ae5-5dd1-4db5-9ed2-53b2646b15cc-e0f4c075-3be3-4a08-b16d-942eac380ed7">…</button> subtree intercepts pointer events',
+    '  - retrying click action',
+    '    - waiting 20ms',
+    '    - waiting for element to be visible, enabled and stable',
+    '    - element is visible, enabled and stable',
+    '    - scrolling into view if needed',
+    '    - done scrolling',
+    '    - <section class="blueprint" data-blueprint-id="e0f4c075-3be3-4a08-b16d-942eac380ed7">…</section> intercepts pointer events',
+    '  2 × retrying click action',
+    '      - waiting 100ms',
+    '      - waiting for element to be visible, enabled and stable',
+    '      - element is visible, enabled and stable',
+    '      - scrolling into view if needed',
+    '      - done scrolling',
+    '      - <div id="feed" class="feed" tabindex="0" aria-label="Gespräch">…</div> intercepts pointer events',
+    '  13 × retrying click action',
+    '       - waiting 500ms',
+    '       - waiting for element to be visible, enabled and stable',
+    '       - element is visible, enabled and stable',
+    '       - scrolling into view if needed',
+    '       - done scrolling',
+    '       - <span>Version 3</span> from <button type="button" aria-expanded="false" class="blueprint-toggle" aria-controls="plan-body-1b532ae5-5dd1-4db5-9ed2-53b2646b15cc-e0f4c075-3be3-4a08-b16d-942eac380ed7">…</button> subtree intercepts pointer events',
+    '     - retrying click action',
+    '       - waiting 500ms',
+    '       - waiting for element to be visible, enabled and stable',
+    '       - element is visible, enabled and stable',
+    '       - scrolling into view if needed',
+    '       - done scrolling',
+    '       - <section class="blueprint" data-blueprint-id="e0f4c075-3be3-4a08-b16d-942eac380ed7">…</section> intercepts pointer events',
+    '     - retrying click action',
+    '       - waiting 500ms',
+    '       - waiting for element to be visible, enabled and stable',
+    '       - element is visible, enabled and stable',
+    '       - scrolling into view if needed',
+    '       - done scrolling',
+    '       - <div id="feed" class="feed" tabindex="0" aria-label="Gespräch">…</div> intercepts pointer events',
+    '     - retrying click action',
+    '       - waiting 500ms',
+    '       - waiting for element to be visible, enabled and stable',
+    '       - element is visible, enabled and stable',
+    '       - scrolling into view if needed',
+    '       - done scrolling',
+    '       - <div id="feed" class="feed" tabindex="0" aria-label="Gespräch">…</div> intercepts pointer events',
+    '  - retrying click action',
+    '    - waiting 500ms',
+    '    - waiting for element to be visible, enabled and stable',
+    '    - element is visible, enabled and stable',
+    '    - scrolling into view if needed',
+    '    - done scrolling',
+    '    - <span>Version 3</span> from <button type="button" aria-expanded="false" class="blueprint-toggle" aria-controls="plan-body-1b532ae5-5dd1-4db5-9ed2-53b2646b15cc-e0f4c075-3be3-4a08-b16d-942eac380ed7">…</button> subtree intercepts pointer events',
+    '  - retrying click action',
+    '    - waiting 500ms',
+    '    - waiting for element to be visible, enabled and stable',
+    '    - element is visible, enabled and stable',
+    '    - scrolling into view if needed',
+    '    - done scrolling',
+    '    - <section class="blueprint" data-blueprint-id="e0f4c075-3be3-4a08-b16d-942eac380ed7">…</section> intercepts pointer events',
+    '  - retrying click action',
+    '    - waiting 500ms',
+    '    - waiting for element to be visible, enabled and stable',
+    '    - element is visible, enabled and stable',
+    '    - scrolling into view if needed',
+    '    - done scrolling',
+    '    - <div id="feed" class="feed" tabindex="0" aria-label="Gespräch">…</div> intercepts pointer events',
+    '  - retrying click action',
+    '    - waiting 500ms'
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.22.2

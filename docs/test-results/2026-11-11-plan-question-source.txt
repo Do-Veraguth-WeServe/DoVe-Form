@@ -1,0 +1,157 @@
+[build-budget] {"round":1,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[job] id=a51efd68 failed after 2 round(s): invalid-artifact
+✔ create without an artifact fails after exactly one correction (309.694659ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[job] id=db92148f failed after 2 round(s): invalid-artifact
+✔ refine without an artifact fails after exactly one correction (227.272076ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+✔ legacy prose-only executeTurn caller remains one round (70.105767ms)
+✔ blueprint target validation: valid (259.715626ms)
+✔ blueprint target validation: missing (259.721653ms)
+✔ blueprint target validation: no-render (233.061796ms)
+✔ blueprint target validation: foreign-user (231.61942ms)
+✔ blueprint target validation: foreign-conversation (251.617894ms)
+[job] id=09f1c072 empty chat round (finish=stop) — one retry
+[job] id=49b0b33f empty chat round (finish=stop) — one retry
+[job] id=b71a236a empty chat round (finish=stop) — one retry
+[job] id=62a0d60c empty chat round (finish=stop) — one retry
+[job] failed: 62a0d60c Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] id=13c03bf1 empty chat round (finish=stop) — one retry
+[job] failed: 13c03bf1 Modellaufruf fehlgeschlagen: Keine Chatantwort erhalten.
+[job] failed: 087ec5c8 Modellaufruf fehlgeschlagen: Keine Chatantwort erhalten.
+[job] failed: 839adee6 Modell-Endpunkt antwortete 429 – synthetic limit
+[job] failed: 7169f2d6 Modell-Endpunkt antwortete 503 – synthetic limit
+[job] failed: a43a8724 Modellaufruf fehlgeschlagen: synthetic disconnected transport
+[job] id=c7cf4ac9 empty chat round (finish=stop) — one retry
+✔ empty then prose (249.344179ms)
+✔ reasoning-only then prose (206.464159ms)
+✔ whitespace then prose (165.045877ms)
+✔ deadline exhausted before retry (216.07728ms)
+✔ twice empty (182.718885ms)
+✔ valid reply (163.251212ms)
+✔ truncated empty (144.203669ms)
+✔ HTTP429 (156.147945ms)
+✔ HTTP503 (195.324997ms)
+✔ transport failure (171.309967ms)
+✔ cancel during second round (212.933791ms)
+[job] failed: 4b0b488c Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: 32ed4294 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: 5d81212b Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: 2302fd32 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: 0dba9e58 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: 9157cb1e Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+✔ plan timeout has no invented duration (totalMs=0) (183.114884ms)
+✔ plan timeout has no invented duration (totalMs=120000) (200.732136ms)
+✔ chat timeout has no invented duration (totalMs=0) (144.875535ms)
+✔ chat timeout has no invented duration (totalMs=120000) (171.122435ms)
+✔ build timeout has no invented duration (totalMs=0) (182.138774ms)
+✔ build timeout has no invented duration (totalMs=120000) (184.393354ms)
+[job] id=6f08fe66 invalid blueprint: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+✔ malformed planner output receives exactly one validated correction (319.775606ms)
+[job] id=43620b15 invalid blueprint: output truncated (over token budget)
+✔ truncated planner output receives exactly one validated correction (236.546208ms)
+[job] id=15ab6432 invalid blueprint: Ungültige Frage.
+✔ questions planner output receives exactly one validated correction (218.418001ms)
+[job] id=7c649abe invalid blueprint: Blueprint ungültig: title über 100 Zeichen (101).
+✔ oversized planner output receives exactly one validated correction (223.089107ms)
+[job] id=f1b3f1ce invalid blueprint: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+[job] id=f1b3f1ce blueprint repair failed: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+[job] failed: f1b3f1ce Modellaufruf fehlgeschlagen: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+✔ double invalid response fails closed and preserves previous blueprint (192.951349ms)
+✔ valid first response needs no correction (155.661482ms)
+[job] id=654ce3e9 invalid blueprint: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+✔ cancellation during correction cannot publish (199.896684ms)
+[job] id=87e35df1 invalid blueprint: Ungültige Frage.
+✖ empty question repair includes closed exact schema and persists unresolved choices (194.111507ms)
+[job] id=5131e85c invalid blueprint: Blueprint ungültig: <question> ohne geschlossenen <text>-Abschnitt.
+✖ unclosedText question repair includes closed exact schema and persists unresolved choices (181.473813ms)
+✖ unclosedOption question repair includes closed exact schema and persists unresolved choices (219.612548ms)
+✖ oneOption question repair includes closed exact schema and persists unresolved choices (173.792207ms)
+✔ structured planner options remain data and block build readiness (6.234566ms)
+✔ 20 questions supported with bounded options, strings remain compatible (3.885541ms)
+✔ ordinary choices persist grouped questions; legacy item choices upgraded (5.578338ms)
+✔ chat blueprint envelope suppresses standalone forms and offers (1.209777ms)
+✔ provider omitted reply wrapper normalizes without accepting executable/missing fields (0.555658ms)
+✔ missing-update claim consistency guard excludes ordinary and negated discussion (1.318142ms)
+ℹ tests 42
+ℹ suites 0
+ℹ pass 38
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2748.48735
+
+✖ failing tests:
+
+test at test/plan-recovery.test.mjs:55:4
+✖ empty question repair includes closed exact schema and persists unresolved choices (194.111507ms)
+  AssertionError [ERR_ASSERTION]: explicit complete question schema in repair guidance
+      at file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:58:9
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:31:9)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test/plan-recovery.test.mjs:55:4
+✖ unclosedText question repair includes closed exact schema and persists unresolved choices (181.473813ms)
+  AssertionError [ERR_ASSERTION]: explicit complete question schema in repair guidance
+      at file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:58:9
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:31:9)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test/plan-recovery.test.mjs:55:4
+✖ unclosedOption question repair includes closed exact schema and persists unresolved choices (219.612548ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 2
+  
+      at file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:56:9
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:31:9)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/plan-recovery.test.mjs:55:4
+✖ oneOption question repair includes closed exact schema and persists unresolved choices (173.792207ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 2
+  
+      at file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:56:9
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:31:9)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

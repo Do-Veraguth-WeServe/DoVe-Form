@@ -1,0 +1,90 @@
+[job] id=c7348916 invalid blueprint: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+✔ malformed planner output receives exactly one validated correction (244.632321ms)
+[job] id=33d954a4 invalid blueprint: output truncated (over token budget)
+✔ truncated planner output receives exactly one validated correction (173.815011ms)
+[job] id=5b9ce321 invalid blueprint: Ungültige Frage.
+✔ questions planner output receives exactly one validated correction (142.014215ms)
+[job] id=905dc6ed invalid blueprint: Blueprint ungültig: title über 100 Zeichen (101).
+✔ oversized planner output receives exactly one validated correction (135.540923ms)
+[job] id=b725d157 invalid blueprint: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+[job] id=b725d157 blueprint repair failed: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+[job] failed: b725d157 Modellaufruf fehlgeschlagen: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+✔ double invalid response fails closed and preserves previous blueprint (148.876874ms)
+✔ valid first response needs no correction (176.185807ms)
+[job] id=1d10e63b invalid blueprint: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+✔ cancellation during correction cannot publish (186.924848ms)
+✖ nestedOption question repair includes closed exact schema and persists unresolved choices (216.367107ms)
+[job] id=64cde2d2 invalid blueprint: Ungültige Frage.
+✔ empty question repair includes closed exact schema and persists unresolved choices (383.159399ms)
+[job] id=d69eb719 invalid blueprint: Blueprint ungültig: <question> ohne geschlossenen <text>-Abschnitt.
+✔ unclosedText question repair includes closed exact schema and persists unresolved choices (322.349093ms)
+[job] id=dd2b6c37 invalid blueprint: Ungültige Frageoptionen.
+✔ blankOption question repair includes closed exact schema and persists unresolved choices (268.290675ms)
+[job] id=d246e9cb invalid blueprint: Ungültige Frageoptionen.
+✔ oversizedOption question repair includes closed exact schema and persists unresolved choices (230.681882ms)
+✖ nested option start must not be persisted inside an answer label (2.356056ms)
+✔ question parser preserves single-option compatibility and literal comparison text (0.840448ms)
+✖ nested option failure twice preserves original blueprint (180.280194ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 12
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3196.701669
+
+✖ failing tests:
+
+test at test/plan-recovery.test.mjs:56:4
+✖ nestedOption question repair includes closed exact schema and persists unresolved choices (216.367107ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 2
+  
+      at file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:57:9
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:31:9)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/plan-recovery.test.mjs:64:1
+✖ nested option start must not be persisted inside an answer label (2.356056ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:67:9)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test/plan-recovery.test.mjs:75:1
+✖ nested option failure twice preserves original blueprint (180.280194ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 2
+  
+      at file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:76:9
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/plan-recovery.test.mjs:31:9)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

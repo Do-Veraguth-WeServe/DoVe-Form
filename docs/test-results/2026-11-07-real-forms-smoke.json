@@ -1,0 +1,43 @@
+{
+  "testOnly": true,
+  "elapsedMs": 16309,
+  "firstContentMs": 11188,
+  "finish": "stop",
+  "chars": 1411,
+  "content": "Gerne! Kurz gesagt: Eine Checkliste ist ein einfache, lineare Liste – ideal für Routinen und klare Abläufe. Kanban verteilt Aufgaben auf Spalten wie „To Do / In Arbeit / Fertig\" und gibt mehr Überblick bei parallelen Aufgaben. Für die meisten Menschen reicht privat eine Checkliste; Kanban lohnt sich, wenn viele Dinge gleichzeitig laufen.\n\n```json\n{\n  \"forms\": [\n    {\n      \"id\": \"test-compare\",\n      \"title\": \"Checkliste vs. Kanban\",\n      \"text\": \"Beide für persönliche Aufgaben – je nach Arbeitsstil.\",\n      \"items\": [\n        {\n          \"label\": \"Checkliste\",\n          \"detail\": \"Linear und minimal: abhaken und fertig. Ideal für Routinen, Einkäufe und Schritt-für-Schritt-Aufgaben.\"\n        },\n        {\n          \"label\": \"Kanban\",\n          \"detail\": \"Spalten wie To Do / In Arbeit / Fertig. Zeigt Fortschritt und Status auf einen Blick.\"\n        },\n        {\n          \"label\": \"Stärke Checkliste\",\n          \"detail\": \"Wenig Overhead, perfekt wenn die Reihenfolge zählt und Aufgaben klein sind.\"\n        },\n        {\n          \"label\": \"Stärke Kanban\",\n          \"detail\": \"Stark bei vielen offenen, parallelen Aufgaben und wenn Priorisierung sichtbar sein soll.\"\n        },\n        {\n          \"label\": \"Empfehlung\",\n          \"detail\": \"Starte mit einer Checkliste; wechsle zu Kanban, wenn du den Überblick über laufende Aufgaben verlierst.\"\n        }\n      ]\n    }\n  ],\n  \"formEdits\": []\n}\n```",
+  "parsed": {
+    "prose": "Gerne! Kurz gesagt: Eine Checkliste ist ein einfache, lineare Liste – ideal für Routinen und klare Abläufe. Kanban verteilt Aufgaben auf Spalten wie „To Do / In Arbeit / Fertig\" und gibt mehr Überblick bei parallelen Aufgaben. Für die meisten Menschen reicht privat eine Checkliste; Kanban lohnt sich, wenn viele Dinge gleichzeitig laufen.",
+    "forms": [
+      {
+        "formId": "test-compare",
+        "revision": 1,
+        "layout": "compare",
+        "title": "Checkliste vs. Kanban",
+        "text": "Beide für persönliche Aufgaben – je nach Arbeitsstil.",
+        "items": [
+          {
+            "label": "Checkliste",
+            "detail": "Linear und minimal: abhaken und fertig. Ideal für Routinen, Einkäufe und Schritt-für-Schritt-Aufgaben."
+          },
+          {
+            "label": "Kanban",
+            "detail": "Spalten wie To Do / In Arbeit / Fertig. Zeigt Fortschritt und Status auf einen Blick."
+          },
+          {
+            "label": "Stärke Checkliste",
+            "detail": "Wenig Overhead, perfekt wenn die Reihenfolge zählt und Aufgaben klein sind."
+          },
+          {
+            "label": "Stärke Kanban",
+            "detail": "Stark bei vielen offenen, parallelen Aufgaben und wenn Priorisierung sichtbar sein soll."
+          },
+          {
+            "label": "Empfehlung",
+            "detail": "Starte mit einer Checkliste; wechsle zu Kanban, wenn du den Überblick über laufende Aufgaben verlierst."
+          }
+        ]
+      }
+    ],
+    "formEdits": []
+  }
+}
