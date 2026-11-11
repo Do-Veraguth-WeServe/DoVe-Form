@@ -25,7 +25,10 @@ try{
   await p.locator('#quickbar .qchip').filter({hasText:initial.name}).click();await frame().locator('#fixture-heading').filter({hasText:'Original'}).waitFor();
   await frame().locator('#value').filter({hasText:'7'}).waitFor();
   // destroy() intentionally retains inert DOM but terminates its interpreter.
-  assert.equal(p.workers().length,1,'only overlay interpreter remains alive');
+  // Since the warm-spare policy (f748d7f) one app-owned prewarmed engine may sit
+  // beside the overlay interpreter; a surviving feed guest still fails as a third.
+  const alive=p.workers().length;
+  assert.ok(alive>=1&&alive<=2,'only overlay interpreter (plus optional warm spare) remains alive, got '+alive);
   await close();await p.frameLocator('#feed iframe.render').locator('#value').filter({hasText:'7'}).waitFor();
   await p.reload();await p.locator('#quickbar .qchip').filter({hasText:initial.name}).click();await frame().locator('#fixture-heading').waitFor();
   console.log('PASS '+width+' named pin persisted, overlay teardown and feed restoration');

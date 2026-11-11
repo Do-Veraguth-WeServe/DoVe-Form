@@ -1,0 +1,18 @@
+// Opt-in real-provider regression. Never writes to the production conversation.
+import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import crypto from 'node:crypto';import {spawn} from 'node:child_process';import {DatabaseSync} from 'node:sqlite';import assert from 'node:assert/strict';
+if(!process.env.FORM_LIVE_REPLAY_JOB)throw Error('Set FORM_LIVE_REPLAY_JOB to an authorized failing job id prefix');
+const source=new DatabaseSync('/opt/form/data/form.db',{readOnly:true});const job=source.prepare('SELECT request,model_id FROM jobs WHERE id LIKE ?').get(process.env.FORM_LIVE_REPLAY_JOB+'%');if(!job)throw Error('Job not found');const messages=JSON.parse(job.request).messages;assert.equal(messages.length,2,'fresh conversation replay only');const cfg=JSON.parse(fs.readFileSync('/opt/form/form.models.json')).models.find(m=>m.id===job.model_id);source.close();
+const dir=fs.mkdtempSync(path.join(os.tmpdir(),'form-live-replay-'));const models=path.join(dir,'models.json');fs.writeFileSync(models,JSON.stringify({models:[cfg]}),{mode:0o600});const BASE='http://127.0.0.1:4596';
+const server=spawn('node',['server.mjs'],{env:{...process.env,PORT:'4596',FORM3_DATA:dir,FORM3_MODELS:models,FORM3_REGISTRATION:'1',FORM3_ORIGIN:BASE,FORM3_CHAT_TIMEOUT_MS:'0'},stdio:['ignore','pipe','inherit']});
+try{
+ await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('startup timeout')),15000);server.stdout.on('data',d=>{if(String(d).includes('ready')){clearTimeout(t);resolve()}});server.on('exit',c=>reject(Error('early exit '+c)));});
+ const auth=await fetch(BASE+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json',Origin:BASE},body:JSON.stringify({username:'replay',password:crypto.randomBytes(24).toString('hex')})});assert.equal(auth.status,200);const a=await auth.json();const cookie=auth.headers.get('set-cookie').split(';')[0];
+ const api=(p,body)=>fetch(BASE+p,{method:'POST',headers:{'Content-Type':'application/json',Origin:BASE,Cookie:cookie,'X-Form-CSRF':a.csrf},body:JSON.stringify(body)});
+ const c=await(await api('/api/conversations',{title:'Isolated original prompt regression'})).json();const conv=c.conversation||c;
+ const t=Date.now(),r=await api('/api/chat',{version:1,sessionId:conv.id,requestId:crypto.randomUUID(),text:messages[1].content,model:cfg.id});assert.equal(r.status,200);
+ let buf='',counts={},error=null,render=null;const reader=r.body.getReader(),dec=new TextDecoder();
+ while(true){const {done,value}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});let end;while((end=buf.indexOf('\n\n'))>=0){const block=buf.slice(0,end);buf=buf.slice(end+2);const event=block.match(/^event: (.+)$/m)?.[1];const raw=block.match(/^data: (.+)$/m)?.[1];if(!event||!raw)continue;const data=JSON.parse(raw);counts[event]=(counts[event]||0)+1;if(event==='error')error=data.message;if(event==='retry')console.log(JSON.stringify({event,code:data.code,elapsedMs:Date.now()-t}));if(event==='render')render=data.render;}}
+ const stored=new DatabaseSync(path.join(dir,'form.db'),{readOnly:true});const replay=JSON.parse(stored.prepare('SELECT request FROM jobs ORDER BY created_at DESC LIMIT 1').get().request);assert.deepEqual(replay.messages,messages,'exact provider message parity');stored.close();
+ console.log(JSON.stringify({elapsedMs:Date.now()-t,counts,error,render:!!render,exactRequest:true}));
+ if(render&&process.env.FORM_LIVE_REPLAY_RESULT)fs.writeFileSync(process.env.FORM_LIVE_REPLAY_RESULT,JSON.stringify(render),{mode:0o600});assert.ok(render,'original prompt produced artifact');assert.equal(error,null);
+}finally{server.kill();await new Promise(r=>server.exitCode!==null?r():server.once('exit',r));fs.rmSync(dir,{recursive:true,force:true});}

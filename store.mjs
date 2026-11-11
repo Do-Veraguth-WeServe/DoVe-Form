@@ -38,6 +38,7 @@ export class Store {
     try { fs.chmodSync(path.join(dataDir, 'form.db'), 0o600); } catch {}
     this.db.exec(`
       PRAGMA journal_mode=WAL;
+      PRAGMA busy_timeout=3000;
       PRAGMA foreign_keys=ON;
       CREATE TABLE IF NOT EXISTS users(
         id TEXT PRIMARY KEY, username TEXT UNIQUE NOT NULL,
