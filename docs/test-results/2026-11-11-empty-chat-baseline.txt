@@ -1,0 +1,114 @@
+[job] failed: 634f1de9 Modellaufruf fehlgeschlagen: Keine Chatantwort erhalten.
+[job] failed: 5f1943ac Modellaufruf fehlgeschlagen: Keine Chatantwort erhalten.
+[job] failed: 36efbb1c Modellaufruf fehlgeschlagen: Keine Chatantwort erhalten.
+[job] failed: 566fedfa Modellaufruf fehlgeschlagen: Keine Chatantwort erhalten.
+[job] failed: df1b16a3 Modellaufruf fehlgeschlagen: Keine Chatantwort erhalten.
+[job] failed: 7880727d Modell-Endpunkt antwortete 429 – synthetic limit
+[job] failed: eebf9264 Modell-Endpunkt antwortete 503 – synthetic limit
+[job] failed: eb53c31b Modellaufruf fehlgeschlagen: synthetic disconnected transport
+[job] failed: 342d69d7 Modellaufruf fehlgeschlagen: Keine Chatantwort erhalten.
+✖ empty then prose (213.169292ms)
+✖ reasoning-only then prose (163.012408ms)
+✖ whitespace then prose (114.265496ms)
+✖ twice empty (128.282379ms)
+✔ valid reply (134.958174ms)
+✔ truncated empty (136.249025ms)
+✔ HTTP429 (137.666753ms)
+✔ HTTP503 (157.898781ms)
+✔ transport failure (141.665147ms)
+✖ cancel during second round (139.965353ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 5
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1912.980002
+
+✖ failing tests:
+
+test at test/empty-chat-recovery.test.mjs:22:22
+✖ empty then prose (213.169292ms)
+  AssertionError [ERR_ASSERTION]: bounded provider calls
+
+  1 !== 2
+
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/empty-chat-recovery.test.mjs:38:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/empty-chat-recovery.test.mjs:22:22
+✖ reasoning-only then prose (163.012408ms)
+  AssertionError [ERR_ASSERTION]: bounded provider calls
+
+  1 !== 2
+
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/empty-chat-recovery.test.mjs:38:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/empty-chat-recovery.test.mjs:22:22
+✖ whitespace then prose (114.265496ms)
+  AssertionError [ERR_ASSERTION]: bounded provider calls
+
+  1 !== 2
+
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/empty-chat-recovery.test.mjs:38:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/empty-chat-recovery.test.mjs:22:22
+✖ twice empty (128.282379ms)
+  AssertionError [ERR_ASSERTION]: bounded provider calls
+
+  1 !== 2
+
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/empty-chat-recovery.test.mjs:38:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/empty-chat-recovery.test.mjs:22:22
+✖ cancel during second round (139.965353ms)
+  AssertionError [ERR_ASSERTION]: bounded provider calls
+
+  1 !== 2
+
+      at TestContext.<anonymous> (file:///root/.openclaw/workspace/projects/form/test/empty-chat-recovery.test.mjs:38:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

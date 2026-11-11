@@ -1,0 +1,28 @@
+[job] id=99514a11 empty chat round (finish=stop) — one retry
+[job] id=72de42dd empty chat round (finish=stop) — one retry
+[job] id=da711690 empty chat round (finish=stop) — one retry
+[job] id=39e9a6fb empty chat round (finish=stop) — one retry
+[job] failed: 39e9a6fb Modellaufruf fehlgeschlagen: Keine Chatantwort erhalten.
+[job] failed: 04e4df88 Modellaufruf fehlgeschlagen: Keine Chatantwort erhalten.
+[job] failed: 6846fb84 Kontingent beim Modellanbieter aufgebraucht (429) – synthetic limit Credits aufladen oder ein anderes Modell wählen.
+[job] failed: 702b0e0b Modell-Endpunkt antwortete 503 – synthetic limit
+[job] failed: 1f516f32 Modellaufruf fehlgeschlagen: synthetic disconnected transport
+[job] id=6254eeeb empty chat round (finish=stop) — one retry
+✔ empty then prose (201.141067ms)
+✔ reasoning-only then prose (122.797598ms)
+✔ whitespace then prose (151.802339ms)
+✔ twice empty (127.309891ms)
+✔ valid reply (113.627178ms)
+✔ truncated empty (154.673691ms)
+✔ HTTP429 (126.728107ms)
+✔ HTTP503 (132.910796ms)
+✔ transport failure (115.117129ms)
+✔ cancel during second round (147.070115ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1827.48658

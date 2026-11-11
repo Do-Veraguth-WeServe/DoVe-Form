@@ -1,0 +1,28 @@
+[job] id=fd1b6148 empty chat round (finish=stop) — one retry
+[job] id=b33ea223 empty chat round (finish=stop) — one retry
+[job] id=76db8fce empty chat round (finish=stop) — one retry
+[job] id=513750ef empty chat round (finish=stop) — one retry
+[job] failed: 513750ef Modellaufruf fehlgeschlagen: Keine Chatantwort erhalten.
+[job] failed: e9f90d8e Modellaufruf fehlgeschlagen: Keine Chatantwort erhalten.
+[job] failed: da453ec7 Modell-Endpunkt antwortete 429 – synthetic limit
+[job] failed: 920cb47b Modell-Endpunkt antwortete 503 – synthetic limit
+[job] failed: c796aaba Modellaufruf fehlgeschlagen: synthetic disconnected transport
+[job] id=a927b192 empty chat round (finish=stop) — one retry
+✔ empty then prose (210.149898ms)
+✔ reasoning-only then prose (147.520334ms)
+✔ whitespace then prose (157.074767ms)
+✔ twice empty (112.163686ms)
+✔ valid reply (144.504234ms)
+✔ truncated empty (117.102123ms)
+✔ HTTP429 (138.912251ms)
+✔ HTTP503 (157.075042ms)
+✔ transport failure (130.281829ms)
+✔ cancel during second round (154.36704ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1875.463878

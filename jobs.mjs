@@ -212,7 +212,16 @@ export class JobRunner {
       if(job.kind==='chat'){
         let partial='';
         const parser=createChatStream(text=>{partial=(partial+text).slice(0,8000);this.store.setJobProse(jobId,partial);this.emitStream(jobId,job.userId,{type:'prose-chunk',text});});
-        const out=await runRound(model,job.request.messages,{signal:ctrl.signal,textOnly:true,maxTokens:3200,deadlineMs:Date.now()+60000},t=>parser.feed(t),()=>{});parser.finish();
+        const chatOpts={signal:ctrl.signal,textOnly:true,maxTokens:3200,deadlineMs:Date.now()+60000};
+        let out=await runRound(model,job.request.messages,chatOpts,t=>parser.feed(t),()=>{});
+        // Eine komplett leere Antwort (Provider-Schluckauf, nur Reasoning) ist
+        // kein Nutzerfehler: genau ein begrenzter Wiederholungsversuch.
+        if(!out.contentText.trim()&&!out.toolCalls.length&&out.finishReason!=='length'&&!ctrl.signal.aborted){
+          console.log('[job] id='+String(jobId).slice(0,8)+' empty chat round (finish='+out.finishReason+') — one retry');
+          this.emitStream(jobId,job.userId,{type:'retry',code:'empty-response',reason:'Leere Modellantwort — ein Wiederholungsversuch läuft.'});
+          out=await runRound(model,job.request.messages,chatOpts,t=>parser.feed(t),()=>{});
+        }
+        parser.finish();
         const library=this.getForms(job.userId).filter(f=>(job.request.forms||[]).some(old=>old.id===f.id&&old.revision===f.revision));
         const result=parseChat(out.contentText,library);
         if(job.request.allowBlueprintUpdate&&!result.blueprint&&claimsBlueprintUpdate(result.prose)){

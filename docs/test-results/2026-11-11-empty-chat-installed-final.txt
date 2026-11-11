@@ -1,0 +1,58 @@
+[build-budget] {"round":1,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[job] id=8a38350c failed after 2 round(s): invalid-artifact
+✔ create without an artifact fails after exactly one correction (307.876976ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[job] id=2efc6f86 failed after 2 round(s): invalid-artifact
+✔ refine without an artifact fails after exactly one correction (208.850355ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+✔ legacy prose-only executeTurn caller remains one round (34.417706ms)
+✔ blueprint target validation: valid (204.097539ms)
+✔ blueprint target validation: missing (189.616254ms)
+✔ blueprint target validation: no-render (206.80591ms)
+✔ blueprint target validation: foreign-user (164.93389ms)
+✔ blueprint target validation: foreign-conversation (222.389984ms)
+[job] id=a8e863bb empty chat round (finish=stop) — one retry
+[job] id=9ebe7bf5 empty chat round (finish=stop) — one retry
+[job] id=4c7c5807 empty chat round (finish=stop) — one retry
+[job] id=e17c5a41 empty chat round (finish=stop) — one retry
+[job] failed: e17c5a41 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] id=9d591fca empty chat round (finish=stop) — one retry
+[job] failed: 9d591fca Modellaufruf fehlgeschlagen: Keine Chatantwort erhalten.
+[job] failed: 2fd42250 Modellaufruf fehlgeschlagen: Keine Chatantwort erhalten.
+[job] failed: ecdf40d3 Kontingent beim Modellanbieter aufgebraucht (429) – synthetic limit Credits aufladen oder ein anderes Modell wählen.
+[job] failed: aa7ad8cd Modell-Endpunkt antwortete 503 – synthetic limit
+[job] failed: 0bfd06cc Modellaufruf fehlgeschlagen: synthetic disconnected transport
+[job] id=fe651961 empty chat round (finish=stop) — one retry
+✔ empty then prose (159.556589ms)
+✔ reasoning-only then prose (127.493525ms)
+✔ whitespace then prose (104.49133ms)
+✔ deadline exhausted before retry (105.658137ms)
+✔ twice empty (119.573695ms)
+✔ valid reply (125.508154ms)
+✔ truncated empty (132.639046ms)
+✔ HTTP429 (134.085856ms)
+✔ HTTP503 (108.153372ms)
+✔ transport failure (131.222006ms)
+✔ cancel during second round (111.177793ms)
+[job] failed: 53482e30 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: 92bfc256 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: e1509b24 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: b72adbce Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: 331370de Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: b9725f43 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+✔ plan timeout has no invented duration (totalMs=0) (172.34053ms)
+✔ plan timeout has no invented duration (totalMs=120000) (120.427935ms)
+✔ chat timeout has no invented duration (totalMs=0) (152.039074ms)
+✔ chat timeout has no invented duration (totalMs=120000) (160.701258ms)
+✔ build timeout has no invented duration (totalMs=0) (127.851948ms)
+✔ build timeout has no invented duration (totalMs=120000) (119.821059ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4892.066429

@@ -1,0 +1,90 @@
+[build-budget] {"round":1,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[job] id=c07b0a42 failed after 2 round(s): invalid-artifact
+✔ create without an artifact fails after exactly one correction (242.83088ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[job] id=b32d0c7d failed after 2 round(s): invalid-artifact
+✔ refine without an artifact fails after exactly one correction (158.184489ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+✔ legacy prose-only executeTurn caller remains one round (43.769205ms)
+✔ blueprint target validation: valid (183.574245ms)
+✔ blueprint target validation: missing (195.406167ms)
+✔ blueprint target validation: no-render (157.78584ms)
+✔ blueprint target validation: foreign-user (181.484052ms)
+✔ blueprint target validation: foreign-conversation (187.985316ms)
+[job] id=466af217 empty chat round (finish=stop) — one retry
+[job] id=d90673af empty chat round (finish=stop) — one retry
+[job] id=5108094d empty chat round (finish=stop) — one retry
+[job] id=54848566 empty chat round (finish=stop) — one retry
+[job] failed: 54848566 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] id=4251c183 empty chat round (finish=stop) — one retry
+[job] failed: 4251c183 Modellaufruf fehlgeschlagen: Keine Chatantwort erhalten.
+[job] failed: dc6722cc Modellaufruf fehlgeschlagen: Keine Chatantwort erhalten.
+[job] failed: c34f9743 Modell-Endpunkt antwortete 429 – synthetic limit
+[job] failed: 95970fce Modell-Endpunkt antwortete 503 – synthetic limit
+[job] failed: 228b03a3 Modellaufruf fehlgeschlagen: synthetic disconnected transport
+[job] id=b430ca32 empty chat round (finish=stop) — one retry
+✔ empty then prose (163.166271ms)
+✔ reasoning-only then prose (111.664146ms)
+✔ whitespace then prose (150.696608ms)
+✔ deadline exhausted before retry (139.873846ms)
+✔ twice empty (136.849775ms)
+✔ valid reply (124.161725ms)
+✔ truncated empty (117.111383ms)
+✔ HTTP429 (148.726868ms)
+✔ HTTP503 (122.293116ms)
+✔ transport failure (135.672725ms)
+✔ cancel during second round (116.938068ms)
+[job] failed: bc7225d4 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: 28da34c8 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: 36e3c789 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: ff9f4d81 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: 1e632d62 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+[job] failed: 3a918168 Zeitlimit beim Modellaufruf erreicht. Bitte erneut versuchen oder die Anfrage aufteilen.
+✔ plan timeout has no invented duration (totalMs=0) (162.498132ms)
+✔ plan timeout has no invented duration (totalMs=120000) (153.261509ms)
+✔ chat timeout has no invented duration (totalMs=0) (145.13645ms)
+✔ chat timeout has no invented duration (totalMs=120000) (134.688756ms)
+✔ build timeout has no invented duration (totalMs=0) (155.782737ms)
+✔ build timeout has no invented duration (totalMs=120000) (134.100754ms)
+[job] id=d5ad68e2 invalid blueprint: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+✔ malformed planner output receives exactly one validated correction (264.616919ms)
+[job] id=a6221082 invalid blueprint: output truncated (over token budget)
+✔ truncated planner output receives exactly one validated correction (156.416689ms)
+[job] id=685ba02f invalid blueprint: Ungültige Frage.
+✔ questions planner output receives exactly one validated correction (133.812168ms)
+[job] id=abc082e0 invalid blueprint: Blueprint ungültig: title über 100 Zeichen (101).
+✔ oversized planner output receives exactly one validated correction (160.845855ms)
+[job] id=e1b02655 invalid blueprint: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+[job] id=e1b02655 blueprint repair failed: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+[job] failed: e1b02655 Modellaufruf fehlgeschlagen: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+✔ double invalid response fails closed and preserves previous blueprint (150.64975ms)
+✔ valid first response needs no correction (151.133445ms)
+[job] id=b27923a2 invalid blueprint: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+✔ cancellation during correction cannot publish (133.661457ms)
+✔ clean round: prose parsed, finish_reason stop, actual content captured (no SSE envelopes) (86.990719ms)
+✔ finish_reason=length sets truncated; unterminated artifact reported as invalid (30.35739ms)
+✔ malformed SSE frames are ignored, valid frames still parsed (11.142647ms)
+✔ explicit provider error frame throws ProviderError (distinct from malformed frames) (11.026538ms)
+✔ final unterminated SSE line is parsed (8.880673ms)
+✔ UTF-8 multibyte char split across reads is reassembled (6.568907ms)
+✔ upstream 401 becomes ProviderError with status (permanent, caller must not retry) (5.960632ms)
+✔ content cap (accumulated deltas) throws SizeError (4.648497ms)
+✔ transport cap (raw SSE bytes) throws SizeError even with tiny visible content (6.828151ms)
+✔ round deadline expiry maps to abortKind timeout (306.709401ms)
+[provider] retry empty interrupted stream code=ECONNRESET
+[provider] retry empty interrupted stream code=ECONNRESET
+✔ external abort maps to abortKind external, not timeout (154.359241ms)
+✔ already-expired deadline fails fast with timeout kind (1.309263ms)
+✔ job generation has no default or zero-configured deadline (14.491396ms)
+✔ empty ECONNRESET retries once and completes, permanent reset stays bounded (3.892763ms)
+✔ connection reset after visible prose is not replayed (23.298416ms)
+ℹ tests 47
+ℹ suites 0
+ℹ pass 47
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10514.905864
