@@ -183,7 +183,7 @@ const server = http.createServer(async (req, res) => {
 
   // --- static files (public, no secrets) ---
   if (req.method === 'GET' && !pathname.startsWith('/api/')) {
-    const files = { '/': 'index.html', '/index.html': 'index.html', '/app.js': 'app.js', '/worker.js': 'worker.js', '/quickjs.wasm': 'quickjs.wasm', '/manifest.webmanifest': 'manifest.webmanifest', '/icon-192.png': 'icon-192.png', '/icon-512.png': 'icon-512.png', '/icon-maskable-512.png': 'icon-maskable-512.png', '/.well-known/assetlinks.json': 'assetlinks.json' };
+    const files = { '/': 'index.html', '/index.html': 'index.html', '/app.js': 'app.js', '/worker.js': 'worker.js', '/sw.js': 'sw.js', '/quickjs.wasm': 'quickjs.wasm', '/manifest.webmanifest': 'manifest.webmanifest', '/icon-192.png': 'icon-192.png', '/icon-512.png': 'icon-512.png', '/icon-maskable-512.png': 'icon-maskable-512.png', '/.well-known/assetlinks.json': 'assetlinks.json' };
     const file = files[pathname];
     if (!file) return reply(res, 404, { error: 'Not found' });
     const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.wasm': 'application/wasm', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.json': 'application/json' };

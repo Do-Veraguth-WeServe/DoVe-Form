@@ -1187,3 +1187,8 @@ function applyShapeIntensity(){
 applyShapeIntensity();
 const shapesRange=document.querySelector('#shapesrange');
 if(shapesRange)shapesRange.addEventListener('input',e=>{shapeIntensity=Math.min(100,Math.max(0,Number(e.target.value)));localStorage.setItem(SHAPES_KEY,String(shapeIntensity));applyShapeIntensity();});
+
+// PWA shell: register the service worker. The SW precaches only the static
+// shell for instant/offline app starts — data caching stays in the app layer
+// (localStorage cache with the server SQLite as single source of truth).
+if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});

@@ -9,7 +9,7 @@ if (!html.includes('</body>')) throw Error('index.html: </body> missing');
 html = html.replace('</body>', '<script type="module" src="/app.js"></script></body>');
 fs.writeFileSync('dist/index.html', html);
 
-await build({ entryPoints: ['src/app.js', 'src/worker.js', 'src/animation-verification.js'], bundle: true, outdir: 'dist', format: 'esm', platform: 'browser', minify: false });
+await build({ entryPoints: ['src/app.js', 'src/worker.js', 'src/animation-verification.js', 'src/sw.js'], bundle: true, outdir: 'dist', format: 'esm', platform: 'browser', minify: false });
 
 // Extract the sandbox bridge function and hash it for the page CSP
 // (the srcdoc iframe inherits the parent CSP, so the trusted bootstrap
@@ -30,4 +30,15 @@ const wasm = 'node_modules/@jitl/quickjs-wasmfile-release-sync/dist/emscripten-m
 if (fs.existsSync(wasm)) fs.copyFileSync(wasm, 'dist/quickjs.wasm');
 else if (!fs.existsSync('dist/quickjs.wasm')) throw Error('quickjs wasm missing — run npm ci first');
 for (const f of ['manifest.webmanifest','icon-192.png','icon-512.png','icon-maskable-512.png','assetlinks.json']) fs.copyFileSync('assets/'+f,'dist/'+f);
+
+// Service worker: version the shell cache by content hash so every deploy
+// activates a fresh cache and activation drops the previous one. A missing
+// version placeholder means a stale build — fail loudly instead of shipping
+// an SW that can never update.
+const shellFiles=['index.html','app.js','worker.js','animation-verification.js','quickjs.wasm','manifest.webmanifest','icon-192.png','icon-512.png','icon-maskable-512.png'];
+const shellHash=crypto.createHash('sha256');for (const f of shellFiles) shellHash.update(fs.readFileSync('dist/'+f));
+let swSource=fs.readFileSync('dist/sw.js','utf8');
+if (!swSource.includes('__FORM_SHELL_VERSION__')) throw Error('sw.js: version placeholder missing');
+swSource=swSource.replaceAll('__FORM_SHELL_VERSION__','form-shell-'+shellHash.digest('hex').slice(0,16));
+fs.writeFileSync('dist/sw.js',swSource);
 console.log('build ok: dist/');
