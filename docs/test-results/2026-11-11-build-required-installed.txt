@@ -1,0 +1,23 @@
+[build-budget] {"round":1,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[job] id=b6508956 failed after 2 round(s): invalid-artifact
+✔ create without an artifact fails after exactly one correction (256.083297ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[job] id=1118e158 failed after 2 round(s): invalid-artifact
+✔ refine without an artifact fails after exactly one correction (174.451527ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+✔ legacy prose-only executeTurn caller remains one round (37.664908ms)
+✔ blueprint target validation: valid (164.363575ms)
+✔ blueprint target validation: missing (182.281348ms)
+✔ blueprint target validation: no-render (240.837976ms)
+✔ blueprint target validation: foreign-user (232.060501ms)
+✔ blueprint target validation: foreign-conversation (255.917842ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2082.277208

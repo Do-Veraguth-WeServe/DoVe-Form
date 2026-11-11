@@ -725,7 +725,16 @@ const server = http.createServer(async (req, res) => {
   forms.seed(user.id);const formLibrary=forms.list(user.id);
   const built=previousBlueprint?.executedJobId?store.getJob(previousBlueprint.executedJobId):null;
   const builtTarget=built?.state==='ready'?(built.targetMessageId||built.messageId):null;
-  const planningTarget=d.refineTarget?.id||previousBlueprint?.targetMessageId||((!isPlanning||d.blueprintId)?builtTarget:null)||null;
+  // Ein uebernommenes Ziel muss noch ein echtes Element dieses Nutzers in
+  // diesem Chat sein. Sonst erbt jede weitere Blueprint-Revision ein totes
+  // Ziel und der Bau endet mit "Zielelement nicht mehr vorhanden".
+  const validTarget=id=>{
+    if(!id||!UUID.test(id))return false;
+    const mo=store.messageOwner(id);
+    return !!mo&&mo.userId===user.id&&mo.conversationId===d.sessionId&&mo.hasRender===true;
+  };
+  const inheritedTarget=validTarget(previousBlueprint?.targetMessageId)?previousBlueprint.targetMessageId:null;
+  const planningTarget=(d.refineTarget?.id&&validTarget(d.refineTarget.id)?d.refineTarget.id:inheritedTarget)||((!isPlanning||d.blueprintId)?(validTarget(builtTarget)?builtTarget:null):null)||null;
 
   // load history/states BEFORE persisting the new user message (it must not dupe upstream)
   const history = store.getHistory(d.sessionId);

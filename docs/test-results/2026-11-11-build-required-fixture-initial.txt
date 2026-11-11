@@ -1,0 +1,105 @@
+✔ standalone loop supplies tools, executes once and returns tool result to model (100.555089ms)
+✔ unknown tool is rejected without executing (20.992337ms)
+[provider] retry empty interrupted stream code=ECONNRESET
+✔ ambiguous external failure is not retried (10.562948ms)
+✔ transport retry after a tool result never re-executes that tool (4.31071ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[job] id=5b9ab531 failed after 2 round(s): invalid-artifact
+✔ create without an artifact fails after exactly one correction (272.70637ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[job] id=955b5262 failed after 2 round(s): invalid-artifact
+✔ refine without an artifact fails after exactly one correction (149.839402ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+✔ legacy prose-only executeTurn caller remains one round (39.59758ms)
+✖ blueprint target validation: valid (191.445298ms)
+✖ blueprint target validation: missing (233.38246ms)
+✖ blueprint target validation: no-render (226.115985ms)
+✖ blueprint target validation: foreign-user (205.744718ms)
+✖ blueprint target validation: foreign-conversation (243.99538ms)
+[job] id=5b84830a invalid blueprint: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+✔ malformed planner output receives exactly one validated correction (263.535666ms)
+[job] id=8b5b4995 invalid blueprint: output truncated (over token budget)
+✔ truncated planner output receives exactly one validated correction (180.207096ms)
+[job] id=71f7b181 invalid blueprint: Ungültige Frage.
+✔ questions planner output receives exactly one validated correction (114.344754ms)
+[job] id=8b48529e invalid blueprint: Blueprint ungültig: title über 100 Zeichen (101).
+✔ oversized planner output receives exactly one validated correction (134.760244ms)
+[job] id=74e9f474 invalid blueprint: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+[job] id=74e9f474 blueprint repair failed: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+[job] failed: 74e9f474 Modellaufruf fehlgeschlagen: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+✔ double invalid response fails closed and preserves previous blueprint (143.467092ms)
+✔ valid first response needs no correction (135.076706ms)
+[job] id=dfeb04e4 invalid blueprint: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+✔ cancellation during correction cannot publish (166.531572ms)
+✔ completion rejects state changed after early hash check (237.057228ms)
+✔ completion rejects code changed after early hash check (204.977776ms)
+✔ completion rejects actions changed after early hash check (206.935834ms)
+✔ completion holds writer lock across hash read and replacement (293.710415ms)
+✔ cancelled completion never invokes apply (105.205102ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":104,"reasoningChars":0,"usage":{}}
+[job] id=769494dd user=2fcec57f kind=refine dur=4389ms rounds=1 finish=stop chars=104 render=yes fail=-
+[build-budget] {"round":1,"finish":"stop","visibleChars":104,"reasoningChars":0,"usage":{}}
+[job] failed: 0db96d5c Modellaufruf fehlgeschlagen: Das Element wurde während der Aktualisierung geändert — erneut versuchen.
+✔ runner turns the late transactional conflict into failed, never ready (8556.687859ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 20
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 14218.791498
+
+✖ failing tests:
+
+test at test/build-required.test.mjs:28:89
+✖ blueprint target validation: valid (191.445298ms)
+  Error: Ungültiger Job-Kontext
+      at Store.createJob (file:///root/.openclaw/workspace/projects/form/store.mjs:307:13)
+      at file:///root/.openclaw/workspace/projects/form/test/build-required.test.mjs:33:55
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/build-required.test.mjs:16:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/build-required.test.mjs:28:89
+✖ blueprint target validation: missing (233.38246ms)
+  Error: Ungültiger Job-Kontext
+      at Store.createJob (file:///root/.openclaw/workspace/projects/form/store.mjs:307:13)
+      at file:///root/.openclaw/workspace/projects/form/test/build-required.test.mjs:33:55
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/build-required.test.mjs:16:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/build-required.test.mjs:28:89
+✖ blueprint target validation: no-render (226.115985ms)
+  Error: Ungültiger Job-Kontext
+      at Store.createJob (file:///root/.openclaw/workspace/projects/form/store.mjs:307:13)
+      at file:///root/.openclaw/workspace/projects/form/test/build-required.test.mjs:33:55
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/build-required.test.mjs:16:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/build-required.test.mjs:28:89
+✖ blueprint target validation: foreign-user (205.744718ms)
+  Error: Ungültiger Job-Kontext
+      at Store.createJob (file:///root/.openclaw/workspace/projects/form/store.mjs:307:13)
+      at file:///root/.openclaw/workspace/projects/form/test/build-required.test.mjs:33:55
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/build-required.test.mjs:16:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/build-required.test.mjs:28:89
+✖ blueprint target validation: foreign-conversation (243.99538ms)
+  Error: Ungültiger Job-Kontext
+      at Store.createJob (file:///root/.openclaw/workspace/projects/form/store.mjs:307:13)
+      at file:///root/.openclaw/workspace/projects/form/test/build-required.test.mjs:33:55
+      at fixture (file:///root/.openclaw/workspace/projects/form/test/build-required.test.mjs:16:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

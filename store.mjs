@@ -286,7 +286,11 @@ export class Store {
     const latest=this.latestBlueprint(job.conversationId);
     if((latest?.revision||0)!==job.request.baseRevision)throw Error('Blueprint wurde inzwischen geändert. Bitte erneut besprechen.');
     const id=crypto.randomUUID(),rev=(latest?.revision||0)+1;
-    this.db.prepare('INSERT INTO blueprints(id,conversation_id,message_id,revision,title,summary,ready,target_message_id,model_id,questions) VALUES (?,?,?,?,?,?,?,?,?,?)').run(id,job.conversationId,job.messageId,rev,plan.title,plan.summary,plan.ready?1:0,job.targetMessageId,job.modelId,JSON.stringify(plan.questions||[]));
+    // Ein Blueprint zielt nur auf ein existierendes Element: ein totes Ziel
+    // (geloescht, fremd, ohne Render) wuerde jede Folge-Revision blockieren.
+    const targetMo=job.targetMessageId?this.messageOwner(job.targetMessageId):null;
+    const target=targetMo&&targetMo.userId===job.userId&&targetMo.conversationId===job.conversationId&&targetMo.hasRender===true?job.targetMessageId:null;
+    this.db.prepare('INSERT INTO blueprints(id,conversation_id,message_id,revision,title,summary,ready,target_message_id,model_id,questions) VALUES (?,?,?,?,?,?,?,?,?,?)').run(id,job.conversationId,job.messageId,rev,plan.title,plan.summary,plan.ready?1:0,target,job.modelId,JSON.stringify(plan.questions||[]));
     return this.latestBlueprint(job.conversationId);
   }
 

@@ -42,17 +42,17 @@ import { runRound, ProviderError, SizeError } from './provider.mjs';
 // content; invalid artifact => one corrected retry. Returns
 // { render, prose, failure, failureCode }.
 export async function executeTurn(model, messages, opts, emit) {
-  const { signal = null, deadlineMs = Infinity } = opts || {};
+  const { signal = null, deadlineMs = Infinity, expectsArtifact = false } = opts || {};
   const onProse = t => emit({ type: 'prose-chunk', text: t });
   const onArtifactStart = () => emit({ type: 'artifact-start' });
   let liveProse = '';
   const wrapProse = t => { liveProse += t; onProse(t); };
 
   const roundOpts = { signal, deadlineMs, ...(/^glm-5\.3(?:-flashx?)?$/i.test(model.model)?{reasoningEffort:'low'}:{}), onTransportRetry: ({code}) => emit({type:'retry',code:'transport',reason:'Verbindung zum Modellanbieter unterbrochen ('+code+') — erneuter Verbindungsversuch …'}) };
-  let round1;
+  let round1,toolCallsMade=0;
   if(opts?.toolContext?.catalog.length){
     const out=await runToolLoop(model,messages,{...roundOpts,...opts.toolContext},ev=>{if(ev.type==='prose-chunk')wrapProse(ev.text);else emit(ev)});
-    round1=out.result;messages=out.messages;
+    round1=out.result;messages=out.messages;toolCallsMade=out.calls||0;
   }else round1 = await runRound(model, messages, roundOpts, wrapProse, onArtifactStart);
   const logBudget=(r,n)=>console.info('[build-budget] '+JSON.stringify({round:n,finish:['stop','length','tool_calls','content_filter'].includes(r.finishReason)?r.finishReason:'other',visibleChars:r.contentChars,reasoningChars:r.reasoningChars||0,usage:r.usage||{}}));
   logBudget(round1,1);
@@ -61,6 +61,11 @@ export async function executeTurn(model, messages, opts, emit) {
   let failureCode = null; // 'truncated' | 'invalid-artifact'
   if (!finalRender) {
     if (round1.truncated) failureCode = 'truncated';
+    // Nur ein BAU-Turn braucht zwingend ein Artefakt — ausser das Modell hat
+    // ein Werkzeug benutzt (MCP): dann ist die Prosa das Ergebnis. Ohne
+    // Artefakt wuerde der Job sonst still als "ready" OHNE Element enden und
+    // spaetere Verfeinerungen zeigten auf ein nicht existierendes Ziel.
+    else if (expectsArtifact && !toolCallsMade) failureCode = 'invalid-artifact';
     else if (round1.hadArtifact) failureCode = 'invalid-artifact';
   }
 
@@ -78,7 +83,9 @@ export async function executeTurn(model, messages, opts, emit) {
     const prev = correctionContext(round1.contentText); // ACTUAL content, never raw SSE envelopes
     let corrective = failureCode === 'truncated'
       ? 'Your previous answer was cut off by the output token limit before it completed (the JSON artifact is truncated). Answer again, much more compact: FIRST a short prose answer, THEN exactly ONE fenced ```json artifact {"version":1,"html","css","js","state"} — valid JSON, well under 10KB, minimal HTML/CSS/JS, no truncation, ids matching between html and js.'
-      : 'Your previous answer contained an invalid JSON artifact (' + (round1.error || 'parse error') + '). Answer again in the same language: FIRST a short prose answer, THEN exactly ONE corrected fenced ```json artifact {"version":1,"html","css","js","state"}. The JSON must be valid (no trailing commas, no comments, no truncation), under 20KB total, with ids matching between html and js.';
+      : round1.hadArtifact
+        ? 'Your previous answer contained an invalid JSON artifact (' + (round1.error || 'parse error') + '). Answer again in the same language: FIRST a short prose answer, THEN exactly ONE corrected fenced ```json artifact {"version":1,"html","css","js","state"}. The JSON must be valid (no trailing commas, no comments, no truncation), under 20KB total, with ids matching between html and js.'
+        : 'Your previous answer contained NO JSON artifact at all — a build turn must produce one. Answer again in the same language: FIRST a short prose answer, THEN exactly ONE fenced ```json artifact {"version":1,"html","css","js","state"} — valid JSON, under 20KB, minimal HTML/CSS/JS, ids matching between html and js.';
     // Provider diagnostics are capped; attach the trusted policy separately, not source CSS.
     corrective += '\n' + cssCapabilityPrompt + '\n' + animationPrompt + '\nDeclared animations must execute with unique existing targets in the sanitized DOM. Startup must handle unavailable isolated data/actions without throwing. Browser smoke verification is mandatory; do not claim visual-intent certification.';
     corrective += animationCorrection(round1.error);
@@ -292,7 +299,8 @@ export class JobRunner {
       const result = await executeTurn(model, job.request.messages, {
         signal: ctrl.signal,
         toolContext: this.getToolContext(job),
-        deadlineMs: t0 + this.totalMs
+        deadlineMs: t0 + this.totalMs,
+        expectsArtifact: job.kind === 'create' || job.kind === 'refine'
       }, emit);
       try { this.store.setJobProse(jobId, result.prose); } catch {}
 

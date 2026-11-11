@@ -1,0 +1,21 @@
+chat: 200 element,prose,done
+jobs: []
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: erster Bau prosa-only, Korrekturrunde mit Artefakt (1 Aufrufe)
+
+1 !== 2
+
+    at file:///root/.openclaw/workspace/projects/form/test/build-prose-only.test.mjs:56:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 1,
+  expected: 2,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.22.2

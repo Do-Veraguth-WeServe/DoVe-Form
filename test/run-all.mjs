@@ -28,6 +28,8 @@ const waitReady = (proc, tag, pattern = /ready/) => new Promise((resolve, reject
 step('revision-bound static CSS evidence',run('node',['--test','test/reply-evidence.test.mjs','test/element-diagnostics.test.mjs','test/element-context.test.mjs']));
 step('MiniMax output budget default',run('node',['--test','test/minimax-budget.test.mjs']));
 step('bounded planner recovery',run('node',['--test','test/plan-recovery.test.mjs']));
+step('required build artifact and target isolation',run('node',['--test','test/build-required.test.mjs']));
+step('prose-only approved build correction',run('node',['test/build-prose-only.test.mjs']));
 step('honest job timeout labels',run('node',['--test','test/job-timeout-label.test.mjs']));
 step('semantic job snapshot equality',run('node',['--test','test/job-snapshot.test.mjs']));
 step('owner revision transport lifecycle',run('node',['--test','test/owner-stream.test.mjs','test/owner-subscription.test.mjs','test/owner-db-ack.test.mjs']));

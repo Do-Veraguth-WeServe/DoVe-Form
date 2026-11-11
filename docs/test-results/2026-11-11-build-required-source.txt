@@ -1,0 +1,53 @@
+✔ standalone loop supplies tools, executes once and returns tool result to model (96.414899ms)
+✔ unknown tool is rejected without executing (17.168084ms)
+[provider] retry empty interrupted stream code=ECONNRESET
+✔ ambiguous external failure is not retried (9.533406ms)
+✔ transport retry after a tool result never re-executes that tool (3.919564ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[job] id=3a8f5d8a failed after 2 round(s): invalid-artifact
+✔ create without an artifact fails after exactly one correction (254.550764ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[build-budget] {"round":2,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+[job] id=8a3062be failed after 2 round(s): invalid-artifact
+✔ refine without an artifact fails after exactly one correction (154.175043ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":19,"reasoningChars":0,"usage":{}}
+✔ legacy prose-only executeTurn caller remains one round (36.21384ms)
+✔ blueprint target validation: valid (178.873572ms)
+✔ blueprint target validation: missing (170.956148ms)
+✔ blueprint target validation: no-render (178.676638ms)
+✔ blueprint target validation: foreign-user (191.739524ms)
+✔ blueprint target validation: foreign-conversation (197.260644ms)
+[job] id=d1118c78 invalid blueprint: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+✔ malformed planner output receives exactly one validated correction (244.247235ms)
+[job] id=008f9023 invalid blueprint: output truncated (over token budget)
+✔ truncated planner output receives exactly one validated correction (158.137438ms)
+[job] id=6a03ff73 invalid blueprint: Ungültige Frage.
+✔ questions planner output receives exactly one validated correction (132.486394ms)
+[job] id=c82eba29 invalid blueprint: Blueprint ungültig: title über 100 Zeichen (101).
+✔ oversized planner output receives exactly one validated correction (156.689611ms)
+[job] id=bd8ebd49 invalid blueprint: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+[job] id=bd8ebd49 blueprint repair failed: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+[job] failed: bd8ebd49 Modellaufruf fehlgeschlagen: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+✔ double invalid response fails closed and preserves previous blueprint (155.338648ms)
+✔ valid first response needs no correction (153.173928ms)
+[job] id=fd28f91b invalid blueprint: Blueprint-Format ungültig: die Abschnitte reply/title/summary/[questions]/ready fehlen, sind verschachtelt oder falsch geschrieben.
+✔ cancellation during correction cannot publish (131.392187ms)
+✔ completion rejects state changed after early hash check (257.561315ms)
+✔ completion rejects code changed after early hash check (233.762245ms)
+✔ completion rejects actions changed after early hash check (217.617282ms)
+✔ completion holds writer lock across hash read and replacement (258.127011ms)
+✔ cancelled completion never invokes apply (159.407471ms)
+[build-budget] {"round":1,"finish":"stop","visibleChars":104,"reasoningChars":0,"usage":{}}
+[job] id=8acf373a user=87fac89f kind=refine dur=4846ms rounds=1 finish=stop chars=104 render=yes fail=-
+[build-budget] {"round":1,"finish":"stop","visibleChars":104,"reasoningChars":0,"usage":{}}
+[job] failed: bf200f52 Modellaufruf fehlgeschlagen: Das Element wurde während der Aktualisierung geändert — erneut versuchen.
+✔ runner turns the late transactional conflict into failed, never ready (9585.526403ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 14968.443648
