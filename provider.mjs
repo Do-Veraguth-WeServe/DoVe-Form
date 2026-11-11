@@ -24,6 +24,19 @@ const CONTEXT_MAX = 8000;      // captured assistant content for retry context
 export class ProviderError extends Error { constructor(m, status) { super(m); this.name = 'ProviderError'; if (status) this.status = status; } }
 export class SizeError extends Error { constructor(m) { super(m); this.name = 'SizeError'; } }
 
+// Maps an artifact-verification failure to the bounded round error the
+// corrective retry sees. The fixed rejection hint alone is ~150 chars; the
+// verifier may append a structural detail (<=160 chars, e.g.
+// "attribute-removed:<name>") that names the actual violation. A 400-char cap
+// keeps hint+detail intact and bounded; transient verifier states still become
+// the user-facing retry ProviderError (never retried with the artifact lost).
+export function artifactRoundError(e) {
+  const message = String(e?.message || e);
+  if (/^Animation verification (unavailable|incomplete|deadline)$/.test(message) || /Animation browser verification rejected \[INTERNAL\]/.test(message))
+    throw new ProviderError('Elementprüfung vorübergehend nicht verfügbar. Der Entwurf wurde nicht veröffentlicht; bitte den Bau später erneut versuchen.');
+  return message.slice(0, 400);
+}
+
 function endpoint(base) { const u = String(base).replace(/\/+$/, ''); return /\/chat\/completions$/.test(u) ? u : u + '/chat/completions'; }
 
 function abortErr(external) {
@@ -157,7 +170,7 @@ async function runRoundAttempt(cfg, messages, opts, onProse, onArtifactStart) {
       render = validateGeneratedCSS(parseArtifact(fin.artifactRaw));
       const verification=await requestAnimationVerification(render,{signal:round.signal,timeoutMs:Math.min(34000,deadlineMs-Date.now())});
       if(render.animations)animationEvidence=verification; // HTML-only checks are not animation/runtime evidence.
-    } catch (e) { if(/^Animation verification (unavailable|incomplete|deadline)$/.test(e.message)||/Animation browser verification rejected \[INTERNAL\]/.test(e.message))throw new ProviderError('Elementprüfung vorübergehend nicht verfügbar. Der Entwurf wurde nicht veröffentlicht; bitte den Bau später erneut versuchen.');render=null;error = String(e.message || e).slice(0, 160); } }
+    } catch (e) { render=null;error = artifactRoundError(e); } }
     if(round.signal.aborted)throw abortErr(!!signal?.aborted);
     return {
       render, error, animationEvidence, hadArtifact: fin.hadArtifact,

@@ -3,7 +3,7 @@
 // Caps are env-driven and set BEFORE import (module reads them once).
 process.env.FORM3_CONTENT_MAX = '1000';
 process.env.FORM3_TRANSPORT_MAX = '2000';
-const { runRound, ProviderError, SizeError } = await import('../provider.mjs');
+const { runRound, artifactRoundError, ProviderError, SizeError } = await import('../provider.mjs');
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
@@ -203,4 +203,19 @@ test('connection reset after visible prose is not replayed',async()=>{
   globalThis.fetch=async()=>{calls++;return new Response(new ReadableStream({start(c){c.enqueue(new TextEncoder().encode('data: '+JSON.stringify({choices:[{delta:{content:'Already visible.'}}]})+'\n\n'));setTimeout(()=>c.error(new TypeError('terminated',{cause:Object.assign(Error('reset'),{code:'ECONNRESET'})})),20);}}));};
   await assert.rejects(()=>runRound(cfg('/unused'),[],{},t=>visible+=t),ProviderError);assert.equal(calls,1);assert.equal(visible,'Already visible.');
  }finally{globalThis.fetch=original;}
+});
+
+// Regression (report 9fb9f9ba): the fixed rejection hint is ~150 chars, so the
+// old 160-char cap truncated the verifier's bounded structural detail to
+// "attribute-r" and the corrective round could not name the violation.
+test('artifact rejection keeps the bounded verifier detail for the corrective round', () => {
+ const hint='Animation browser verification rejected [HTML]: Use supported HTML: safe IDs, allowed tags/attributes/input types; no inline handlers or URL values.';
+ const detail='attribute-removed:style×2, element-removed:marquee';
+ const kept=artifactRoundError(new Error(hint+' '+detail));
+ assert.ok(kept.length>160,'detail-bearing rejection must exceed the old cap');
+ assert.match(kept,/attribute-removed:style/);
+ assert.ok(kept.length<=400,'round error stays bounded');
+ assert.equal(artifactRoundError(new Error('x'.repeat(5000))).length,400);
+ for(const m of ['Animation verification unavailable','Animation verification incomplete','Animation verification deadline','Animation browser verification rejected [INTERNAL]: Isolated verifier unavailable or rejected the artifact.'])
+  assert.throws(()=>artifactRoundError(new Error(m)),e=>e instanceof ProviderError,/Elementprüfung/);
 });
